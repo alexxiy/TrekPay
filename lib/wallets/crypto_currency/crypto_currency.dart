@@ -2,16 +2,19 @@ import '../../models/isar/models/blockchain_data/address.dart';
 import '../../models/node_model.dart';
 import '../../utilities/enums/derive_path_type_enum.dart';
 
-export 'coins/pivx.dart';
+export 'coins/kerrigan.dart';
 
 enum CryptoCurrencyNetwork {
   main,
   test,
   stage,
-  test4;
+  test4,
+  regtest;
 
   bool get isTestNet =>
-      this == CryptoCurrencyNetwork.test || this == CryptoCurrencyNetwork.test4;
+      this == CryptoCurrencyNetwork.test ||
+      this == CryptoCurrencyNetwork.test4 ||
+      this == CryptoCurrencyNetwork.regtest;
 }
 
 abstract class CryptoCurrency {

@@ -34,7 +34,6 @@ import '../../../../utilities/text_styles.dart';
 import '../../../../utilities/util.dart';
 import '../../../../wallets/crypto_currency/crypto_currency.dart';
 import '../../../../wallets/isar/providers/wallet_info_provider.dart';
-import '../../../../wallets/wallet/impl/pivx/pivx_tx_parser.dart';
 import '../../../../widgets/icon_buttons.dart';
 import '../../../../widgets/background.dart';
 import '../../../../widgets/conditional_parent.dart';
@@ -77,20 +76,19 @@ class _TransactionV2DetailsViewState
 
   late final CryptoCurrency coin;
 
-  /// PIVX: received shield notes carried a text memo.
-  bool get _hasPivxMemo =>
-      coin is Pivx && (_transaction.onChainNote?.isNotEmpty ?? false);
+  /// Kerrigan: received shield notes carried a text memo.
+  bool get _hasKerriganMemo =>
+      coin is Kerrigan && (_transaction.onChainNote?.isNotEmpty ?? false);
   late final Amount amount;
   late final Amount fee;
   late final String amountPrefix;
 
   /// The masternode reward (or proposal payment) within a cold staking
   /// reward: the same block paid it.
-  Amount? _alsoPart;
   late final String unit;
   late final int minConfirms;
 
-  late List<({List<String> addresses, Amount amount, bool coldStake})> data;
+  late List<({List<String> addresses, Amount amount})> data;
 
   bool showFeePending = false;
 
@@ -136,9 +134,9 @@ class _TransactionV2DetailsViewState
         break;
     }
 
-    // Like PIVX Core: the destination only, without change. All inputs
-    // and outputs are listed separately ([_PivxTxParts]).
-    final change = _transaction.pivxChangeAddresses;
+    // Like Kerrigan Core: the destination only, without change. All inputs
+    // and outputs are listed separately ([_KerriganTxParts]).
+    final change = _transaction.kerriganChangeAddresses;
     final owned = _transaction.outputs.where((e) => e.walletOwns);
     var shown = switch (_transaction.type) {
       TransactionType.outgoing => _transaction.outputs.where(
@@ -148,27 +146,11 @@ class _TransactionV2DetailsViewState
       _ => owned.where((e) => !e.addresses.any(change.contains)),
     };
     if (shown.isEmpty) shown = owned;
-    if (_transaction.pivxAlsoLabel != null) {
-      _alsoPart = Amount(
-        rawValue: owned
-            .where(
-              (e) =>
-                  e.scriptPubKeyHex.isNotEmpty &&
-                  !pivxIsColdStakeScript(e.scriptPubKeyHex),
-            )
-            .fold(BigInt.zero, (p, e) => p + e.value),
-        fractionDigits: fractionDigits,
-      );
-    }
     data = [
       for (final e in shown)
         (
           addresses: e.addresses,
           amount: Amount(rawValue: e.value, fractionDigits: fractionDigits),
-          // A delegated output: staker and owner, one amount.
-          coldStake:
-              pivxIsColdStakeScript(e.scriptPubKeyHex) &&
-              e.addresses.length == 2,
         ),
     ];
 
@@ -382,28 +364,6 @@ class _TransactionV2DetailsViewState
                                   ],
                                 ),
                               ),
-                              // PIVX: a cold stake whose block also paid our
-                              // masternode: the two parts of the amount.
-                              if (_alsoPart != null) ...[
-                                isDesktop
-                                    ? const _Divider()
-                                    : const SizedBox(height: 12),
-                                _DetailItem(
-                                  label: "Cold staking reward",
-                                  detail: ref
-                                      .watch(pAmountFormatter(coin))
-                                      .format(amount - _alsoPart!),
-                                ),
-                                isDesktop
-                                    ? const _Divider()
-                                    : const SizedBox(height: 12),
-                                _DetailItem(
-                                  label: _transaction.pivxAlsoLabel!,
-                                  detail: ref
-                                      .watch(pAmountFormatter(coin))
-                                      .format(_alsoPart!),
-                                ),
-                              ],
                               isDesktop
                                   ? const _Divider()
                                   : const SizedBox(height: 12),
@@ -555,53 +515,40 @@ class _TransactionV2DetailsViewState
                                                             CrossAxisAlignment
                                                                 .start,
                                                         children: [
-                                                          if (data[i].coldStake)
-                                                            OutputCard(
-                                                              address: data[i]
-                                                                  .addresses
-                                                                  .first,
-                                                              owner: data[i]
-                                                                  .addresses
-                                                                  .last,
-                                                              amount: data[i]
-                                                                  .amount,
-                                                              coin: coin,
-                                                            )
-                                                          else
-                                                            ...data[i].addresses.map((
-                                                              e,
-                                                            ) {
-                                                              return FutureBuilder(
-                                                                future:
-                                                                    fetchContactNameFor(
-                                                                      e,
-                                                                    ),
-                                                                builder: (builderContext, AsyncSnapshot<String> snapshot) {
-                                                                  final String
-                                                                  addressOrContactName;
-                                                                  if (snapshot.connectionState ==
-                                                                          ConnectionState
-                                                                              .done &&
+                                                          ...data[i].addresses.map((
+                                                            e,
+                                                          ) {
+                                                            return FutureBuilder(
+                                                              future:
+                                                                  fetchContactNameFor(
+                                                                    e,
+                                                                  ),
+                                                              builder: (builderContext, AsyncSnapshot<String> snapshot) {
+                                                                final String
+                                                                addressOrContactName;
+                                                                if (snapshot.connectionState ==
+                                                                        ConnectionState
+                                                                            .done &&
+                                                                    snapshot
+                                                                        .hasData) {
+                                                                  addressOrContactName =
                                                                       snapshot
-                                                                          .hasData) {
-                                                                    addressOrContactName =
-                                                                        snapshot
-                                                                            .data!;
-                                                                  } else {
-                                                                    addressOrContactName =
-                                                                        e;
-                                                                  }
+                                                                          .data!;
+                                                                } else {
+                                                                  addressOrContactName =
+                                                                      e;
+                                                                }
 
-                                                                  return OutputCard(
-                                                                    address:
-                                                                        addressOrContactName,
-                                                                    amount: data[i]
-                                                                        .amount,
-                                                                    coin: coin,
-                                                                  );
-                                                                },
-                                                              );
-                                                            }),
+                                                                return OutputCard(
+                                                                  address:
+                                                                      addressOrContactName,
+                                                                  amount: data[i]
+                                                                      .amount,
+                                                                  coin: coin,
+                                                                );
+                                                              },
+                                                            );
+                                                          }),
                                                         ],
                                                       ),
                                                     ),
@@ -618,20 +565,20 @@ class _TransactionV2DetailsViewState
                                   ],
                                 ),
                               ),
-                              if (coin is Pivx) ...[
+                              if (coin is Kerrigan) ...[
                                 isDesktop
                                     ? const _Divider()
                                     : const SizedBox(height: 12),
-                                _PivxTxParts(
+                                _KerriganTxParts(
                                   transaction: _transaction,
                                   coin: coin,
                                 ),
                               ],
-                              if (_hasPivxMemo)
+                              if (_hasKerriganMemo)
                                 isDesktop
                                     ? const _Divider()
                                     : const SizedBox(height: 12),
-                              if (_hasPivxMemo)
+                              if (_hasKerriganMemo)
                                 RoundedWhiteContainer(
                                   padding: isDesktop
                                       ? const EdgeInsets.all(16)
@@ -648,7 +595,7 @@ class _TransactionV2DetailsViewState
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              coin is Pivx
+                                              coin is Kerrigan
                                                   ? "Shielded memo"
                                                   : "On chain note",
                                               style: labelStyle,
@@ -1114,16 +1061,11 @@ class OutputCard extends ConsumerWidget {
     required this.address,
     required this.amount,
     required this.coin,
-    this.owner,
   });
 
   final String address;
   final Amount amount;
   final CryptoCurrency coin;
-
-  /// Owner of a delegated (cold staking) output; [address] is then its
-  /// cold staking address.
-  final String? owner;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1138,16 +1080,8 @@ class OutputCard extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          owner == null ? "Address" : "Cold staking address",
-          style: labelStyle,
-        ),
+        Text("Address", style: labelStyle),
         SelectableText(address, style: valueStyle),
-        if (owner != null) ...[
-          const SizedBox(height: 10),
-          Text("Owner address", style: labelStyle),
-          SelectableText(owner!, style: valueStyle),
-        ],
         const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1175,17 +1109,17 @@ class OutputCard extends ConsumerWidget {
   }
 }
 
-/// Inputs and outputs of a PIVX transaction, each list folded by
-/// default (PIVX Core shows them in its transaction details).
-class _PivxTxParts extends StatelessWidget {
-  const _PivxTxParts({required this.transaction, required this.coin});
+/// Inputs and outputs of a Kerrigan transaction, each list folded by
+/// default (Kerrigan Core shows them in its transaction details).
+class _KerriganTxParts extends StatelessWidget {
+  const _KerriganTxParts({required this.transaction, required this.coin});
 
   final TransactionV2 transaction;
   final CryptoCurrency coin;
 
   @override
   Widget build(BuildContext context) {
-    final change = transaction.pivxChangeAddresses;
+    final change = transaction.kerriganChangeAddresses;
     String where(List<String> addresses, {bool shield = false}) {
       final text = addresses.where((e) => e.isNotEmpty).join(", ");
       return text.isNotEmpty ? text : (shield ? "Shielded" : "Unknown");
@@ -1203,37 +1137,30 @@ class _PivxTxParts extends StatelessWidget {
     ];
     final outputs = [
       for (final o in transaction.outputs)
-        // Skip the empty first output of a coinstake (staking rewards,
-        // proposal and masternode payouts): a marker, no address, 0 PIV.
-        if (!(o.scriptPubKeyHex.isEmpty &&
-            o.addresses.every((e) => e.isEmpty) &&
-            o.value == BigInt.zero))
-          (
-            address: where(o.addresses, shield: o.scriptPubKeyHex.isEmpty),
-            value: o.value,
-            tag: !o.walletOwns
-                ? null
-                : pivxIsColdStakeScript(o.scriptPubKeyHex)
-                ? "Delegated"
-                : o.addresses.any(change.contains)
-                ? "Change"
-                : "Yours",
-          ),
+        (
+          address: where(o.addresses, shield: o.scriptPubKeyHex.isEmpty),
+          value: o.value,
+          tag: !o.walletOwns
+              ? null
+              : o.addresses.any(change.contains)
+              ? "Change"
+              : "Yours",
+        ),
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _PivxPartList(title: "Inputs", entries: inputs, coin: coin),
+        _KerriganPartList(title: "Inputs", entries: inputs, coin: coin),
         Util.isDesktop ? const _Divider() : const SizedBox(height: 12),
-        _PivxPartList(title: "Outputs", entries: outputs, coin: coin),
+        _KerriganPartList(title: "Outputs", entries: outputs, coin: coin),
       ],
     );
   }
 }
 
-class _PivxPartList extends ConsumerStatefulWidget {
-  const _PivxPartList({
+class _KerriganPartList extends ConsumerStatefulWidget {
+  const _KerriganPartList({
     required this.title,
     required this.entries,
     required this.coin,
@@ -1244,10 +1171,10 @@ class _PivxPartList extends ConsumerStatefulWidget {
   final CryptoCurrency coin;
 
   @override
-  ConsumerState<_PivxPartList> createState() => _PivxPartListState();
+  ConsumerState<_KerriganPartList> createState() => _KerriganPartListState();
 }
 
-class _PivxPartListState extends ConsumerState<_PivxPartList> {
+class _KerriganPartListState extends ConsumerState<_KerriganPartList> {
   bool _open = false;
 
   @override

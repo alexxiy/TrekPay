@@ -46,7 +46,7 @@ class _ManagedFavoriteCardState extends ConsumerState<ManagedFavorite> {
 
     final coin = ref.watch(pWalletCoin(walletId));
 
-    // PIVX: transparent + shield.
+    // Kerrigan: transparent + shield.
     final total =
         ref.watch(pWalletBalance(walletId)).total +
         ref.watch(pWalletBalanceSecondary(walletId)).total;

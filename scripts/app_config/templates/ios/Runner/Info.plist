@@ -28,10 +28,10 @@
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>CFBundleURLName</key>
-			<string>pivx payment</string>
+			<string>kerrigan payment</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>pivx</string>
+				<string>kerrigan</string>
 			</array>
 		</dict>
 	</array>

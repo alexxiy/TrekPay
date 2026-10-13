@@ -23,7 +23,7 @@ import '../../utilities/prefs.dart';
 import '../crypto_currency/crypto_currency.dart';
 import '../isar/models/wallet_info.dart';
 import '../models/tx_data.dart';
-import 'impl/pivx_wallet.dart';
+import 'impl/kerrigan_wallet.dart';
 import 'wallet_mixin_interfaces/mnemonic_interface.dart';
 import 'wallet_mixin_interfaces/multi_address_interface.dart';
 import 'wallet_mixin_interfaces/private_key_interface.dart';
@@ -244,8 +244,8 @@ abstract class Wallet<T extends CryptoCurrency> {
   static Wallet _loadWallet({required WalletInfo walletInfo}) {
     final net = walletInfo.coin.network;
     switch (walletInfo.coin.runtimeType) {
-      case const (Pivx):
-        return PivxWallet(net);
+      case const (Kerrigan):
+        return KerriganWallet(net);
 
       default:
         // should never hit in reality

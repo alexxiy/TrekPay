@@ -45,7 +45,7 @@ import '../../utilities/util.dart';
 import '../../wallets/crypto_currency/crypto_currency.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../wallets/models/tx_data.dart';
-import '../../wallets/wallet/impl/pivx_wallet.dart';
+import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../widgets/animated_text.dart';
 import '../../widgets/background.dart';
 import '../../widgets/custom_buttons/app_bar_icon_button.dart';
@@ -54,7 +54,7 @@ import '../../widgets/icon_widgets/addressbook_icon.dart';
 import '../../widgets/icon_widgets/clipboard_icon.dart';
 import '../../widgets/icon_widgets/qrcode_icon.dart';
 import '../../widgets/icon_widgets/x_icon.dart';
-import '../../widgets/pivx_memo_field.dart';
+import '../../widgets/kerrigan_memo_field.dart';
 import '../../widgets/rounded_container.dart';
 import '../../widgets/rounded_white_container.dart';
 import '../../widgets/stack_dialog.dart';
@@ -64,7 +64,7 @@ import '../address_book_views/address_book_view.dart';
 import '../coin_control/coin_control_view.dart';
 import 'confirm_transaction_view.dart';
 import 'sub_widgets/building_transaction_dialog.dart';
-import 'sub_widgets/pivx_change_address_sheet.dart';
+import 'sub_widgets/kerrigan_change_address_sheet.dart';
 import 'sub_widgets/dual_balance_selection_sheet.dart';
 
 class SendView extends ConsumerStatefulWidget {
@@ -84,7 +84,7 @@ class SendView extends ConsumerStatefulWidget {
   final SendViewAutoFillData? autoFillData;
 
   /// A payment request to fill in, as if its QR code was scanned here
-  /// (e.g. a pivx: link opened from another app).
+  /// (e.g. a kerrigan: link opened from another app).
   final PaymentUriData? paymentUri;
   final ClipboardInterface clipboard;
 
@@ -116,7 +116,7 @@ class _SendViewState extends ConsumerState<SendView> {
 
   final _addressFocusNode = FocusNode();
   final _noteFocusNode = FocusNode();
-  final _pivxMemoFocusNode = FocusNode();
+  final _kerriganMemoFocusNode = FocusNode();
   final _onChainNoteFocusNode = FocusNode();
   final _cryptoFocus = FocusNode();
   final _baseFocus = FocusNode();
@@ -132,14 +132,14 @@ class _SendViewState extends ConsumerState<SendView> {
 
   Set<StandardInput> selectedUTXOs = {};
 
-  /// PIVX: the recipient pays the fee (receives amount - fee).
-  bool _pivxSubtractFee = false;
+  /// Kerrigan: the recipient pays the fee (receives amount - fee).
+  bool _kerriganSubtractFee = false;
 
-  /// PIVX: custom change address for public sends (null = automatic).
-  String? _pivxChangeAddress;
+  /// Kerrigan: custom change address for public sends (null = automatic).
+  String? _kerriganChangeAddress;
 
   /// Change of sends from the shield balance (null: automatic).
-  String? _pivxShieldChangeAddress;
+  String? _kerriganShieldChangeAddress;
 
   void _applyUri(PaymentUriData paymentData) {
     try {
@@ -149,7 +149,7 @@ class _SendViewState extends ConsumerState<SendView> {
       // shield memo
       memoController.text = truncateUtf8(
         paymentData.additionalParams['memo'] ?? "",
-        kPivxMaxMemoBytes,
+        kKerriganMaxMemoBytes,
       );
 
       // autofill notes field
@@ -452,7 +452,7 @@ class _SendViewState extends ConsumerState<SendView> {
   Map<Amount, String> cachedFees = {};
 
   Future<String> calculateFees(Amount amount) async {
-    final wallet = ref.read(pWallets).getWallet(walletId) as PivxWallet;
+    final wallet = ref.read(pWallets).getWallet(walletId) as KerriganWallet;
     final fromShield =
         ref.read(publicPrivateBalanceStateProvider) == BalanceType.private;
     final toShield = wallet.isShieldAddress(_address ?? "");
@@ -468,7 +468,7 @@ class _SendViewState extends ConsumerState<SendView> {
         selected: selectedUTXOs.isEmpty
             ? null
             : selectedUTXOs.map((e) => e.utxo).toSet(),
-        subtractFee: _pivxSubtractFee,
+        subtractFee: _kerriganSubtractFee,
       );
       return ref
           .read(pAmountFormatter(coin))
@@ -479,7 +479,7 @@ class _SendViewState extends ConsumerState<SendView> {
       return cachedFees[amount]!;
     }
 
-    // PIVX has no fee market: every transparent send pays the relay
+    // Kerrigan has no fee market: every transparent send pays the relay
     // minimum (fast = average = slow).
     final feeRate = (await wallet.fees).medium;
     fee = await wallet.estimateFeeFor(amount, feeRate);
@@ -588,20 +588,20 @@ class _SendViewState extends ConsumerState<SendView> {
       final Future<TxData> txDataFuture;
 
       final memo =
-          (coin as Pivx).isShieldAddress(_address ?? "") &&
+          (coin as Kerrigan).isShieldAddress(_address ?? "") &&
               memoController.text.isNotEmpty
           ? memoController.text
           : null;
       // Spending the private balance means spending shield notes.
-      final pivxFromShield =
+      final kerriganFromShield =
           ref.read(publicPrivateBalanceStateProvider) == BalanceType.private;
-      final pivxOtherData = <String, dynamic>{
-        if (pivxFromShield) kPivxFromShield: true,
-        if (_pivxSubtractFee) kPivxSubtractFee: true,
-        if (!pivxFromShield && _pivxChangeAddress != null)
-          kPivxChangeAddress: _pivxChangeAddress,
-        if (pivxFromShield && _pivxShieldChangeAddress != null)
-          kPivxChangeAddress: _pivxShieldChangeAddress,
+      final kerriganOtherData = <String, dynamic>{
+        if (kerriganFromShield) kKerriganFromShield: true,
+        if (_kerriganSubtractFee) kKerriganSubtractFee: true,
+        if (!kerriganFromShield && _kerriganChangeAddress != null)
+          kKerriganChangeAddress: _kerriganChangeAddress,
+        if (kerriganFromShield && _kerriganShieldChangeAddress != null)
+          kKerriganChangeAddress: _kerriganShieldChangeAddress,
       };
       txDataFuture = wallet.prepareSend(
         txData: TxData(
@@ -618,7 +618,9 @@ class _SendViewState extends ConsumerState<SendView> {
           utxos: (coinControlEnabled && selectedUTXOs.isNotEmpty)
               ? selectedUTXOs
               : null,
-          otherData: pivxOtherData.isEmpty ? null : jsonEncode(pivxOtherData),
+          otherData: kerriganOtherData.isEmpty
+              ? null
+              : jsonEncode(kerriganOtherData),
         ),
       );
 
@@ -726,9 +728,9 @@ class _SendViewState extends ConsumerState<SendView> {
     fractionDigits: ref.read(pWalletCoin(walletId)).fractionDigits,
   );
 
-  void _setPivxSubtractFee(bool value) {
+  void _setKerriganSubtractFee(bool value) {
     setState(() {
-      _pivxSubtractFee = value;
+      _kerriganSubtractFee = value;
       // Shield fees depend on how many notes the amount needs.
       _calculateFeesFuture = calculateFees(
         ref.read(pSendAmount) ??
@@ -738,9 +740,9 @@ class _SendViewState extends ConsumerState<SendView> {
   }
 
   Future<void> _sendAllTapped(bool showCoinControl) async {
-    // PIVX never takes the fee out of the amount silently: sending
+    // Kerrigan never takes the fee out of the amount silently: sending
     // everything ticks "Subtract fee from amount" where the user sees it.
-    if (!_pivxSubtractFee) _setPivxSubtractFee(true);
+    if (!_kerriganSubtractFee) _setKerriganSubtractFee(true);
     final Amount amount;
 
     if (showCoinControl && selectedUTXOs.isNotEmpty) {
@@ -764,9 +766,9 @@ class _SendViewState extends ConsumerState<SendView> {
   }
 
   /// Chosen change address for a send from [balance] (null: automatic).
-  String? _pivxChange(BalanceType balance) => balance == BalanceType.private
-      ? _pivxShieldChangeAddress
-      : _pivxChangeAddress;
+  String? _kerriganChange(BalanceType balance) => balance == BalanceType.private
+      ? _kerriganShieldChangeAddress
+      : _kerriganChangeAddress;
 
   @override
   void initState() {
@@ -877,7 +879,7 @@ class _SendViewState extends ConsumerState<SendView> {
     memoController.dispose();
 
     _noteFocusNode.dispose();
-    _pivxMemoFocusNode.dispose();
+    _kerriganMemoFocusNode.dispose();
     _onChainNoteFocusNode.dispose();
     _addressFocusNode.dispose();
     _cryptoFocus.dispose();
@@ -1533,11 +1535,12 @@ class _SendViewState extends ConsumerState<SendView> {
                                   ),
                                 ),
                               ),
-                            if (coin is Pivx) const SizedBox(height: 8),
-                            if (coin is Pivx)
+                            if (coin is Kerrigan) const SizedBox(height: 8),
+                            if (coin is Kerrigan)
                               GestureDetector(
-                                onTap: () =>
-                                    _setPivxSubtractFee(!_pivxSubtractFee),
+                                onTap: () => _setKerriganSubtractFee(
+                                  !_kerriganSubtractFee,
+                                ),
                                 child: Container(
                                   color: Colors.transparent,
                                   child: Row(
@@ -1548,9 +1551,11 @@ class _SendViewState extends ConsumerState<SendView> {
                                         child: Checkbox(
                                           materialTapTargetSize:
                                               MaterialTapTargetSize.shrinkWrap,
-                                          value: _pivxSubtractFee,
+                                          value: _kerriganSubtractFee,
                                           onChanged: (v) =>
-                                              _setPivxSubtractFee(v ?? false),
+                                              _setKerriganSubtractFee(
+                                                v ?? false,
+                                              ),
                                         ),
                                       ),
                                       const SizedBox(width: 12),
@@ -1564,8 +1569,8 @@ class _SendViewState extends ConsumerState<SendView> {
                                   ),
                                 ),
                               ),
-                            if (coin is Pivx) const SizedBox(height: 8),
-                            if (coin is Pivx)
+                            if (coin is Kerrigan) const SizedBox(height: 8),
+                            if (coin is Kerrigan)
                               RoundedWhiteContainer(
                                 child: Row(
                                   mainAxisAlignment:
@@ -1583,10 +1588,10 @@ class _SendViewState extends ConsumerState<SendView> {
                                     const SizedBox(width: 12),
                                     Flexible(
                                       child: CustomTextButton(
-                                        text: _pivxChange(balType) == null
+                                        text: _kerriganChange(balType) == null
                                             ? "Automatic"
-                                            : "${_pivxChange(balType)!.substring(0, 6)}"
-                                                  "…${_pivxChange(balType)!.substring(_pivxChange(balType)!.length - 6)}",
+                                            : "${_kerriganChange(balType)!.substring(0, 6)}"
+                                                  "…${_kerriganChange(balType)!.substring(_kerriganChange(balType)!.length - 6)}",
                                         onTap: () async {
                                           FocusScope.of(context).unfocus();
                                           final picked =
@@ -1599,10 +1604,10 @@ class _SendViewState extends ConsumerState<SendView> {
                                                 useSafeArea: true,
                                                 isScrollControlled: true,
                                                 builder: (_) =>
-                                                    PivxChangeAddressSheet(
+                                                    KerriganChangeAddressSheet(
                                                       walletId: walletId,
-                                                      coin: coin as Pivx,
-                                                      current: _pivxChange(
+                                                      coin: coin as Kerrigan,
+                                                      current: _kerriganChange(
                                                         balType,
                                                       ),
                                                       shield:
@@ -1617,10 +1622,10 @@ class _SendViewState extends ConsumerState<SendView> {
                                                   : picked;
                                               if (balType ==
                                                   BalanceType.private) {
-                                                _pivxShieldChangeAddress =
+                                                _kerriganShieldChangeAddress =
                                                     value;
                                               } else {
-                                                _pivxChangeAddress = value;
+                                                _kerriganChangeAddress = value;
                                               }
                                             });
                                           }
@@ -1659,13 +1664,13 @@ class _SendViewState extends ConsumerState<SendView> {
                                         }
 
                                         if (context.mounted) {
-                                          final pivxShield =
-                                              coin is Pivx &&
+                                          final kerriganShield =
+                                              coin is Kerrigan &&
                                               ref.read(
                                                     publicPrivateBalanceStateProvider,
                                                   ) ==
                                                   BalanceType.private;
-                                          final spendable = pivxShield
+                                          final spendable = kerriganShield
                                               ? ref
                                                     .read(
                                                       pWalletBalanceSecondary(
@@ -1684,8 +1689,8 @@ class _SendViewState extends ConsumerState<SendView> {
                                             amount = ref.read(pSendAmount)!;
 
                                             if (spendable == amount ||
-                                                (coin is Pivx &&
-                                                    _pivxSubtractFee)) {
+                                                (coin is Kerrigan &&
+                                                    _kerriganSubtractFee)) {
                                               // send all, or the fee comes
                                               // out of the amount
                                             } else {
@@ -1698,7 +1703,7 @@ class _SendViewState extends ConsumerState<SendView> {
                                                 context,
                                               ).pushNamed(
                                                 CoinControlView.routeName,
-                                                arguments: coin is Pivx
+                                                arguments: coin is Kerrigan
                                                     ? Tuple5(
                                                         walletId,
                                                         CoinControlViewType.use,
@@ -1708,18 +1713,18 @@ class _SendViewState extends ConsumerState<SendView> {
                                                             .toSet(),
                                                         (
                                                           shieldNotes:
-                                                              pivxShield,
+                                                              kerriganShield,
                                                           sendAmount: ref.read(
                                                             pSendAmount,
                                                           ),
                                                           toShield:
-                                                              (coin as Pivx)
+                                                              (coin as Kerrigan)
                                                                   .isShieldAddress(
                                                                     _address ??
                                                                         "",
                                                                   ),
                                                           subtractFee:
-                                                              _pivxSubtractFee,
+                                                              _kerriganSubtractFee,
                                                         ),
                                                       )
                                                     : Tuple4(
@@ -1746,10 +1751,10 @@ class _SendViewState extends ConsumerState<SendView> {
                                 ),
                               ),
                             const SizedBox(height: 12),
-                            // PIVX: the shielded memo travels encrypted
+                            // Kerrigan: the shielded memo travels encrypted
                             // with the payment; only shield recipients
                             // can receive one.
-                            if ((coin as Pivx).isShieldAddress(
+                            if ((coin as Kerrigan).isShieldAddress(
                               _address ?? "",
                             )) ...[
                               Text(
@@ -1758,10 +1763,10 @@ class _SendViewState extends ConsumerState<SendView> {
                                 textAlign: TextAlign.left,
                               ),
                               const SizedBox(height: 8),
-                              PivxMemoField(
-                                key: const Key("sendViewPivxMemoFieldKey"),
+                              KerriganMemoField(
+                                key: const Key("sendViewKerriganMemoFieldKey"),
                                 controller: memoController,
-                                focusNode: _pivxMemoFocusNode,
+                                focusNode: _kerriganMemoFocusNode,
                                 onChanged: () => setState(() {}),
                               ),
                               const SizedBox(height: 4),
@@ -1787,7 +1792,7 @@ class _SendViewState extends ConsumerState<SendView> {
                                 onChanged: (_) => setState(() {}),
                                 decoration:
                                     standardInputDecoration(
-                                      coin is Pivx
+                                      coin is Kerrigan
                                           ? "Just for you: kept in your history, never sent"
                                           : "Type something...",
                                       _noteFocusNode,
@@ -1825,7 +1830,7 @@ class _SendViewState extends ConsumerState<SendView> {
                               textAlign: TextAlign.left,
                             ),
                             const SizedBox(height: 8),
-                            // PIVX has no fee market: the fee is the
+                            // Kerrigan has no fee market: the fee is the
                             // network minimum, nothing to choose.
                             RoundedContainer(
                               color: Theme.of(context)

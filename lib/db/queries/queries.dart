@@ -26,7 +26,7 @@ enum CCFilter {
 }
 
 /// Keep only utxos whose otherData contains [key] (or only those
-/// without it), e.g. PIVX shield note rows vs transparent outputs.
+/// without it), e.g. Kerrigan shield note rows vs transparent outputs.
 typedef UtxoTagFilter = ({String key, bool present});
 
 enum CCSortDescriptor {
@@ -82,9 +82,7 @@ extension MainDBQueries on MainDB {
     bool? ascending,
   }) {
     var preSort = getUTXOs(walletId).filter().group((q) {
-      final qq = q.group(
-        (q) => q.usedIsNull().or().usedEqualTo(false),
-      );
+      final qq = q.group((q) => q.usedIsNull().or().usedEqualTo(false));
       switch (filter) {
         case CCFilter.frozen:
           return qq.and().isBlockedEqualTo(true);
@@ -99,54 +97,52 @@ extension MainDBQueries on MainDB {
       preSort = tagFilter.present
           ? preSort.and().otherDataContains(tagFilter.key)
           : preSort.and().group(
-              (q) => q
-                  .otherDataIsNull()
-                  .or()
-                  .not()
-                  .otherDataContains(tagFilter.key),
+              (q) => q.otherDataIsNull().or().not().otherDataContains(
+                tagFilter.key,
+              ),
             );
     }
 
     if (searchTerm.isNotEmpty) {
-      preSort = preSort.and().group(
-        (q) {
-          var qq = q.addressContains(searchTerm, caseSensitive: false);
+      preSort = preSort.and().group((q) {
+        var qq = q.addressContains(searchTerm, caseSensitive: false);
 
-          qq = qq.or().nameContains(searchTerm, caseSensitive: false);
-          qq = qq.or().group(
-                (q) => q
-                    .isBlockedEqualTo(true)
-                    .and()
-                    .blockedReasonContains(searchTerm, caseSensitive: false),
-              );
+        qq = qq.or().nameContains(searchTerm, caseSensitive: false);
+        qq = qq.or().group(
+          (q) => q
+              .isBlockedEqualTo(true)
+              .and()
+              .blockedReasonContains(searchTerm, caseSensitive: false),
+        );
 
-          qq = qq.or().txidContains(searchTerm, caseSensitive: false);
-          qq = qq.or().blockHashContains(searchTerm, caseSensitive: false);
+        qq = qq.or().txidContains(searchTerm, caseSensitive: false);
+        qq = qq.or().blockHashContains(searchTerm, caseSensitive: false);
 
-          final maybeDecimal = Decimal.tryParse(searchTerm);
-          if (maybeDecimal != null) {
-            qq = qq.or().valueEqualTo(
-                  Amount.fromDecimal(
-                    maybeDecimal,
-                    fractionDigits: cryptoCurrency.fractionDigits,
-                  ).raw.toInt(),
-                );
-          }
+        final maybeDecimal = Decimal.tryParse(searchTerm);
+        if (maybeDecimal != null) {
+          qq = qq.or().valueEqualTo(
+            Amount.fromDecimal(
+              maybeDecimal,
+              fractionDigits: cryptoCurrency.fractionDigits,
+            ).raw.toInt(),
+          );
+        }
 
-          final maybeInt = int.tryParse(searchTerm);
-          if (maybeInt != null) {
-            qq = qq.or().valueEqualTo(maybeInt);
-          }
+        final maybeInt = int.tryParse(searchTerm);
+        if (maybeInt != null) {
+          qq = qq.or().valueEqualTo(maybeInt);
+        }
 
-          return qq;
-        },
-      );
+        return qq;
+      });
     }
 
     if (ascending != null) {
-      return _sortedUtxos(preSort.findAllSync(), sort, ascending)
-          .map((e) => e.id)
-          .toList();
+      return _sortedUtxos(
+        preSort.findAllSync(),
+        sort,
+        ascending,
+      ).map((e) => e.id).toList();
     }
 
     final List<Id> ids;
@@ -174,9 +170,7 @@ extension MainDBQueries on MainDB {
     bool? ascending,
   }) {
     var preSort = getUTXOs(walletId).filter().group((q) {
-      final qq = q.group(
-        (q) => q.usedIsNull().or().usedEqualTo(false),
-      );
+      final qq = q.group((q) => q.usedIsNull().or().usedEqualTo(false));
       switch (filter) {
         case CCFilter.frozen:
           return qq.and().isBlockedEqualTo(true);
@@ -191,48 +185,44 @@ extension MainDBQueries on MainDB {
       preSort = tagFilter.present
           ? preSort.and().otherDataContains(tagFilter.key)
           : preSort.and().group(
-              (q) => q
-                  .otherDataIsNull()
-                  .or()
-                  .not()
-                  .otherDataContains(tagFilter.key),
+              (q) => q.otherDataIsNull().or().not().otherDataContains(
+                tagFilter.key,
+              ),
             );
     }
 
     if (searchTerm.isNotEmpty) {
-      preSort = preSort.and().group(
-        (q) {
-          var qq = q.addressContains(searchTerm, caseSensitive: false);
+      preSort = preSort.and().group((q) {
+        var qq = q.addressContains(searchTerm, caseSensitive: false);
 
-          qq = qq.or().nameContains(searchTerm, caseSensitive: false);
-          qq = qq.or().group(
-                (q) => q
-                    .isBlockedEqualTo(true)
-                    .and()
-                    .blockedReasonContains(searchTerm, caseSensitive: false),
-              );
+        qq = qq.or().nameContains(searchTerm, caseSensitive: false);
+        qq = qq.or().group(
+          (q) => q
+              .isBlockedEqualTo(true)
+              .and()
+              .blockedReasonContains(searchTerm, caseSensitive: false),
+        );
 
-          qq = qq.or().txidContains(searchTerm, caseSensitive: false);
-          qq = qq.or().blockHashContains(searchTerm, caseSensitive: false);
+        qq = qq.or().txidContains(searchTerm, caseSensitive: false);
+        qq = qq.or().blockHashContains(searchTerm, caseSensitive: false);
 
-          final maybeDecimal = Decimal.tryParse(searchTerm);
-          if (maybeDecimal != null) {
-            qq = qq.or().valueEqualTo(
-                  Amount.fromDecimal(
-                    maybeDecimal,
-                    fractionDigits: cryptoCurrency.fractionDigits,
-                  ).raw.toInt(),
-                );
-          }
+        final maybeDecimal = Decimal.tryParse(searchTerm);
+        if (maybeDecimal != null) {
+          qq = qq.or().valueEqualTo(
+            Amount.fromDecimal(
+              maybeDecimal,
+              fractionDigits: cryptoCurrency.fractionDigits,
+            ).raw.toInt(),
+          );
+        }
 
-          final maybeInt = int.tryParse(searchTerm);
-          if (maybeInt != null) {
-            qq = qq.or().valueEqualTo(maybeInt);
-          }
+        final maybeInt = int.tryParse(searchTerm);
+        if (maybeInt != null) {
+          qq = qq.or().valueEqualTo(maybeInt);
+        }
 
-          return qq;
-        },
-      );
+        return qq;
+      });
     }
 
     final List<UTXO> utxos;

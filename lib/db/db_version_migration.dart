@@ -16,7 +16,7 @@ import 'hive/db.dart';
 
 class DbVersionMigrator {
   // Stack Wallet's older steps (v1..v15) only converted data of other coins
-  // and of old Stack Wallet releases, none of which a PIVXie install has.
+  // and of old Stack Wallet releases, none of which a Astronaut install has.
   // A fresh install still needs the defaults the early steps used to set.
   Future<void> migrate(
     int fromVersion, {

@@ -25,7 +25,7 @@ import 'tor_service.dart';
 
 class PriceAPI {
   // coingecko coin ids
-  static const Map<Type, String> _coinToIdMap = {Pivx: "pivx"};
+  static const Map<Type, String> _coinToIdMap = {Kerrigan: "kerrigan"};
 
   static const refreshInterval = 60;
 

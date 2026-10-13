@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 
 import '../pages/settings_views/global_settings_view/manage_nodes_views/add_edit_node_view.dart';
 import '../providers/global/prefs_provider.dart';
-import '../wallets/api/pivx/pivx_bridge_client.dart';
+import '../wallets/api/kerrigan/kerrigan_bridge_client.dart';
 import '../wallets/crypto_currency/crypto_currency.dart';
 import 'logger.dart';
 import 'tor_plain_net_option_enum.dart';
@@ -32,7 +32,7 @@ final testNodeConnectionProvider = Provider<TestNodeConnectionCallback>((ref) {
   };
 });
 
-/// Test a PIVX bridge with the node form's settings.
+/// Test a Kerrigan bridge with the node form's settings.
 Future<bool> testNodeConnection({
   required BuildContext context,
   required NodeFormData nodeFormData,
@@ -59,20 +59,20 @@ Future<bool> testNodeConnection({
 
   bool testPassed = false;
   try {
-    final client = PivxBridgeClient.fromParts(
+    final client = KerriganBridgeClient.fromParts(
       host: formData.host!,
       port: formData.port ?? 0,
       useSSL: formData.useSSL ?? false,
       useTor: read(prefsChangeNotifierProvider).useTor,
     );
-    final problem = await client.verifyFor(cryptoCurrency as Pivx);
+    final problem = await client.verifyFor(cryptoCurrency as Kerrigan);
     if (problem != null) {
-      Logging.instance.w("PIVX testNodeConnection: $problem");
+      Logging.instance.w("Kerrigan testNodeConnection: $problem");
     }
     testPassed = problem == null;
   } catch (e, s) {
     Logging.instance.w(
-      "PIVX testNodeConnection failed",
+      "Kerrigan testNodeConnection failed",
       error: e,
       stackTrace: s,
     );

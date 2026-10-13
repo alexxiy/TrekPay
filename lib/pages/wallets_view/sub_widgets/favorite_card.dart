@@ -207,7 +207,7 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard> {
                     builder: (context) {
                       final balance = ref.watch(pWalletBalance(walletId));
 
-                      // PIVX: transparent + shield.
+                      // Kerrigan: transparent + shield.
                       final total =
                           balance.total +
                           ref.watch(pWalletBalanceSecondary(walletId)).total;

@@ -27,7 +27,7 @@ import '../../utilities/constants.dart';
 import '../../utilities/text_styles.dart';
 import '../../wallets/crypto_currency/crypto_currency.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
-import '../../wallets/wallet/impl/pivx_wallet.dart';
+import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../wallets/wallet/wallet.dart';
 import '../../wallets/wallet/wallet_mixin_interfaces/coin_control_interface.dart';
 import '../../widgets/animated_widgets/rotate_icon.dart';
@@ -49,10 +49,10 @@ import '../../widgets/icon_buttons.dart';
 
 enum CoinControlViewType { manage, use }
 
-/// PIVX send context: which kind of coins to pick (shield notes or
+/// Kerrigan send context: which kind of coins to pick (shield notes or
 /// transparent outputs) and what they pay for, for the Core-style
-/// summary (see [PivxWallet.coinControlSummary]).
-typedef PivxCoinControlArgs = ({
+/// summary (see [KerriganWallet.coinControlSummary]).
+typedef KerriganCoinControlArgs = ({
   bool shieldNotes,
   Amount? sendAmount,
   bool toShield,
@@ -66,7 +66,7 @@ class CoinControlView extends ConsumerStatefulWidget {
     required this.type,
     this.requestedTotal,
     this.selectedUTXOs,
-    this.pivx,
+    this.kerrigan,
   });
 
   static const routeName = "/coinControl";
@@ -76,9 +76,9 @@ class CoinControlView extends ConsumerStatefulWidget {
   final Amount? requestedTotal;
   final Set<UTXO>? selectedUTXOs;
 
-  /// PIVX send context. When null on a shield-capable PIVX wallet the
+  /// Kerrigan send context. When null on a shield-capable Kerrigan wallet the
   /// user switches between transparent outputs and shield notes.
-  final PivxCoinControlArgs? pivx;
+  final KerriganCoinControlArgs? kerrigan;
 
   @override
   ConsumerState<CoinControlView> createState() => _CoinControlViewState();
@@ -103,7 +103,7 @@ class _CoinControlViewState extends ConsumerState<CoinControlView> {
   final Set<UTXO> _selectedAvailable = {};
   final Set<UTXO> _selectedBlocked = {};
 
-  /// PIVX wallets keep shield notes and transparent outputs apart; null
+  /// Kerrigan wallets keep shield notes and transparent outputs apart; null
   /// for other wallets (no filter).
   bool? _shieldNotes;
   bool _canSwitchKind = false;
@@ -163,9 +163,9 @@ class _CoinControlViewState extends ConsumerState<CoinControlView> {
     );
   }
 
-  /// PIVX Core-style figures for the current selection.
-  Widget _pivxSummary(PivxWallet wallet, CryptoCurrency coin) {
-    final args = widget.pivx;
+  /// Kerrigan Core-style figures for the current selection.
+  Widget _kerriganSummary(KerriganWallet wallet, CryptoCurrency coin) {
+    final args = widget.kerrigan;
     final s = wallet.coinControlSummary(
       selected: _selectedAvailable,
       toShield: args?.toShield ?? false,
@@ -242,9 +242,9 @@ class _CoinControlViewState extends ConsumerState<CoinControlView> {
   @override
   void initState() {
     final wallet = ref.read(pWallets).getWallet(widget.walletId);
-    if (wallet is PivxWallet) {
-      _shieldNotes = widget.pivx?.shieldNotes ?? false;
-      _canSwitchKind = widget.pivx == null && wallet.supportsShield;
+    if (wallet is KerriganWallet) {
+      _shieldNotes = widget.kerrigan?.shieldNotes ?? false;
+      _canSwitchKind = widget.kerrigan == null && wallet.supportsShield;
     }
     if (widget.selectedUTXOs != null) {
       _selectedAvailable.addAll(widget.selectedUTXOs!);
@@ -279,7 +279,7 @@ class _CoinControlViewState extends ConsumerState<CoinControlView> {
 
     final UtxoTagFilter? tagFilter = _shieldNotes == null
         ? null
-        : (key: kPivxShieldNoteKey, present: _shieldNotes!);
+        : (key: kKerriganShieldNoteKey, present: _shieldNotes!);
 
     if (_sort == CCSortDescriptor.address && !_isSearching) {
       _list = null;
@@ -1029,7 +1029,7 @@ class _CoinControlViewState extends ConsumerState<CoinControlView> {
                                     ref
                                             .watch(pWallets)
                                             .getWallet(widget.walletId)
-                                        is PivxWallet) ...[
+                                        is KerriganWallet) ...[
                                   Container(
                                     width: double.infinity,
                                     height: 1.5,
@@ -1037,11 +1037,11 @@ class _CoinControlViewState extends ConsumerState<CoinControlView> {
                                         .extension<StackColors>()!
                                         .backgroundAppBar,
                                   ),
-                                  _pivxSummary(
+                                  _kerriganSummary(
                                     ref
                                             .watch(pWallets)
                                             .getWallet(widget.walletId)
-                                        as PivxWallet,
+                                        as KerriganWallet,
                                     coin,
                                   ),
                                 ],

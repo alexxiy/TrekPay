@@ -6,7 +6,7 @@ import 'logger.dart';
 /// reacting (taps, frames), with the work in progress at the time.
 ///
 /// Wallet code names its long-running steps with [run], so a log line
-/// like "UI blocked for 2400 ms during PIVX My wallet: shield sync"
+/// like "UI blocked for 2400 ms during Kerrigan My wallet: shield sync"
 /// points at the culprit.
 abstract final class UiStallWatch {
   static const _tick = Duration(milliseconds: 100);

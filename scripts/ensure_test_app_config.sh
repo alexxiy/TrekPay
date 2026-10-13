@@ -20,13 +20,13 @@ cat > "$APP_CONFIG_DART_FILE" <<EOF
 
 part of 'app_config.dart';
 
-const _prefix = "PIVXie";
+const _prefix = "Astronaut";
 const _separator = "";
 const _suffix = "";
 const _emptyWalletsMessage =
-    "Create your first PIVX wallet";
-const _appDataDirName = "pivxie";
-const _shortDescriptionText = "Your privacy. Your keys. Your PIVX.";
+    "Create your first Kerrigan wallet";
+const _appDataDirName = "astronaut";
+const _shortDescriptionText = "Your privacy. Your keys. Your Kerrigan.";
 const _commitHash = "$BUILT_COMMIT_HASH";
 const _websiteUrl = "";
 const _termsUrl = "";
@@ -41,8 +41,8 @@ const Set<AppFeature> _features = {
 const ({String light, String dark})? _appIconAsset = null;
 
 final List<CryptoCurrency> _supportedCoins = List.unmodifiable([
-  Pivx(CryptoCurrencyNetwork.main),
-  Pivx(CryptoCurrencyNetwork.test),
+  Kerrigan(CryptoCurrencyNetwork.main),
+  Kerrigan(CryptoCurrencyNetwork.test),
 ]);
 EOF
 

@@ -50,7 +50,7 @@ class WalletsOverview extends ConsumerStatefulWidget {
 
   final CryptoCurrency coin;
 
-  /// List the wallets of every network of [coin] (e.g. PIVX and tPIVX)
+  /// List the wallets of every network of [coin] (e.g. Kerrigan and tKerrigan)
   /// inline on the home screen, as single coin apps do.
   final bool allNetworks;
   final NavigatorState? navigatorState;

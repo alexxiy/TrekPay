@@ -18,7 +18,7 @@ final coinIconProvider = Provider.family<String, CryptoCurrency>((ref, coin) {
   final assets = ref.watch(themeAssetsProvider);
 
   if (assets is ThemeAssets) {
-    // Legacy v1 theme assets have no PIVX icon.
+    // Legacy v1 theme assets have no Kerrigan icon.
     return assets.stackIcon;
   } else if (assets is ThemeAssetsV2) {
     return (assets).coinIcons[coin.mainNetId]!;

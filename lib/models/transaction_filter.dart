@@ -12,55 +12,30 @@ import '../utilities/amount/amount.dart';
 import 'isar/models/blockchain_data/transaction.dart' show TransactionType;
 import 'isar/models/blockchain_data/v2/transaction_v2.dart';
 
-/// PIVX history categories the filter can select.
-enum PivxTxCategory {
+/// Kerrigan history categories the filter can select.
+enum KerriganTxCategory {
   sent("Sent"),
   received("Received"),
   sentToSelf("Sent to self"),
-  stakingReward("Staking rewards"),
-  masternodeReward("Masternode rewards"),
-  coldStakingReward("Cold staking rewards"),
-  proposalPayment("Proposal payments"),
-  delegation("Delegated"),
-  undelegation("Undelegated"),
+  blockReward("Block rewards"),
   shield("Shielded"),
-  unshield("Unshielded"),
-  burn("Burned");
+  unshield("Unshielded");
 
-  const PivxTxCategory(this.label);
+  const KerriganTxCategory(this.label);
 
   final String label;
 
-  /// The categories [tx] belongs to: its own, and that of a second kind
-  /// in the same block (a cold staking reward that also paid our
-  /// masternode shows under both).
-  static Set<PivxTxCategory> allOf(TransactionV2 tx) => {
-    of(tx),
-    if (tx.pivxAlsoKind == PivxTxKind.masternodeReward) masternodeReward,
-    if (tx.pivxAlsoKind == PivxTxKind.budgetPayment) proposalPayment,
-  };
+  /// The categories [tx] belongs to.
+  static Set<KerriganTxCategory> allOf(TransactionV2 tx) => {of(tx)};
 
-  static PivxTxCategory of(TransactionV2 tx) {
-    switch (tx.pivxKind) {
-      case PivxTxKind.stakeReward:
-      case PivxTxKind.blockReward:
-        return stakingReward;
-      case PivxTxKind.masternodeReward:
-        return masternodeReward;
-      case PivxTxKind.coldStakeReward:
-        return coldStakingReward;
-      case PivxTxKind.budgetPayment:
-        return proposalPayment;
-      case PivxTxKind.delegation:
-        return delegation;
-      case PivxTxKind.undelegation:
-        return undelegation;
-      case PivxTxKind.shield:
+  static KerriganTxCategory of(TransactionV2 tx) {
+    switch (tx.kerriganKind) {
+      case KerriganTxKind.blockReward:
+        return blockReward;
+      case KerriganTxKind.shield:
         return shield;
-      case PivxTxKind.unshield:
+      case KerriganTxKind.unshield:
         return unshield;
-      case PivxTxKind.burn:
-        return burn;
     }
     switch (tx.type) {
       case TransactionType.incoming:
@@ -82,9 +57,9 @@ class TransactionFilter {
   final Amount? amount;
   final String keyword;
 
-  /// PIVX: categories to show (instead of [sent] / [received]); null when
+  /// Kerrigan: categories to show (instead of [sent] / [received]); null when
   /// not filtering by category.
-  final Set<PivxTxCategory>? pivxCategories;
+  final Set<KerriganTxCategory>? kerriganCategories;
 
   TransactionFilter({
     required this.sent,
@@ -94,7 +69,7 @@ class TransactionFilter {
     required this.to,
     required this.amount,
     required this.keyword,
-    this.pivxCategories,
+    this.kerriganCategories,
   });
 
   TransactionFilter copyWith({
@@ -105,7 +80,7 @@ class TransactionFilter {
     DateTime? to,
     Amount? amount,
     String? keyword,
-    Set<PivxTxCategory>? pivxCategories,
+    Set<KerriganTxCategory>? kerriganCategories,
   }) {
     return TransactionFilter(
       sent: sent ?? this.sent,
@@ -115,12 +90,12 @@ class TransactionFilter {
       to: to ?? this.to,
       amount: amount ?? this.amount,
       keyword: keyword ?? this.keyword,
-      pivxCategories: pivxCategories ?? this.pivxCategories,
+      kerriganCategories: kerriganCategories ?? this.kerriganCategories,
     );
   }
 
   @override
   String toString() {
-    return "TxFilter { sent: $sent, received: $received, trade: $trade, from: $from, to: $to, amount: $amount, keyword: $keyword, pivxCategories: $pivxCategories }";
+    return "TxFilter { sent: $sent, received: $received, trade: $trade, from: $from, to: $to, amount: $amount, keyword: $keyword, kerriganCategories: $kerriganCategories }";
   }
 }

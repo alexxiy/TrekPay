@@ -2,7 +2,7 @@
 
 set -x -e
 
-APP="${1:-pivxie}"
+APP="${1:-astronaut}"
 
 mkdir -p build
 

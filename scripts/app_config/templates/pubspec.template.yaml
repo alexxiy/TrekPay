@@ -30,10 +30,10 @@ dependencies:
 #      ref: 5586bfa3c48e495bc00f9b56fa18869daf768573
 # %%END_ENABLE_TOR%%
 
-# %%ENABLE_PIVX%%
-#  flutter_libpivxshield:
-#    path: ./crypto_plugins/flutter_libpivxshield
-# %%END_ENABLE_PIVX%%
+# %%ENABLE_KERRIGAN%%
+#  flutter_libkerriganshield:
+#    path: ./crypto_plugins/flutter_libkerriganshield
+# %%END_ENABLE_KERRIGAN%%
 
   stack_wallet_backup:
     git:
@@ -42,7 +42,7 @@ dependencies:
 
   # Utility plugins
   http: ^1.6.0
-  # pivx: payment links opened from other apps (camera, browser, ...)
+  # kerrigan: payment links opened from other apps (camera, browser, ...)
   app_links: ^7.2.2
   # Sound effects (the send animation's sound), all platforms
   audioplayers: ^6.8.1
@@ -199,7 +199,7 @@ flutter:
     # socials
     - assets/svg/socials/
 
-    # PIVXie mascot (Void Pixie), 1.5x-4.0x density variants
+    # Astronaut mascot (Void Pixie), 1.5x-4.0x density variants
     - assets/persona/
 
     # lottie animations

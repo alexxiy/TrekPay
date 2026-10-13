@@ -144,9 +144,10 @@ class _AllTransactionsV2ViewState extends ConsumerState<AllTransactionsV2View> {
     Map<String, String> notes,
   ) {
     {
-      final categories = filter.pivxCategories;
+      final categories = filter.kerriganCategories;
       if (categories != null) {
-        if (!PivxTxCategory.allOf(tx).any(categories.contains)) return false;
+        if (!KerriganTxCategory.allOf(tx).any(categories.contains))
+          return false;
       } else {
         if (!filter.sent && !filter.received) {
           return false;
@@ -234,8 +235,8 @@ class _AllTransactionsV2ViewState extends ConsumerState<AllTransactionsV2View> {
     // on chain / shielded memo
     contains |= tx.onChainNote?.toLowerCase().contains(keyword) ?? false;
 
-    // PIVX type ("staking", "masternode", "shield", ...)
-    contains |= PivxTxCategory.allOf(tx)
+    // Kerrigan type ("block reward", "shield", ...)
+    contains |= KerriganTxCategory.allOf(tx)
         .any((c) => c.label.toLowerCase().contains(keyword));
 
     // amount: "1.2" finds 1.2, 1.25, 11.2, ...
@@ -614,7 +615,7 @@ class _TransactionFilterOptionBarState
     to: to ? null : f.to,
     amount: amount ? null : f.amount,
     keyword: f.keyword,
-    pivxCategories: categories ? null : f.pivxCategories,
+    kerriganCategories: categories ? null : f.kerriganCategories,
   );
 
   void _remove(String label, TransactionFilter Function(TransactionFilter) f) {
@@ -633,9 +634,9 @@ class _TransactionFilterOptionBarState
     _filter = ref.read(transactionFilterProvider);
 
     if (_filter != null) {
-      final categories = _filter!.pivxCategories;
+      final categories = _filter!.kerriganCategories;
       if (categories != null &&
-          categories.length < PivxTxCategory.values.length) {
+          categories.length < KerriganTxCategory.values.length) {
         final label = categories.map((e) => e.label).join(", ");
         items.add(
           TransactionFilterOptionBarItem(
@@ -967,11 +968,6 @@ class _DesktopTransactionCardRowState
                                 .textDark,
                           ),
                     ),
-                    if (_transaction.pivxAlsoLabel != null)
-                      Text(
-                        "+ ${_transaction.pivxAlsoLabel}",
-                        style: STextStyles.label(context),
-                      ),
                   ],
                 ),
               ),

@@ -33,7 +33,7 @@ void main() {
         name: "John Doe",
         addresses: [
           ContactAddressEntry()
-            ..coinName = Pivx(CryptoCurrencyNetwork.main).identifier
+            ..coinName = Kerrigan(CryptoCurrencyNetwork.main).identifier
             ..address = "some bch address",
         ],
         isFavorite: true,
@@ -58,8 +58,11 @@ void main() {
     );
 
     expect(find.text("John Doe"), findsOneWidget);
-    expect(find.text("PIV"), findsOneWidget);
-    expect(find.text(Pivx(CryptoCurrencyNetwork.main).ticker), findsOneWidget);
+    expect(find.text("KRGN"), findsOneWidget);
+    expect(
+      find.text(Kerrigan(CryptoCurrencyNetwork.main).ticker),
+      findsOneWidget,
+    );
 
     if (Platform.isIOS || Platform.isAndroid) {
       await widgetTester.tap(find.byType(RawMaterialButton));

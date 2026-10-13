@@ -40,7 +40,7 @@ Uri getBlockExplorerTransactionUrlFor({
 
 /// The block explorer page of [address]: the transaction explorer's URL
 /// with `/address/<address>` for its `/tx/<txid>` (Blockbook style, like
-/// PIVX's explorers).
+/// Kerrigan's explorers).
 Uri getBlockExplorerAddressUrlFor({
   required CryptoCurrency coin,
   required String address,

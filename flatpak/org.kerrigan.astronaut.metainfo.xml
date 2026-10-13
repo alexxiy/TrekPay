@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.kerrigan.astronaut</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <name>Astronaut</name>
+  <summary>Non-custodial Kerrigan wallet</summary>
+  <developer id="me.astronaut">
+    <name>Astronaut developers</name>
+  </developer>
+  <description>
+    <p>
+      Astronaut is a non-custodial wallet for Kerrigan. Your recovery phrase and
+      keys stay on your device.
+    </p>
+    <ul>
+      <li>Cold staking: delegate PIV to a staker while the coins stay yours</li>
+      <li>Masternodes: set up, start and follow your masternodes</li>
+      <li>Governance: vote on budget proposals and submit your own</li>
+      <li>Encrypted backups, PIN lock and optional Tor</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">org.kerrigan.astronaut.desktop</launchable>
+  <url type="homepage">https://astronaut.me</url>
+  <content_rating type="oars-1.1"/>
+</component>

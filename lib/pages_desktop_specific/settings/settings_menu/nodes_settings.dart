@@ -103,7 +103,7 @@ class _NodesSettings extends ConsumerState<NodesSettings> {
         ? _coins
         : _coins.where((e) => e.network == CryptoCurrencyNetwork.main).toList();
 
-    // One network (PIVX mainnet only): its nodes straight away, as on
+    // One network (Kerrigan mainnet only): its nodes straight away, as on
     // mobile.
     final shown = shownCoins(ref, withWalletCoins: true);
     if (shown.length == 1) return _singleCoinNodes(shown.first);

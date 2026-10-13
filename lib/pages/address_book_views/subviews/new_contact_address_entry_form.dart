@@ -53,7 +53,7 @@ class _NewContactAddressEntryFormState
 
   late final FocusNode addressFocusNode;
 
-  /// Coins an address may belong to; the address picks its coin (PIVX
+  /// Coins an address may belong to; the address picks its coin (Kerrigan
   /// mainnet and testnet addresses differ), so no coin selector.
   List<CryptoCurrency> coins = [];
 

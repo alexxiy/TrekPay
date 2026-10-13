@@ -2,7 +2,7 @@
 
 set -x -e
 
-APP="${1:-pivxie}"
+APP="${1:-astronaut}"
 
 # for arm
 # flutter-elinux clean

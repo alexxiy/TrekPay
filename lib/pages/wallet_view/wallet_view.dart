@@ -38,11 +38,8 @@ import '../../utilities/enums/sync_type_enum.dart';
 import '../../utilities/text_styles.dart';
 import '../../wallets/crypto_currency/crypto_currency.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
-import '../../wallets/wallet/impl/pivx_wallet.dart';
+import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../address_book_views/address_book_view.dart';
-import '../pivx_cold_staking/pivx_cold_staking_view.dart';
-import '../pivx_governance/pivx_governance_view.dart';
-import '../pivx_masternodes/pivx_masternodes_view.dart';
 import '../../wallets/wallet/wallet_mixin_interfaces/view_only_option_interface.dart';
 import '../../widgets/background.dart';
 import '../../widgets/conditional_parent.dart';
@@ -92,7 +89,7 @@ class _WalletViewState extends ConsumerState<WalletView> {
   late final String walletId;
   late final CryptoCurrency coin;
 
-  late final bool isPivxShield;
+  late final bool isKerriganShield;
 
   // late final bool _shouldDisableAutoSyncOnLogOut;
 
@@ -124,7 +121,7 @@ class _WalletViewState extends ConsumerState<WalletView> {
       //   _shouldDisableAutoSyncOnLogOut = false;
     }
 
-    isPivxShield = wallet is PivxWallet && wallet.supportsShield;
+    isKerriganShield = wallet is KerriganWallet && wallet.supportsShield;
 
     wallet.refresh();
 
@@ -323,7 +320,7 @@ class _WalletViewState extends ConsumerState<WalletView> {
     }
 
     try {
-      await (wallet as PivxWallet).shieldAllTransparent();
+      await (wallet as KerriganWallet).shieldAllTransparent();
       shouldPop = true;
       if (mounted) {
         Navigator.of(context)
@@ -591,9 +588,9 @@ class _WalletViewState extends ConsumerState<WalletView> {
                             ),
                           ),
                         ),
-                        if (isPivxShield && !viewOnly)
+                        if (isKerriganShield && !viewOnly)
                           const SizedBox(height: 10),
-                        if (isPivxShield && !viewOnly)
+                        if (isKerriganShield && !viewOnly)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
@@ -805,57 +802,6 @@ class _WalletViewState extends ConsumerState<WalletView> {
                               widget.walletId,
                               CoinControlViewType.manage,
                             ),
-                          );
-                        },
-                      ),
-                    if (!viewOnly && wallet is PivxWallet)
-                      WalletNavigationBarItemData(
-                        label: "Masternodes",
-                        icon: Icon(
-                          Icons.dns_rounded,
-                          size: 20,
-                          color: Theme.of(context)
-                              .extension<StackColors>()!
-                              .bottomNavIconIcon,
-                        ),
-                        onTap: () {
-                          Navigator.of(context).pushNamed(
-                            PivxMasternodesView.routeName,
-                            arguments: widget.walletId,
-                          );
-                        },
-                      ),
-                    if (wallet is PivxWallet)
-                      WalletNavigationBarItemData(
-                        label: "Cold staking",
-                        icon: Icon(
-                          Icons.ac_unit_rounded,
-                          size: 20,
-                          color: Theme.of(context)
-                              .extension<StackColors>()!
-                              .bottomNavIconIcon,
-                        ),
-                        onTap: () {
-                          Navigator.of(context).pushNamed(
-                            PivxColdStakingView.routeName,
-                            arguments: widget.walletId,
-                          );
-                        },
-                      ),
-                    if (wallet is PivxWallet)
-                      WalletNavigationBarItemData(
-                        label: "Governance",
-                        icon: Icon(
-                          Icons.how_to_vote_rounded,
-                          size: 20,
-                          color: Theme.of(context)
-                              .extension<StackColors>()!
-                              .bottomNavIconIcon,
-                        ),
-                        onTap: () {
-                          Navigator.of(context).pushNamed(
-                            PivxGovernanceView.routeName,
-                            arguments: widget.walletId,
                           );
                         },
                       ),

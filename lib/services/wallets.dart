@@ -21,8 +21,8 @@ import '../utilities/logger.dart';
 import '../utilities/prefs.dart';
 import '../wallets/crypto_currency/crypto_currency.dart';
 import '../wallets/isar/models/wallet_info.dart';
-import '../wallets/wallet/impl/pivx/pivx_shield_state.dart';
-import '../wallets/wallet/impl/pivx_wallet.dart';
+import '../wallets/wallet/impl/kerrigan/kerrigan_shield_state.dart';
+import '../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../wallets/wallet/wallet.dart';
 import 'event_bus/events/wallet_added_event.dart';
 import 'event_bus/global_event_bus.dart';
@@ -116,7 +116,7 @@ class Wallets {
             .deleteAll(),
       );
       // A sync still running at deletion may have saved it again.
-      await PivxShieldState.delete(walletId);
+      await KerriganShieldState.delete(walletId);
     }
     // clear list
     await DB.instance.deleteAll<String>(
@@ -341,7 +341,7 @@ class Wallets {
     );
   }
 
-  /// Keys in secure storage and the PIVX data kept outside the database.
+  /// Keys in secure storage and the Kerrigan data kept outside the database.
   Future<void> _deleteSecrets(
     WalletInfo info,
     SecureStorageInterface secureStorage,
@@ -355,8 +355,8 @@ class Wallets {
     await secureStorage.delete(
       key: Wallet.getViewOnlyWalletDataSecStoreKey(walletId: walletId),
     );
-    if (info.coin is Pivx) {
-      await PivxWallet.deleteLocalData(
+    if (info.coin is Kerrigan) {
+      await KerriganWallet.deleteLocalData(
         walletId: walletId,
         otherData: info.otherData,
         secureStorage: secureStorage,

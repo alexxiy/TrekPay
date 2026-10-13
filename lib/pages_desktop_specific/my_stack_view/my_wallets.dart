@@ -67,7 +67,7 @@ class _MyWalletsState extends ConsumerState<MyWallets> {
           ),
           const SizedBox(height: 20),
           Expanded(
-            // One list when every coin is a network of the same one (PIVX
+            // One list when every coin is a network of the same one (Kerrigan
             // and its test network), as on mobile.
             child: AppConfig.coins.map((e) => e.mainNetId).toSet().length == 1
                 ? WalletsOverview(

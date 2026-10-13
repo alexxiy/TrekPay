@@ -53,7 +53,7 @@ class AllWallets extends ConsumerWidget {
                 return WalletsOverview(coin: AppConfig.coins.first);
               }
 
-              // Every coin is a network of the same one (PIVX and its test
+              // Every coin is a network of the same one (Kerrigan and its test
               // network): no per-coin groups, list the wallets directly.
               if (AppConfig.coins.map((e) => e.mainNetId).toSet().length == 1 &&
                   walletsByCoin.isNotEmpty) {

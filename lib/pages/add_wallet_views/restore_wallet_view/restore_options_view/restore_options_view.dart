@@ -101,7 +101,7 @@ class _RestoreOptionsViewState extends ConsumerState<RestoreOptionsView> {
       }
 
       if (mounted) {
-        // PIVX wallets scan from the start.
+        // Kerrigan wallets scan from the start.
         const height = 0;
         if (!_showViewOnlyOption) {
           await Navigator.of(context).pushNamed(

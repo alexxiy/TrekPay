@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: PIVX Discord
-    url: https://discord.pivx.org/
+  - name: Kerrigan Discord
+    url: https://discord.kerrigan.org/
     about: Questions and help with your wallet
-  - name: PIVX on Telegram
-    url: https://t.me/PIVX_official
+  - name: Kerrigan on Telegram
+    url: https://t.me/KERRIGAN_official
     about: Questions and help with your wallet
   - name: Email support
-    url: mailto:support@pivxie.me
-    about: Contact the PIVXie team
+    url: mailto:support@astronaut.me
+    about: Contact the Astronaut team

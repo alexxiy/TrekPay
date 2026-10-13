@@ -22,7 +22,7 @@ import '../../utilities/show_loading.dart';
 import '../../utilities/show_node_tor_settings_mismatch.dart';
 import '../../utilities/text_styles.dart';
 import '../../utilities/util.dart';
-import '../../wallets/crypto_currency/coins/pivx.dart';
+import '../../wallets/crypto_currency/coins/kerrigan.dart';
 import '../../wallets/crypto_currency/crypto_currency.dart';
 import '../../wallets/wallet/wallet.dart';
 import '../../wallets/wallet/wallet_mixin_interfaces/view_only_option_interface.dart';
@@ -33,7 +33,7 @@ import '../send_view/send_view.dart';
 import '../wallet_view/wallet_view.dart';
 import 'home_view.dart';
 
-/// A pivx: payment link opened from another app (e.g. a QR code scanned
+/// A kerrigan: payment link opened from another app (e.g. a QR code scanned
 /// with the camera, or a link clicked in a browser), waiting for the
 /// unlocked wallet list ([HomeView], or DesktopHomeView) to handle it.
 final pPendingPaymentLink = StateProvider<String?>((_) => null);
@@ -44,12 +44,12 @@ final pPendingPaymentLink = StateProvider<String?>((_) => null);
 final pDesktopPaymentLink =
     StateProvider<({String walletId, PaymentUriData data})?>((_) => null);
 
-/// Catch pivx: links, including the one the app was started with.
+/// Catch kerrigan: links, including the one the app was started with.
 StreamSubscription<String>? listenForPaymentLinks(WidgetRef ref) {
   if (kIsWeb) return null;
   return AppLinks().stringLinkStream.listen(
     (link) {
-      if (link.toLowerCase().startsWith("pivx:")) {
+      if (link.toLowerCase().startsWith("kerrigan:")) {
         ref.read(pPendingPaymentLink.notifier).state = link;
       }
     },
@@ -76,7 +76,7 @@ _paymentLinkWallets(BuildContext context, WidgetRef ref, String link) {
       ? null
       : AppConfig.coins.where((c) => c.validateAddress(address)).firstOrNull;
   if (data == null || coin == null) {
-    warn("The payment link has no valid PIVX address");
+    warn("The payment link has no valid Kerrigan address");
     return null;
   }
 
@@ -163,7 +163,7 @@ Future<void> openPaymentLink(
 
 /// Desktop: open the Send tab of a wallet for [link], filled in as if the
 /// link was pasted there. [context] is the desktop home's, [nav] the
-/// navigator of My PIVXie.
+/// navigator of My Astronaut.
 Future<void> openPaymentLinkDesktop(
   BuildContext context,
   WidgetRef ref,
@@ -214,7 +214,7 @@ Future<void> openPaymentLinkDesktop(
 }
 
 /// Pay a contact: one of its addresses (asked when it has several) opens
-/// the send screen of a wallet that can pay it, as a pivx: link would.
+/// the send screen of a wallet that can pay it, as a kerrigan: link would.
 Future<void> payContact(
   BuildContext context,
   WidgetRef ref,
@@ -233,10 +233,10 @@ Future<void> payContact(
               (
                 label: a.address,
                 detail: switch (a.coin) {
-                  final Pivx pivx =>
-                    pivx.isShieldAddress(a.address)
-                        ? "Shielded (${pivx.ticker})"
-                        : "Transparent (${pivx.ticker})",
+                  final Kerrigan kerrigan =>
+                    kerrigan.isShieldAddress(a.address)
+                        ? "Shielded (${kerrigan.ticker})"
+                        : "Transparent (${kerrigan.ticker})",
                   final coin => coin.prettyName,
                 },
                 value: a.address,
@@ -245,7 +245,7 @@ Future<void> payContact(
         );
   if (address == null) return;
   // The wallet list handles it (HomeView, DesktopHomeView).
-  ref.read(pPendingPaymentLink.notifier).state = "pivx:$address";
+  ref.read(pPendingPaymentLink.notifier).state = "kerrigan:$address";
 }
 
 Future<String?> _chooseWallet(

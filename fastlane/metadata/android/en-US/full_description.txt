@@ -1,4 +1,4 @@
-PIVXie is a non-custodial mobile wallet for PIVX. Your recovery phrase and keys never leave your phone, and nobody else can move your coins.
+Astronaut is a non-custodial mobile wallet for Kerrigan. Your recovery phrase and keys never leave your phone, and nobody else can move your coins.
 
 Highlights:
 - SHIELD private transactions: shield, unshield and send privately, with an optional encrypted memo.
@@ -6,9 +6,9 @@ Highlights:
 - Masternodes: set up a masternode from your wallet, start it, and follow its status and rewards.
 - Governance: browse budget proposals, vote with your masternodes, submit your own proposal, and see when budget payments arrive.
 - Clear history: staking rewards, masternode rewards and proposal payments are labelled, and you can filter by each type.
-- Coin control, an address book and pivx: payment links.
+- Coin control, an address book and kerrigan: payment links.
 - Encrypted backups of all your wallets and settings, plus automatic backups.
 - PIN and fingerprint lock.
 - Optional Tor for every connection.
-- Connect to your own pivx-bridge server if you prefer.
+- Connect to your own kerrigan-bridge server if you prefer.
 - Open source (GPLv3), with no ads and no tracking.

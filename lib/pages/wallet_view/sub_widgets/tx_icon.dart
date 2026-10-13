@@ -71,7 +71,7 @@ class TxIcon extends ConsumerWidget {
       currency.minCoinbaseConfirms,
     );
     final assetName =
-        PivxTxKind.iconAsset(tx.pivxKind, pending: isPending) ??
+        KerriganTxKind.iconAsset(tx.kerriganKind, pending: isPending) ??
         _getAssetName(
           false,
           txIsReceived,
@@ -92,9 +92,7 @@ class TxIcon extends ConsumerWidget {
                 height: size.height,
               )
             : SvgPicture.file(
-                File(
-                  assetName,
-                ),
+                File(assetName),
                 width: size.width,
                 height: size.height,
               ),

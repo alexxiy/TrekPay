@@ -57,8 +57,8 @@ class _TransactionSearchViewState
   bool _isActiveSentCheckbox = false;
   bool _isActiveTradeCheckbox = false;
 
-  /// PIVX: categories to show; all by default.
-  final Set<PivxTxCategory> _categories = {...PivxTxCategory.values};
+  /// Kerrigan: categories to show; all by default.
+  final Set<KerriganTxCategory> _categories = {...KerriganTxCategory.values};
 
   final keywordTextFieldFocusNode = FocusNode();
   final amountTextFieldFocusNode = FocusNode();
@@ -72,10 +72,10 @@ class _TransactionSearchViewState
     if (filterState != null) {
       _isActiveReceivedCheckbox = filterState.received;
       _isActiveSentCheckbox = filterState.sent;
-      if (filterState.pivxCategories != null) {
+      if (filterState.kerriganCategories != null) {
         _categories
           ..clear()
-          ..addAll(filterState.pivxCategories!);
+          ..addAll(filterState.kerriganCategories!);
       }
       _selectedToDate = filterState.to;
       _selectedFromDate = filterState.from;
@@ -171,9 +171,9 @@ class _TransactionSearchViewState
     }
   }
 
-  /// One checkbox per PIVX transaction type, and "All" above them.
-  Widget _pivxCategoryBox(bool isDesktop) {
-    final all = PivxTxCategory.values.length;
+  /// One checkbox per Kerrigan transaction type, and "All" above them.
+  Widget _kerriganCategoryBox(bool isDesktop) {
+    final all = KerriganTxCategory.values.length;
     // Ticked when all are, a dash when some are.
     final bool? allValue = _categories.length == all
         ? true
@@ -184,7 +184,7 @@ class _TransactionSearchViewState
       if (_categories.length == all) {
         _categories.clear();
       } else {
-        _categories.addAll(PivxTxCategory.values);
+        _categories.addAll(KerriganTxCategory.values);
       }
     });
     return RoundedWhiteContainer(
@@ -233,7 +233,7 @@ class _TransactionSearchViewState
                   .textFieldDefaultBG,
             ),
           ),
-          for (final c in PivxTxCategory.values)
+          for (final c in KerriganTxCategory.values)
             Padding(
               padding: EdgeInsets.only(bottom: isDesktop ? 4 : 10),
               child: GestureDetector(
@@ -306,8 +306,8 @@ class _TransactionSearchViewState
             ),
           ),
         if (!isDesktop) const SizedBox(height: 12),
-        if (widget.coin is Pivx)
-          _pivxCategoryBox(isDesktop)
+        if (widget.coin is Kerrigan)
+          _kerriganCategoryBox(isDesktop)
         else
           RoundedWhiteContainer(
             padding: EdgeInsets.all(isDesktop ? 0 : 12),
@@ -767,16 +767,16 @@ class _TransactionSearchViewState
                 .toAmount(fractionDigits: widget.coin.fractionDigits);
     }
 
-    final isPivx = widget.coin is Pivx;
+    final isKerrigan = widget.coin is Kerrigan;
     final TransactionFilter filter = TransactionFilter(
-      sent: isPivx || _isActiveSentCheckbox,
-      received: isPivx || _isActiveReceivedCheckbox,
+      sent: isKerrigan || _isActiveSentCheckbox,
+      received: isKerrigan || _isActiveReceivedCheckbox,
       trade: _isActiveTradeCheckbox,
       from: _selectedFromDate,
       to: _selectedToDate,
       amount: amount,
       keyword: _keywordTextEditingController.text,
-      pivxCategories: isPivx ? {..._categories} : null,
+      kerriganCategories: isKerrigan ? {..._categories} : null,
     );
 
     ref.read(transactionFilterProvider.notifier).state = filter;

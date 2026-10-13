@@ -43,7 +43,7 @@ import '../../widgets/rounded_white_container.dart';
 import '../../widgets/stack_dialog.dart';
 import '../../widgets/stack_text_field.dart';
 import '../../widgets/textfield_icon_button.dart';
-import '../../widgets/pivx_memo_field.dart';
+import '../../widgets/kerrigan_memo_field.dart';
 
 class GenerateUriQrCodeView extends StatefulWidget {
   const GenerateUriQrCodeView({
@@ -66,12 +66,13 @@ class GenerateUriQrCodeView extends StatefulWidget {
 class _GenerateUriQrCodeViewState extends State<GenerateUriQrCodeView> {
   final _qrKey = GlobalKey();
 
-  // PIVX payment URIs carry no message; shield addresses take a memo
+  // Kerrigan payment URIs carry no message; shield addresses take a memo
   // (sent on chain with the payment) in the field the note uses.
-  late final bool _isPivx = widget.coin is Pivx;
-  late final bool _pivxShield =
-      _isPivx && (widget.coin as Pivx).isShieldAddress(widget.receivingAddress);
-  bool get _showNote => !_isPivx || _pivxShield;
+  late final bool _isKerrigan = widget.coin is Kerrigan;
+  late final bool _kerriganShield =
+      _isKerrigan &&
+      (widget.coin as Kerrigan).isShieldAddress(widget.receivingAddress);
+  bool get _showNote => !_isKerrigan || _kerriganShield;
 
   late TextEditingController amountController;
   late TextEditingController noteController;
@@ -170,10 +171,10 @@ class _GenerateUriQrCodeViewState extends State<GenerateUriQrCodeView> {
     if (amountString.isNotEmpty) {
       queryParams["amount"] = amount.toString();
     }
-    if (noteString.isNotEmpty && _pivxShield) {
-      // The field keeps it within kPivxMaxMemoBytes.
+    if (noteString.isNotEmpty && _kerriganShield) {
+      // The field keeps it within kKerriganMaxMemoBytes.
       queryParams["memo"] = noteString;
-    } else if (noteString.isNotEmpty && !_isPivx) {
+    } else if (noteString.isNotEmpty && !_isKerrigan) {
       queryParams["message"] = noteString;
     }
 
@@ -342,9 +343,9 @@ class _GenerateUriQrCodeViewState extends State<GenerateUriQrCodeView> {
               RoundedWhiteContainer(
                 child: Text(
                   "The new QR code with your address, amount"
-                  "${_pivxShield
+                  "${_kerriganShield
                       ? " and shielded memo"
-                      : _isPivx
+                      : _isKerrigan
                       ? ""
                       : " and note"}"
                   " will appear in the pop up window.",
@@ -424,7 +425,9 @@ class _GenerateUriQrCodeViewState extends State<GenerateUriQrCodeView> {
             if (_showNote) ...[
               SizedBox(height: isDesktop ? 20 : 12),
               Text(
-                _pivxShield ? "Shielded memo (Optional)" : "Note (Optional)",
+                _kerriganShield
+                    ? "Shielded memo (Optional)"
+                    : "Note (Optional)",
                 style: isDesktop
                     ? STextStyles.desktopTextExtraExtraSmall(context).copyWith(
                         color: Theme.of(context)
@@ -435,9 +438,9 @@ class _GenerateUriQrCodeViewState extends State<GenerateUriQrCodeView> {
                 textAlign: TextAlign.left,
               ),
               SizedBox(height: isDesktop ? 10 : 8),
-              if (_pivxShield)
+              if (_kerriganShield)
                 // Same 512-byte rule and counter as the send screen.
-                PivxMemoField(
+                KerriganMemoField(
                   controller: noteController,
                   focusNode: _noteFocusNode,
                   hint: "Sent privately with the payment",
@@ -465,7 +468,7 @@ class _GenerateUriQrCodeViewState extends State<GenerateUriQrCodeView> {
                     onChanged: (_) => setState(() {}),
                     decoration:
                         standardInputDecoration(
-                          _pivxShield ? "Shielded memo" : "Note",
+                          _kerriganShield ? "Shielded memo" : "Note",
                           _noteFocusNode,
                           context,
                         ).copyWith(

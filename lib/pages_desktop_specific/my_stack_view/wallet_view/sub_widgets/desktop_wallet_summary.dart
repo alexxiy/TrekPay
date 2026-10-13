@@ -25,7 +25,7 @@ import '../../../../utilities/assets.dart';
 import '../../../../utilities/enums/wallet_balance_toggle_state.dart';
 import '../../../../utilities/text_styles.dart';
 import '../../../../wallets/isar/providers/wallet_info_provider.dart';
-import '../../../../wallets/wallet/impl/pivx_wallet.dart';
+import '../../../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../../../widgets/desktop/desktop_dialog.dart';
 import 'desktop_balance_toggle_button.dart';
 
@@ -81,12 +81,12 @@ class _WDesktopWalletSummaryState extends ConsumerState<DesktopWalletSummary> {
     final balance = ref.watch(pWalletBalance(walletId));
     Amount balanceToShow = _showAvailable ? balance.spendable : balance.total;
 
-    // PIVX has a transparent and a shield balance: the same choice as on
+    // Kerrigan has a transparent and a shield balance: the same choice as on
     // mobile (total, or one of them available or in full).
     final wallet = ref.watch(pWallets).getWallet(walletId);
-    final pivxShield = wallet is PivxWallet && wallet.supportsShield;
+    final kerriganShield = wallet is KerriganWallet && wallet.supportsShield;
     String? title;
-    if (pivxShield) {
+    if (kerriganShield) {
       final type = ref.watch(publicPrivateBalanceStateProvider);
       final privateBalance = ref.watch(pWalletBalanceSecondary(walletId));
       if (ref.watch(showTotalBalanceProvider)) {
@@ -171,7 +171,7 @@ class _WDesktopWalletSummaryState extends ConsumerState<DesktopWalletSummary> {
               initialSyncStatus: widget.initialSyncStatus,
             ),
 
-            if (!pivxShield) ...[
+            if (!kerriganShield) ...[
               const SizedBox(width: 8),
               const DesktopBalanceToggleButton(),
             ],

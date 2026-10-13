@@ -42,7 +42,6 @@ import '../../../../../utilities/logger.dart';
 import '../../../../../utilities/prefs.dart';
 import '../../../../../utilities/util.dart';
 import '../../../../../wallets/isar/models/wallet_info.dart';
-import '../../../../../wallets/wallet/impl/pivx_wallet.dart';
 import '../../../../../wallets/wallet/wallet.dart';
 import '../../../../../wallets/wallet/wallet_mixin_interfaces/mnemonic_interface.dart';
 import '../../../../../wallets/wallet/wallet_mixin_interfaces/private_key_interface.dart';
@@ -284,16 +283,6 @@ abstract class SWB {
         backupWallet['isFavorite'] = wallet.info.isFavourite;
         backupWallet['otherDataJsonString'] = wallet.info.otherDataJsonString;
 
-        // Masternode private keys live in secure storage, not otherData.
-        if (wallet is PivxWallet) {
-          final keys = <String, String>{};
-          for (final mn in wallet.masternodes) {
-            final key = await wallet.masternodeKey(mn);
-            if (key != null) keys[mn.id] = key;
-          }
-          if (keys.isNotEmpty) backupWallet['pivxMasternodeKeys'] = keys;
-        }
-
         if (wallet is ViewOnlyOptionInterface && wallet.isViewOnly) {
           backupWallet['viewOnlyWalletDataKey'] =
               (await wallet.getViewOnlyWalletData()).toJsonEncodedString();
@@ -404,16 +393,6 @@ abstract class SWB {
       );
 
       await wallet.init();
-
-      final masternodeKeys = Map<String, String>.from(
-        walletbackup['pivxMasternodeKeys'] as Map? ?? {},
-      );
-      for (final e in masternodeKeys.entries) {
-        await secureStorageInterface.write(
-          key: pivxMasternodeKeyName(info.walletId, e.key),
-          value: e.value,
-        );
-      }
 
       int restoreHeight = walletbackup['restoreHeight'] as int? ?? 0;
       if (restoreHeight <= 0) {
@@ -923,7 +902,7 @@ abstract class SWB {
             .map<String>((e) => e as String)
             .toList();
     _prefs.showTestNetCoins = prefs['showTestNetCoins'] as bool;
-    // The PIVXie experience (older backups do not have it).
+    // The Astronaut experience (older backups do not have it).
     if (prefs['externalCalls'] is bool) {
       _prefs.externalCalls = prefs['externalCalls'] as bool;
     }

@@ -8,7 +8,6 @@
  *
  */
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -205,7 +204,9 @@ class HiddenSettings extends StatelessWidget {
                                   await showDialog<bool>(
                                     context: context,
                                     builder: (_) => TorWarningDialog(
-                                      coin: Pivx(CryptoCurrencyNetwork.main),
+                                      coin: Kerrigan(
+                                        CryptoCurrencyNetwork.main,
+                                      ),
                                     ),
                                   );
                                 },

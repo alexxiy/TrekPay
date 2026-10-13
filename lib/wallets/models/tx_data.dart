@@ -30,7 +30,7 @@ class TxData {
 
   final String? changeAddress;
 
-  // PIVX: JSON encoded send options (shield, subtract fee, ...)
+  // Kerrigan: JSON encoded send options (shield, subtract fee, ...)
   final String? otherData;
 
   final TransactionV2? tempTx;

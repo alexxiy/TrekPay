@@ -1,5 +1,5 @@
-"""PIVXie launcher icon sources from the artwork (app_icon_orig_v2.jpg:
-the winged Void Pixie with the PIVX shield on a violet gradient tile).
+"""Astronaut launcher icon sources from the artwork (app_icon_orig_v2.jpg:
+the winged Void Pixie with the Kerrigan shield on a violet gradient tile).
 
 Writes 1024 px sources for flutter_launcher_icons, which scales them to
 every Android density (mdpi..xxxhdpi), every iOS size and the desktop

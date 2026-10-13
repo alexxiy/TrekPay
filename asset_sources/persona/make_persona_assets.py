@@ -1,4 +1,4 @@
-"""Cut the PIVXie mascots out of their dark background and export
+"""Cut the Astronaut mascots out of their dark background and export
 density variants for Flutter (1x = 140 logical px).
 
 alpha = max(AI matte, colour-key matte against the backdrop colour):
@@ -11,7 +11,7 @@ BiRefNet model once):
 
     python make_persona_assets.py birefnet-general <src dir> <out dir>
 
-<src dir> holds PIVXie_public.jpeg / PIVXie_private.jpeg (the artwork);
+<src dir> holds Astronaut_public.jpeg / Astronaut_private.jpeg (the artwork);
 <out dir>/assets/ then goes to assets/persona/ and <out dir>/full/ to
 asset_sources/persona/.
 """
@@ -78,8 +78,8 @@ def square_crop(im: Image.Image, box) -> Image.Image:
     return sq
 
 
-for name, src in [("pivxie_public", "PIVXie_public.jpeg"),
-                  ("pivxie_private", "PIVXie_private.jpeg")]:
+for name, src in [("pivxie_public", "Astronaut_public.jpeg"),
+                  ("pivxie_private", "Astronaut_private.jpeg")]:
     im, box, bg = cut(SRC / src)
     sq = square_crop(im, box)
     print(name, "backdrop", bg.round(), "content box", box, "square", sq.size)

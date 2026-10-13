@@ -1,10 +1,10 @@
-# Building PIVXie
+# Building Astronaut
 
 These steps build the Android app on a Linux host. iOS needs a macOS host (see [iOS](#ios)). For the Linux desktop app, see [Linux desktop](#linux-desktop).
 
 ## Requirements
 
-- A Linux host. PIVXie is built on Fedora 44; Ubuntu 24.04 works too.
+- A Linux host. Astronaut is built on Fedora 44; Ubuntu 24.04 works too.
 - About 40 GB of free disk space (Flutter, the Android SDK, Gradle and Rust caches, and the build output).
 - [Flutter](https://docs.flutter.dev/install/manual) 3.47.7 or newer (Dart 3.13). Run `flutter doctor` to check the install.
 - JDK 17.
@@ -12,7 +12,7 @@ These steps build the Android app on a Linux host. iOS needs a macOS host (see [
   ```bash
   sdkmanager "platforms;android-37.0" "build-tools;36.0.0" "ndk;28.0.13004108" "cmake;3.22.1"
   ```
-- [Rust](https://rustup.rs) (stable) with the Android targets. The SHIELD library (`crypto_plugins/flutter_libpivxshield`) is Rust and is compiled during `flutter build`:
+- [Rust](https://rustup.rs) (stable) with the Android targets. The shield library (`crypto_plugins/flutter_libkerriganshield`) is Rust and is compiled during `flutter build`:
   ```bash
   rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
   ```
@@ -28,30 +28,30 @@ export PATH=/path/to/flutter/bin:$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$HO
 
 ## Get the code
 
-The app lives on the `pivxie` branch:
+The app lives on the `astronaut` branch:
 ```bash
-git clone --branch pivxie <PIVXie repository URL> PIVXie
-cd PIVXie
+git clone --branch astronaut <Astronaut repository URL> Astronaut
+cd Astronaut
 ```
 
 ## Configure
 
-The project is a white-label Stack Wallet tree. `scripts/build_app.sh` turns it into PIVXie: it writes `pubspec.yaml` from `scripts/app_config/templates/pubspec.template.yaml`, generates `lib/app_config.g.dart` and the PIVX plugin interfaces, creates the platform files (Android manifest, Gradle files, iOS `Info.plist`, and so on) from `scripts/app_config/templates/`, and generates the icons and splash screen.
+The project is a white-label Stack Wallet tree. `scripts/build_app.sh` turns it into Astronaut: it writes `pubspec.yaml` from `scripts/app_config/templates/pubspec.template.yaml`, generates `lib/app_config.g.dart` and the Kerrigan plugin interfaces, creates the platform files (Android manifest, Gradle files, iOS `Info.plist`, and so on) from `scripts/app_config/templates/`, and generates the icons and splash screen.
 
 ```bash
 cd scripts
-./build_app.sh -a pivxie -p android -v 1.0.0 -b 1 -i
+./build_app.sh -a astronaut -p android -v 1.0.0 -b 1 -i
 cd ..
 ```
 
-- `-a pivxie`: the app (the only one in this tree).
+- `-a astronaut`: the app (the only one in this tree).
 - `-p`: the platform: `android`, `ios`, `linux`, `macos` or `windows`.
 - `-v` and `-b`: the version name and the build number. The script asks you to confirm them: never ship a lower build number than an installed version.
 - `-i`: skip the native plugin scripts. Android needs none: the shield library is built by Flutter.
 
-Run the configure step again after you change a template, `configure_pivxie.sh` or the version. The generated platform files are not tracked in git.
+Run the configure step again after you change a template, `configure_astronaut.sh` or the version. The generated platform files are not tracked in git.
 
-The app ID is `org.pivx.pivxie`. The app name, links and supported networks are in `scripts/app_config/configure_pivxie.sh`.
+The app ID is `org.kerrigan.astronaut`. The app name, links and supported networks are in `scripts/app_config/configure_astronaut.sh`.
 
 ## Build the APK
 
@@ -62,7 +62,7 @@ flutter build apk --release --target-platform android-arm64
 
 The APK is written to `build/app/outputs/flutter-apk/app-release.apk`.
 
-Release builds are mainnet only. To include the PIVX testnet (and regtest), add `--dart-define=PIVX_TESTNET=true`. Debug builds always include it.
+Release builds are mainnet only. To include the Kerrigan testnet (and regtest), add `--dart-define=KERRIGAN_TESTNET=true`. Debug builds always include it.
 
 ### Signing
 
@@ -79,14 +79,14 @@ Keep the release keystore out of the repository. For test builds you can point `
 ### Run on a device
 
 ```bash
-flutter run --dart-define=PIVX_TESTNET=true
+flutter run --dart-define=KERRIGAN_TESTNET=true
 ```
 
 The Android emulator works only with x86_64 images. A real phone is better for checking the UI and the shield sync speed. Debug builds are much slower at shield work than release builds.
 
 ## Server
 
-PIVXie gets chain data from a [pivx-bridge](https://github.com/PIVX-Labs/pivx-bridge) server. The bridge must run with `ADDR_INDEX=true` for transaction history. You can add your own server in the app under the PIVX node settings, and set the default one in `lib/wallets/crypto_currency/coins/pivx.dart` (`defaultNode`).
+Astronaut gets chain data from a kerrigan-bridge server. The bridge must run with `ADDR_INDEX=true` for transaction history. You can add your own server in the app under the Kerrigan node settings, and set the default one in `lib/wallets/crypto_currency/coins/kerrigan.dart` (`defaultNode`).
 
 ## Tests
 
@@ -95,34 +95,33 @@ The host tests need `libsecp256k1` in `build/`:
 dart run coinlib:build_linux
 ```
 
-If `lib/app_config.g.dart` is missing (for example after `build_runner` deleted it), `scripts/ensure_test_app_config.sh` writes the PIVXie config again.
+If `lib/app_config.g.dart` is missing (for example after `build_runner` deleted it), `scripts/ensure_test_app_config.sh` writes the Astronaut config again.
 
 General tests:
 ```bash
-flutter test --concurrency=4 $(find test -name "*_test.dart" ! -path "test/pivx/*")
+flutter test --concurrency=4 $(find test -name "*_test.dart" ! -path "test/kerrigan/*")
 ```
 
-PIVX tests:
+Kerrigan tests:
 ```bash
-flutter test --concurrency=1 test/pivx/
+flutter test --concurrency=1 test/kerrigan/
 ```
 
-Without extra settings, the regtest tests in `test/pivx/` are skipped. They need a PIVX Core regtest node and a pivx-bridge connected to it. They share one chain and mine blocks, so always run them with `--concurrency=1`. Set:
+Without extra settings, the regtest tests in `test/kerrigan/` are skipped. They need a Kerrigan Core regtest node and a kerrigan-bridge connected to it. They share one chain and mine blocks, so always run them with `--concurrency=1`. Set:
 
 | Variable | Value |
 | --- | --- |
-| `PIVX_BRIDGE` | The bridge URL, for example `http://127.0.0.1:3000` |
-| `PIVX_CLI` | The `pivx-cli` command for the regtest node, for example `pivx-cli -datadir=/srv/pivx-regtest` |
-| `PIVX_SHIELD_LIB` | The host build of the shield library: `cargo build --release` in `crypto_plugins/flutter_libpivxshield/rust`, then `target/release/libpivx_shield_ffi.so` |
-| `PIVX_PARAMS_DIR` | The folder with the Sapling parameters (`sapling-output.params`, `sapling-spend.params`) |
-| `PIVX_MN_KEY`, `PIVX_MN_SERVICE` | For the masternode start test: the key and `ip:port` of a regtest masternode server that is running |
+| `KERRIGAN_BRIDGE` | The bridge URL, for example `http://127.0.0.1:3001` |
+| `KERRIGAN_RPC` | The regtest node's JSON-RPC URL with credentials (default `http://rpc:rpc@127.0.0.1:19898`); its wallet `test` (or `KERRIGAN_WALLET`) needs funds |
+| `KERRIGAN_SHIELD_LIB` | The host build of the shield library: `cargo build --release` in `crypto_plugins/flutter_libkerriganshield/rust`, then `target/release/libkerrigan_shield_ffi.so` |
+| `KERRIGAN_PARAMS_DIR` | The folder with the Sapling parameters (`sapling-output.params`, `sapling-spend.params`) |
 
 ## iOS
 
 On a macOS host with Xcode, CocoaPods, Flutter and Rust (with the `aarch64-apple-ios` target):
 ```bash
 cd scripts
-./build_app.sh -a pivxie -p ios -v 1.0.0 -b 1 -i
+./build_app.sh -a astronaut -p ios -v 1.0.0 -b 1 -i
 cd ..
 flutter pub get
 flutter build ios --release
@@ -145,13 +144,13 @@ Then configure and build. `-s` links the system libsecret and jsoncpp, and `USE_
 ```bash
 export USE_SYSTEM_SECURE_STORAGE_DEPS=1
 cd scripts
-./build_app.sh -a pivxie -p linux -v 1.0.0 -b 1 -i -s
+./build_app.sh -a astronaut -p linux -v 1.0.0 -b 1 -i -s
 cd ..
 flutter pub get
 flutter build linux --release
 ```
 
-The app is in `build/linux/x64/release/bundle` (run `bundle/pivxie`). It keeps its data in `~/.pivxie`. SHIELD works on Linux: the Rust library is built by cargokit and bundled as `lib/libpivx_shield_ffi.so`.
+The app is in `build/linux/x64/release/bundle` (run `bundle/astronaut`). It keeps its data in `~/.astronaut`. The shield works on Linux: the Rust library is built by cargokit and bundled as `lib/libkerrigan_shield_ffi.so`.
 
 On Fedora (and other distributions that install libraries to `lib64`), coinlib's secp256k1 build puts the library where its install step doesn't look. Before the first build, run:
 ```bash
@@ -159,15 +158,15 @@ mkdir -p build/linux/x64/release/secp256k1
 ln -s lib64 build/linux/x64/release/secp256k1/lib
 ```
 
-Packaging files are in `flatpak/` (`org.pivx.pivxie`) and `appimage/pivxie/`. Both start from the release bundle; `.github/workflows/build.yaml` shows the full steps.
+Packaging files are in `flatpak/` (`org.kerrigan.astronaut`) and `appimage/astronaut/`. Both start from the release bundle; `.github/workflows/build.yaml` shows the full steps.
 
-`pivx:` payment links: the app runs as a single instance (unless started with `-d <dir>`), so starting it again with a link hands the link to the running window. The desktop entries of both packages register the `pivx` scheme. To open links with a plain bundle, install a desktop entry for it, e.g. `~/.local/share/applications/pivxie.desktop` with `Exec=/path/to/bundle/pivxie %u` and `MimeType=x-scheme-handler/pivx;`, then run `xdg-mime default pivxie.desktop x-scheme-handler/pivx`.
+`kerrigan:` payment links: the app runs as a single instance (unless started with `-d <dir>`), so starting it again with a link hands the link to the running window. The desktop entries of both packages register the `kerrigan` scheme. To open links with a plain bundle, install a desktop entry for it, e.g. `~/.local/share/applications/astronaut.desktop` with `Exec=/path/to/bundle/astronaut %u` and `MimeType=x-scheme-handler/kerrigan;`, then run `xdg-mime default astronaut.desktop x-scheme-handler/kerrigan`.
 
 ## Windows and macOS
 
-The SHIELD plugin has Windows and macOS build files (cargokit), and both targets configure with `build_app.sh -p windows` or `-p macos`, but these builds are untested.
+The shield plugin has Windows and macOS build files (cargokit), and both targets configure with `build_app.sh -p windows` or `-p macos`, but these builds are untested.
 
-For `pivx:` links, the Windows app registers itself for the current user when it starts, unless another installed app (e.g. PIVX Core) already handles them. The macOS app declares the scheme in `macos/Runner/Info.plist`.
+For `kerrigan:` links, the Windows app registers itself for the current user when it starts, unless another installed app (e.g. Kerrigan Core) already handles them. The macOS app declares the scheme in `macos/Runner/Info.plist`.
 
 ## Troubleshooting
 

@@ -222,7 +222,7 @@ extension AmountUnitExt on AmountUnit {
         }
       }
 
-      // PIVXie: no trailing zeros ("1.5 PIV", not "1.50000000 PIV")
+      // Astronaut: no trailing zeros ("1.5 KRGN", not "1.50000000 KRGN")
       remainder = remainder.replaceFirst(RegExp(r'0+$'), "");
 
       // get decimal separator based on locale

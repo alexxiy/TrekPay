@@ -32,7 +32,7 @@ import '../../utilities/show_loading.dart';
 import '../../utilities/text_styles.dart';
 import '../../wallets/crypto_currency/crypto_currency.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
-import '../../wallets/wallet/impl/pivx_wallet.dart';
+import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../wallets/wallet/intermediate/bip39_hd_wallet.dart';
 import '../../wallets/wallet/wallet_mixin_interfaces/multi_address_interface.dart';
 import '../../wallets/wallet/wallet_mixin_interfaces/view_only_option_interface.dart';
@@ -68,7 +68,7 @@ class _ReceiveViewState extends ConsumerState<ReceiveView> {
   late final CryptoCurrency coin;
   late final String walletId;
   late final ClipboardInterface clipboard;
-  late final bool _supportsPivxShield;
+  late final bool _supportsKerriganShield;
   late final bool _showMultiType;
 
   int _currentIndex = 0;
@@ -139,20 +139,20 @@ class _ReceiveViewState extends ConsumerState<ReceiveView> {
     }
   }
 
-  Future<void> generateNewPivxShieldAddress() async {
-    final wallet = ref.read(pWallets).getWallet(walletId) as PivxWallet;
+  Future<void> generateNewKerriganShieldAddress() async {
+    final wallet = ref.read(pWallets).getWallet(walletId) as KerriganWallet;
     final address = await showLoading<String>(
       whileFuture: wallet.generateNewShieldAddress(),
       context: context,
       message: "Generating address",
     );
     if (mounted && address != null) {
-      setState(() => _addressMap[AddressType.pivxShield] = address);
+      setState(() => _addressMap[AddressType.kerriganShield] = address);
     }
   }
 
   String _addressTypeLabel(AddressType type) =>
-      _supportsPivxShield && type == AddressType.p2pkh
+      _supportsKerriganShield && type == AddressType.p2pkh
       ? "Transparent address"
       : "${type.readableName} address";
 
@@ -188,13 +188,13 @@ class _ReceiveViewState extends ConsumerState<ReceiveView> {
     coin = ref.read(pWalletCoin(walletId));
     clipboard = widget.clipboard;
     final wallet = ref.read(pWallets).getWallet(walletId);
-    _supportsPivxShield = wallet is PivxWallet && wallet.supportsShield;
+    _supportsKerriganShield = wallet is KerriganWallet && wallet.supportsShield;
 
     if (wallet is ViewOnlyOptionInterface && wallet.isViewOnly) {
       _showMultiType = false;
     } else {
       _showMultiType =
-          _supportsPivxShield ||
+          _supportsKerriganShield ||
           (wallet is Bip39HDWallet && wallet.supportedAddressTypes.length > 1);
     }
 
@@ -203,9 +203,9 @@ class _ReceiveViewState extends ConsumerState<ReceiveView> {
     }
 
     if (_showMultiType) {
-      if (_supportsPivxShield) {
+      if (_supportsKerriganShield) {
         // Shield first: private by default.
-        _walletAddressTypes.insert(0, AddressType.pivxShield);
+        _walletAddressTypes.insert(0, AddressType.kerriganShield);
       } else {
         _walletAddressTypes.addAll(
           (wallet as Bip39HDWallet).supportedAddressTypes.where(
@@ -215,14 +215,14 @@ class _ReceiveViewState extends ConsumerState<ReceiveView> {
       }
     }
 
-    if (_supportsPivxShield) {
+    if (_supportsKerriganShield) {
       _addressMap[wallet.info.mainAddressType] = ref.read(
         pWalletReceivingAddress(walletId),
       );
-      _addressMap[AddressType.pivxShield] = "[Loading shield address]";
-      (wallet as PivxWallet).getCurrentShieldAddress().then((a) {
+      _addressMap[AddressType.kerriganShield] = "[Loading shield address]";
+      (wallet as KerriganWallet).getCurrentShieldAddress().then((a) {
         if (mounted && a != null) {
-          setState(() => _addressMap[AddressType.pivxShield] = a);
+          setState(() => _addressMap[AddressType.kerriganShield] = a);
         }
       });
     } else {
@@ -271,7 +271,7 @@ class _ReceiveViewState extends ConsumerState<ReceiveView> {
         wallet.viewOnlyType == ViewOnlyWalletType.addressOnly) {
       canGen = false;
     } else {
-      canGen = wallet is MultiAddressInterface || _supportsPivxShield;
+      canGen = wallet is MultiAddressInterface || _supportsKerriganShield;
     }
 
     return Background(
@@ -557,10 +557,10 @@ class _ReceiveViewState extends ConsumerState<ReceiveView> {
                       SecondaryButton(
                         label: "Generate new address",
                         onPressed:
-                            _supportsPivxShield &&
+                            _supportsKerriganShield &&
                                 _walletAddressTypes[_currentIndex] ==
-                                    AddressType.pivxShield
-                            ? generateNewPivxShieldAddress
+                                    AddressType.kerriganShield
+                            ? generateNewKerriganShieldAddress
                             : generateNewAddress,
                       ),
                     const SizedBox(height: 30),

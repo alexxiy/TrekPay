@@ -194,17 +194,6 @@ class _TransactionCardStateV2 extends ConsumerState<TransactionCardV2> {
                           ),
                         ],
                       ),
-                      // PIVX: the same block also paid our masternode.
-                      if (_transaction.pivxAlsoLabel != null) ...[
-                        const SizedBox(height: 2),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            "+ ${_transaction.pivxAlsoLabel}",
-                            style: STextStyles.label(context),
-                          ),
-                        ),
-                      ],
                       const SizedBox(height: 4),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -241,9 +230,9 @@ class _TransactionCardStateV2 extends ConsumerState<TransactionCardV2> {
                             ),
                         ],
                       ),
-                      // PIVX: memo of a received shield payment, left
+                      // Kerrigan: memo of a received shield payment, left
                       // aligned with the lines above.
-                      if (coin is Pivx &&
+                      if (coin is Kerrigan &&
                           (_transaction.onChainNote?.isNotEmpty ?? false)) ...[
                         const SizedBox(height: 4),
                         Row(

@@ -22,7 +22,7 @@ import '../../../utilities/util.dart';
 import '../../../utilities/shown_coins.dart';
 import '../../add_wallet_views/create_or_restore_wallet_view/create_or_restore_wallet_view.dart';
 
-/// No wallet yet. With a single coin (mainnet PIVX only) this is the
+/// No wallet yet. With a single coin (mainnet Kerrigan only) this is the
 /// "Create new wallet / Restore wallet" screen itself; with testnets shown,
 /// an "Add wallet" button that leads to the coin choice.
 class EmptyWallets extends ConsumerWidget {

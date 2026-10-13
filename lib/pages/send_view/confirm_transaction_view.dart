@@ -35,7 +35,6 @@ import '../../utilities/util.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../wallets/models/tx_data.dart';
 import '../../wallets/crypto_currency/crypto_currency.dart';
-import '../../wallets/wallet/impl/pivx_wallet.dart';
 import '../../widgets/background.dart';
 import '../../widgets/conditional_parent.dart';
 import '../../widgets/custom_buttons/app_bar_icon_button.dart';
@@ -77,16 +76,9 @@ class ConfirmTransactionView extends ConsumerStatefulWidget {
 
 class _ConfirmTransactionViewState
     extends ConsumerState<ConfirmTransactionView> {
-  /// The first recipient; a proposal fee (OP_RETURN) reads as what it is.
-  String get _recipientText {
-    final address = widget.txData.recipients?.firstOrNull?.address ?? "";
-    if (widget.txData.otherData?.contains(kPivxColdStakeOwner) ?? false) {
-      return "Cold staking with staker $address";
-    }
-    return address.startsWith(kPivxOpReturnPrefix)
-        ? "Proposal fee, burnt (proposal ${address.substring(kPivxOpReturnPrefix.length, kPivxOpReturnPrefix.length + 16)}…)"
-        : address;
-  }
+  /// The first recipient.
+  String get _recipientText =>
+      widget.txData.recipients?.firstOrNull?.address ?? "";
 
   late final String walletId;
   late final String routeOnSuccessName;
@@ -405,12 +397,12 @@ class _ConfirmTransactionViewState
                       ],
                     ),
                   ),
-                  // PIVX has no fee market: the fee above says it all.
-                  if (coin is! Pivx &&
+                  // Kerrigan has no fee market: the fee above says it all.
+                  if (coin is! Kerrigan &&
                       widget.txData.fee != null &&
                       widget.txData.vSize != null)
                     const SizedBox(height: 12),
-                  if (coin is! Pivx &&
+                  if (coin is! Kerrigan &&
                       widget.txData.fee != null &&
                       widget.txData.vSize != null)
                     RoundedWhiteContainer(
@@ -757,7 +749,7 @@ class _ConfirmTransactionViewState
                 ),
               ),
             if (isDesktop &&
-                coin is! Pivx &&
+                coin is! Kerrigan &&
                 widget.txData.fee != null &&
                 widget.txData.vSize != null)
               Padding(
@@ -768,7 +760,7 @@ class _ConfirmTransactionViewState
                 ),
               ),
             if (isDesktop &&
-                coin is! Pivx &&
+                coin is! Kerrigan &&
                 widget.txData.fee != null &&
                 widget.txData.vSize != null)
               Padding(

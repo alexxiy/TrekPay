@@ -1,0 +1,51 @@
+[package]
+name = "kerrigan_shield_ffi"
+version = "0.1.0"
+edition = "2021"
+description = "Kerrigan Sapling (shielded) wallet core with a C ABI for the Astronaut wallet: keys, note scanning and transaction building for Kerrigan's type 10 Sapling transactions."
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[features]
+default = ["multicore"]
+multicore = ["sapling/multicore"]
+
+[dependencies]
+sapling = { package = "sapling-crypto", version = "0.9", default-features = false, features = ["std", "circuit"] }
+zcash_note_encryption = "0.5"
+incrementalmerkletree = "0.9"
+zip32 = "0.3"
+jubjub = "0.11"
+bls12_381 = "0.9"
+group = "0.14"
+redjubjub = "0.9"
+rand = "0.10"
+bech32 = "0.12"
+bs58 = { version = "0.5", features = ["check"] }
+secp256k1 = { version = "0.33", features = ["global-context"] }
+sha2 = "0.11"
+ripemd = "0.2"
+rayon = "1.12"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+hex = "0.4"
+
+# Debug app builds compile the dev profile; unoptimised Sapling proving
+# is several times slower, so optimise it too.
+[profile.dev]
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

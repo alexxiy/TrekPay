@@ -10,10 +10,10 @@ import '../../../../utilities/amount/amount.dart';
 import '../../../../utilities/amount/amount_formatter.dart';
 import '../../../../utilities/text_styles.dart';
 import '../../../../wallets/isar/providers/wallet_info_provider.dart';
-import '../../../../wallets/wallet/impl/pivx_wallet.dart';
+import '../../../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../../../widgets/animated_text.dart';
 
-/// The estimated network fee. PIVX has no fee market: every transparent
+/// The estimated network fee. Kerrigan has no fee market: every transparent
 /// send pays the relay minimum, so there is nothing to choose. Shield
 /// sends pay by size, so their fee depends on the balance spent, the
 /// recipient, the chosen coins and whether the fee comes out of the amount.
@@ -43,7 +43,7 @@ class DesktopSendFeeForm extends ConsumerWidget {
   Future<Amount> _fee(WidgetRef ref, Amount amount) async {
     final cache = ref.read(feeSheetSessionCacheProvider);
     final wallet = ref.read(pWallets).getWallet(walletId);
-    if (wallet is PivxWallet && (fromShield || toShield)) {
+    if (wallet is KerriganWallet && (fromShield || toShield)) {
       return wallet.estimateShieldFee(
         amount: amount,
         fromShield: fromShield,

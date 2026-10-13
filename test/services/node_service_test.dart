@@ -35,7 +35,7 @@ void main() {
       final fakeStore = FakeSecureStorage();
       final service = NodeService(secureStorageInterface: fakeStore);
       final node = service.getPrimaryNodeFor(
-        currency: Pivx(CryptoCurrencyNetwork.main),
+        currency: Kerrigan(CryptoCurrencyNetwork.main),
       );
       expect(node, null);
       expect(fakeStore.interactions, 0);
@@ -45,7 +45,7 @@ void main() {
       final fakeStore = FakeSecureStorage();
       final service = NodeService(secureStorageInterface: fakeStore);
       final node = service.getPrimaryNodeFor(
-        currency: Pivx(CryptoCurrencyNetwork.main),
+        currency: Kerrigan(CryptoCurrencyNetwork.main),
       );
       expect(node, null);
       final node1 = NodeModel(
@@ -55,7 +55,7 @@ void main() {
         id: "pnodeID",
         useSSL: true,
         enabled: true,
-        coinName: "pivx",
+        coinName: "kerrigan",
         isFailover: true,
         isDown: false,
         torEnabled: true,
@@ -63,14 +63,14 @@ void main() {
         isPrimary: true,
       );
       await service.setPrimaryNodeFor(
-        coin: Pivx(CryptoCurrencyNetwork.main),
+        coin: Kerrigan(CryptoCurrencyNetwork.main),
         node: node1,
         shouldNotifyListeners: true,
       );
 
       expect(
         service
-            .getPrimaryNodeFor(currency: Pivx(CryptoCurrencyNetwork.main))
+            .getPrimaryNodeFor(currency: Kerrigan(CryptoCurrencyNetwork.main))
             .toString(),
         node1.toString(),
       );
@@ -80,7 +80,7 @@ void main() {
     test("getNodesFor", () {
       final fakeStore = FakeSecureStorage();
       final service = NodeService(secureStorageInterface: fakeStore);
-      final nodes = service.getNodesFor(Pivx(CryptoCurrencyNetwork.main));
+      final nodes = service.getNodesFor(Kerrigan(CryptoCurrencyNetwork.main));
       expect(nodes.isEmpty, true);
       expect(fakeStore.interactions, 0);
     });
@@ -105,7 +105,7 @@ void main() {
       final fakeStore = FakeSecureStorage();
       final service = NodeService(secureStorageInterface: fakeStore);
       final nodes = service.failoverNodesFor(
-        currency: Pivx(CryptoCurrencyNetwork.main),
+        currency: Kerrigan(CryptoCurrencyNetwork.main),
       );
       expect(nodes.isEmpty, true);
       expect(fakeStore.interactions, 0);
@@ -136,7 +136,7 @@ void main() {
       id: "pnodeID1",
       useSSL: true,
       enabled: true,
-      coinName: "pivx",
+      coinName: "kerrigan",
       isFailover: true,
       isDown: false,
       torEnabled: true,
@@ -150,7 +150,7 @@ void main() {
       id: "pnodeID2",
       useSSL: true,
       enabled: true,
-      coinName: "pivxTestNet",
+      coinName: "kerriganTestNet",
       isFailover: true,
       isDown: false,
       torEnabled: true,
@@ -182,21 +182,21 @@ void main() {
       final service = NodeService(secureStorageInterface: fakeStore);
       expect(
         service
-            .getPrimaryNodeFor(currency: Pivx(CryptoCurrencyNetwork.main))
+            .getPrimaryNodeFor(currency: Kerrigan(CryptoCurrencyNetwork.main))
             ?.toString(),
-        Pivx(CryptoCurrencyNetwork.main)
+        Kerrigan(CryptoCurrencyNetwork.main)
             .defaultNode(isPrimary: true)
             .toString(),
       );
       await service.setPrimaryNodeFor(
-        coin: Pivx(CryptoCurrencyNetwork.main),
-        node: Pivx(CryptoCurrencyNetwork.main).defaultNode(isPrimary: true),
+        coin: Kerrigan(CryptoCurrencyNetwork.main),
+        node: Kerrigan(CryptoCurrencyNetwork.main).defaultNode(isPrimary: true),
       );
       expect(
         service
-            .getPrimaryNodeFor(currency: Pivx(CryptoCurrencyNetwork.main))
+            .getPrimaryNodeFor(currency: Kerrigan(CryptoCurrencyNetwork.main))
             .toString(),
-        Pivx(CryptoCurrencyNetwork.main)
+        Kerrigan(CryptoCurrencyNetwork.main)
             .defaultNode(isPrimary: true)
             .toString(),
       );
@@ -207,12 +207,12 @@ void main() {
       final fakeStore = FakeSecureStorage();
       final service = NodeService(secureStorageInterface: fakeStore);
       await service.setPrimaryNodeFor(
-        coin: Pivx(CryptoCurrencyNetwork.main),
-        node: Pivx(CryptoCurrencyNetwork.main).defaultNode(isPrimary: true),
+        coin: Kerrigan(CryptoCurrencyNetwork.main),
+        node: Kerrigan(CryptoCurrencyNetwork.main).defaultNode(isPrimary: true),
       );
       await service.setPrimaryNodeFor(
-        coin: Pivx(CryptoCurrencyNetwork.test),
-        node: Pivx(CryptoCurrencyNetwork.test).defaultNode(isPrimary: true),
+        coin: Kerrigan(CryptoCurrencyNetwork.test),
+        node: Kerrigan(CryptoCurrencyNetwork.test).defaultNode(isPrimary: true),
       );
       final primaryNodes = service.primaryNodes;
       final expectedPrimaryNodes = [...expectedPrimaryDefaults]

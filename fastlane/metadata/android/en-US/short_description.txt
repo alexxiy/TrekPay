@@ -1,1 +1,1 @@
-PIVX mobile wallet with SHIELD privacy, cold staking and masternodes.
+Kerrigan mobile wallet with SHIELD privacy, cold staking and masternodes.

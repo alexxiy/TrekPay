@@ -43,13 +43,13 @@
                 <data android:mimeType="*/*" />
                 <data android:pathPattern=".*\\.swb" />
             </intent-filter>
-            <!-- pivx: payment links (BIP21 style), e.g. from a QR code scanned
+            <!-- kerrigan: payment links (BIP21 style), e.g. from a QR code scanned
                  with the camera app: open the send screen. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="pivx"/>
+                <data android:scheme="kerrigan"/>
             </intent-filter>
             <intent-filter>
                 <data android:scheme="file" />

@@ -15,7 +15,7 @@ abstract class Assets {
   static const persona = _PERSONA();
 }
 
-/// The PIVXie mascot (the Void Pixie). PNGs with 1.5x-4.0x density
+/// The Astronaut mascot (the Void Pixie). PNGs with 1.5x-4.0x density
 /// variants: the privacy choice at 140 logical px, the screen artwork
 /// within 280.
 class _PERSONA {
@@ -32,7 +32,7 @@ class _PERSONA {
   /// Holding a "WELCOME" banner: the first screen.
   String get welcome => "${_path}pivxie_welcome.png";
 
-  /// Holding a PIVX wallet: create or restore a wallet.
+  /// Holding a Kerrigan wallet: create or restore a wallet.
   String get addWallet => "${_path}pivxie_add_wallet.png";
 
   /// Looping animation (animated WebP, 960x540) while a transaction is

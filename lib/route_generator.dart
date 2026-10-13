@@ -56,14 +56,6 @@ import 'pages/settings_views/global_settings_view/advanced_views/logging_setting
 import 'pages/settings_views/global_settings_view/advanced_views/manage_coin_units/edit_coin_units_view.dart';
 import 'pages/settings_views/global_settings_view/advanced_views/manage_coin_units/manage_coin_units_view.dart';
 import 'pages/settings_views/global_settings_view/advanced_views/manage_explorer_view.dart';
-import 'pages/pivx_cold_staking/pivx_cold_staking_view.dart';
-import 'pages/pivx_cold_staking/pivx_delegate_view.dart';
-import 'pages/pivx_governance/pivx_create_proposal_view.dart';
-import 'pages/pivx_governance/pivx_governance_view.dart';
-import 'pages/pivx_governance/pivx_proposal_view.dart';
-import 'pages/pivx_masternodes/pivx_create_masternode_view.dart';
-import 'pages/pivx_masternodes/pivx_masternode_details_view.dart';
-import 'pages/pivx_masternodes/pivx_masternodes_view.dart';
 import 'pages/settings_views/global_settings_view/appearance_settings/appearance_view.dart';
 import 'pages/settings_views/global_settings_view/appearance_settings/theme_mode_view.dart';
 import 'pages/settings_views/global_settings_view/currency_view.dart';
@@ -148,7 +140,6 @@ import 'utilities/enums/add_wallet_type_enum.dart';
 import 'wallets/crypto_currency/crypto_currency.dart';
 import 'wallets/models/tx_data.dart';
 import 'wallets/wallet/wallet.dart';
-import 'wallets/wallet/impl/pivx_wallet.dart';
 import 'widgets/choose_coin_view.dart';
 import 'widgets/desktop/desktop_page_column.dart';
 
@@ -304,7 +295,7 @@ class RouteGenerator {
               CoinControlViewType,
               Amount?,
               Set<UTXO>?,
-              PivxCoinControlArgs
+              KerriganCoinControlArgs
             >) {
           return getRoute(
             shouldUseMaterialRoute: useMaterialPageRoute,
@@ -314,7 +305,7 @@ class RouteGenerator {
                 type: args.item2,
                 requestedTotal: args.item3,
                 selectedUTXOs: args.item4,
-                pivx: args.item5,
+                kerrigan: args.item5,
               ),
             ),
             settings: RouteSettings(name: settings.name),
@@ -1055,122 +1046,6 @@ class RouteGenerator {
         return _routeError("${settings.name} invalid args: ${args.toString()}");
 
       // exchange steps
-
-      case PivxColdStakingView.routeName:
-        if (args is String) {
-          return getRoute(
-            shouldUseMaterialRoute: useMaterialPageRoute,
-            builder: (_) =>
-                DesktopPageColumn(child: PivxColdStakingView(walletId: args)),
-            settings: RouteSettings(name: settings.name),
-          );
-        }
-        return _routeError("${settings.name} invalid args: ${args.toString()}");
-
-      case PivxDelegateView.routeName:
-        if (args is String) {
-          return getRoute(
-            shouldUseMaterialRoute: useMaterialPageRoute,
-            builder: (_) =>
-                DesktopPageColumn(child: PivxDelegateView(walletId: args)),
-            settings: RouteSettings(name: settings.name),
-          );
-        }
-        return _routeError("${settings.name} invalid args: ${args.toString()}");
-
-      case PivxGovernanceView.routeName:
-        if (args is String) {
-          return getRoute(
-            shouldUseMaterialRoute: useMaterialPageRoute,
-            builder: (_) =>
-                DesktopPageColumn(child: PivxGovernanceView(walletId: args)),
-            settings: RouteSettings(name: settings.name),
-          );
-        }
-        return _routeError("${settings.name} invalid args: ${args.toString()}");
-
-      case PivxCreateProposalView.routeName:
-        if (args is String) {
-          return getRoute(
-            shouldUseMaterialRoute: useMaterialPageRoute,
-            builder: (_) => DesktopPageColumn(
-              child: PivxCreateProposalView(walletId: args),
-            ),
-            settings: RouteSettings(name: settings.name),
-          );
-        }
-        return _routeError("${settings.name} invalid args: ${args.toString()}");
-
-      case PivxProposalView.routeName:
-        if (args
-            is ({
-              String walletId,
-              PivxProposal proposal,
-              PivxGovernance governance,
-            })) {
-          return getRoute<bool>(
-            shouldUseMaterialRoute: useMaterialPageRoute,
-            builder: (_) => DesktopPageColumn(
-              child: PivxProposalView(
-                walletId: args.walletId,
-                proposal: args.proposal,
-                governance: args.governance,
-              ),
-            ),
-            settings: RouteSettings(name: settings.name),
-          );
-        }
-        return _routeError("${settings.name} invalid args: ${args.toString()}");
-
-      case PivxMasternodesView.routeName:
-        if (args is String) {
-          return getRoute(
-            shouldUseMaterialRoute: useMaterialPageRoute,
-            builder: (_) =>
-                DesktopPageColumn(child: PivxMasternodesView(walletId: args)),
-            settings: RouteSettings(name: settings.name),
-          );
-        }
-        return _routeError("${settings.name} invalid args: ${args.toString()}");
-
-      case PivxCreateMasternodeView.routeName:
-        if (args is String) {
-          return getRoute(
-            shouldUseMaterialRoute: useMaterialPageRoute,
-            builder: (_) => DesktopPageColumn(
-              child: PivxCreateMasternodeView(walletId: args),
-            ),
-            settings: RouteSettings(name: settings.name),
-          );
-        }
-        if (args is ({String walletId, bool existing})) {
-          return getRoute(
-            shouldUseMaterialRoute: useMaterialPageRoute,
-            builder: (_) => DesktopPageColumn(
-              child: PivxCreateMasternodeView(
-                walletId: args.walletId,
-                existing: args.existing,
-              ),
-            ),
-            settings: RouteSettings(name: settings.name),
-          );
-        }
-        return _routeError("${settings.name} invalid args: ${args.toString()}");
-
-      case PivxMasternodeDetailsView.routeName:
-        if (args is ({String walletId, String id})) {
-          return getRoute(
-            shouldUseMaterialRoute: useMaterialPageRoute,
-            builder: (_) => DesktopPageColumn(
-              child: PivxMasternodeDetailsView(
-                walletId: args.walletId,
-                masternodeId: args.id,
-              ),
-            ),
-            settings: RouteSettings(name: settings.name),
-          );
-        }
-        return _routeError("${settings.name} invalid args: ${args.toString()}");
 
       case AppearanceView.routeName:
         return getRoute(

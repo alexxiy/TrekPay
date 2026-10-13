@@ -2,7 +2,7 @@
 
 set -x -e
 
-APP="${1:-pivxie}"
+APP="${1:-astronaut}"
 
 # ensure ios rust triples are there
 rustup target add aarch64-apple-ios

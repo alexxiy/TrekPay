@@ -13,7 +13,7 @@ void main() {
       "169.254.3.4",
       "fd12::1",
       "fe80::1",
-      "pivx-node.local",
+      "kerrigan-node.local",
       "homeserver",
     ]) {
       expect(await LocalNetworkAccess.isLocal(host), isTrue, reason: host);

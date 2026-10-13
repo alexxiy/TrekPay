@@ -24,7 +24,7 @@ class AddressUtils {
     'recipient_name',
     'tx_description',
     'op_return', // For Rosen Bridge and other OP_RETURN protocols.
-    'memo', // PIVX shield memo (as in MyPIVXWallet).
+    'memo', // Kerrigan shield memo (as in MyPIVXWallet).
     // TODO [prio=med]: Add more recognized params for other coins.
   };
 

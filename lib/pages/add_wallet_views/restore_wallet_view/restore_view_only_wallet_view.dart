@@ -89,7 +89,7 @@ class _RestoreViewOnlyWalletViewState
       WalletInfoKeys.isViewOnlyKey: true,
     };
 
-    // PIVX view only wallets watch one BIP44 account xpub.
+    // Kerrigan view only wallets watch one BIP44 account xpub.
     otherDataJson[WalletInfoKeys.viewOnlyTypeIndexKey] =
         ViewOnlyWalletType.xPub.index;
 

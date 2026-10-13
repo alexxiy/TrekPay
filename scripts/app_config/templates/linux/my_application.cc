@@ -21,7 +21,7 @@ static void first_frame_cb(MyApplication* self, FlView *view)
 static void my_application_activate(GApplication* application) {
   MyApplication* self = MY_APPLICATION(application);
 
-  // Started again (e.g. to open a pivx: link): show the window we have.
+  // Started again (e.g. to open a kerrigan: link): show the window we have.
   GList* windows = gtk_application_get_windows(GTK_APPLICATION(application));
   if (windows) {
     gtk_window_present(GTK_WINDOW(windows->data));
@@ -79,7 +79,7 @@ static gboolean my_application_local_command_line(GApplication* application, gch
   // Strip out the first argument as it is the binary name.
   self->dart_entrypoint_arguments = g_strdupv(*arguments + 1);
 
-  // One instance, which gets the pivx: links of later starts, unless it
+  // One instance, which gets the kerrigan: links of later starts, unless it
   // is started on another data directory ("-d <dir>").
   for (gchar** arg = *arguments + 1; *arg != nullptr; arg++) {
     if (g_strcmp0(*arg, "-d") == 0) {

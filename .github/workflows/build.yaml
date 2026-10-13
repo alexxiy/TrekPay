@@ -15,7 +15,7 @@ on:
         required: true
         default: '1'
       testnet:
-        description: 'Include the PIVX testnet (test builds only)'
+        description: 'Include the Kerrigan testnet (test builds only)'
         type: boolean
         default: false
 
@@ -44,7 +44,7 @@ jobs:
           fi
           DEFINES=""
           if [ "${{ inputs.testnet }}" = "true" ]; then
-            DEFINES="--dart-define=PIVX_TESTNET=true"
+            DEFINES="--dart-define=KERRIGAN_TESTNET=true"
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "build_number=${BUILD_NUMBER}" >> "$GITHUB_OUTPUT"
@@ -79,7 +79,7 @@ jobs:
           channel: stable
           cache: true
 
-      # The SHIELD library (crypto_plugins/flutter_libpivxshield) is Rust,
+      # The SHIELD library (crypto_plugins/flutter_libkerriganshield) is Rust,
       # built by cargokit during the Flutter build.
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -95,7 +95,7 @@ jobs:
       - name: Configure app
         run: |
           cd scripts
-          echo "yes" | ./build_app.sh -a pivxie -p android -i \
+          echo "yes" | ./build_app.sh -a astronaut -p android -i \
             -v "${{ needs.version.outputs.version }}" \
             -b "${{ needs.version.outputs.build_number }}"
 
@@ -127,7 +127,7 @@ jobs:
             keytool -genkeypair -keystore android/release.jks -storetype pkcs12 \
               -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 365 \
               -storepass "$STORE_PASSWORD" -keypass "$KEY_PASSWORD" \
-              -dname "CN=PIVXie test build" -noprompt
+              -dname "CN=Astronaut test build" -noprompt
           fi
           cat > android/key.properties << EOF
           storeFile=../release.jks
@@ -147,13 +147,13 @@ jobs:
           mkdir -p out
           for abi in arm64-v8a armeabi-v7a x86_64; do
             cp "build/app/outputs/flutter-apk/app-${abi}-release.apk" \
-               "out/pivxie-${VERSION}-android-${abi}.apk"
+               "out/astronaut-${VERSION}-android-${abi}.apk"
           done
-          cp build/app/outputs/bundle/release/app-release.aab "out/pivxie-${VERSION}-android.aab"
+          cp build/app/outputs/bundle/release/app-release.aab "out/astronaut-${VERSION}-android.aab"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: pivxie-${{ env.VERSION }}-android
+          name: astronaut-${{ env.VERSION }}-android
           path: out/
 
   # Unsigned: sign the IPA with your Apple certificate before installing it.
@@ -180,7 +180,7 @@ jobs:
       - name: Configure app
         run: |
           cd scripts
-          echo "yes" | ./build_app.sh -a pivxie -p ios -i \
+          echo "yes" | ./build_app.sh -a astronaut -p ios -i \
             -v "${{ needs.version.outputs.version }}" \
             -b "${{ needs.version.outputs.build_number }}"
 
@@ -194,12 +194,12 @@ jobs:
         run: |
           mkdir -p Payload
           cp -r build/ios/iphoneos/Runner.app Payload/
-          zip -qr "pivxie-${VERSION}-ios-unsigned.ipa" Payload
+          zip -qr "astronaut-${VERSION}-ios-unsigned.ipa" Payload
 
       - uses: actions/upload-artifact@v7
         with:
-          name: pivxie-${{ env.VERSION }}-ios-unsigned.ipa
-          path: pivxie-${{ env.VERSION }}-ios-unsigned.ipa
+          name: astronaut-${{ env.VERSION }}-ios-unsigned.ipa
+          path: astronaut-${{ env.VERSION }}-ios-unsigned.ipa
 
   build-linux:
     runs-on: ubuntu-24.04
@@ -234,7 +234,7 @@ jobs:
           USE_SYSTEM_SECURE_STORAGE_DEPS: "1"
         run: |
           cd scripts
-          echo "yes" | ./build_app.sh -a pivxie -p linux -i -s \
+          echo "yes" | ./build_app.sh -a astronaut -p linux -i -s \
             -v "${{ needs.version.outputs.version }}" \
             -b "${{ needs.version.outputs.build_number }}"
 
@@ -248,13 +248,13 @@ jobs:
 
       - name: Package
         run: |
-          tar -czf "pivxie-${VERSION}-linux-x86_64.tar.gz" \
+          tar -czf "astronaut-${VERSION}-linux-x86_64.tar.gz" \
             -C build/linux/x64/release bundle
 
       - uses: actions/upload-artifact@v7
         with:
-          name: pivxie-${{ env.VERSION }}-linux-x86_64.tar.gz
-          path: pivxie-${{ env.VERSION }}-linux-x86_64.tar.gz
+          name: astronaut-${{ env.VERSION }}-linux-x86_64.tar.gz
+          path: astronaut-${{ env.VERSION }}-linux-x86_64.tar.gz
 
   build-flatpak:
     runs-on: ubuntu-24.04
@@ -267,15 +267,15 @@ jobs:
       - name: Download Linux bundle
         uses: actions/download-artifact@v8
         with:
-          name: pivxie-${{ env.VERSION }}-linux-x86_64.tar.gz
+          name: astronaut-${{ env.VERSION }}-linux-x86_64.tar.gz
 
       - name: Stage bundle and icon
         run: |
           sudo apt-get update -q
           sudo apt-get install -y imagemagick
-          tar -xzf "pivxie-${VERSION}-linux-x86_64.tar.gz" -C flatpak/
-          convert asset_sources/icon/pivxie/icon.png -resize 512x512 \
-            flatpak/org.pivx.pivxie.png
+          tar -xzf "astronaut-${VERSION}-linux-x86_64.tar.gz" -C flatpak/
+          convert asset_sources/icon/astronaut/icon.png -resize 512x512 \
+            flatpak/org.kerrigan.astronaut.png
 
       - name: Install Flatpak tools
         run: |
@@ -301,19 +301,19 @@ jobs:
         run: |
           flatpak-builder --user --force-clean \
             --repo=flatpak-repo \
-            build-flatpak flatpak/org.pivx.pivxie.yaml
+            build-flatpak flatpak/org.kerrigan.astronaut.yaml
 
       - name: Bundle Flatpak
         run: |
           flatpak build-bundle flatpak-repo \
             --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo \
-            "pivxie-${VERSION}-x86_64.flatpak" \
-            org.pivx.pivxie
+            "astronaut-${VERSION}-x86_64.flatpak" \
+            org.kerrigan.astronaut
 
       - uses: actions/upload-artifact@v7
         with:
-          name: pivxie-${{ env.VERSION }}-x86_64.flatpak
-          path: pivxie-${{ env.VERSION }}-x86_64.flatpak
+          name: astronaut-${{ env.VERSION }}-x86_64.flatpak
+          path: astronaut-${{ env.VERSION }}-x86_64.flatpak
 
   build-appimage:
     runs-on: ubuntu-24.04
@@ -326,7 +326,7 @@ jobs:
       - name: Download Linux bundle
         uses: actions/download-artifact@v8
         with:
-          name: pivxie-${{ env.VERSION }}-linux-x86_64.tar.gz
+          name: astronaut-${{ env.VERSION }}-linux-x86_64.tar.gz
 
       - name: Install AppImage tools
         run: |
@@ -335,20 +335,20 @@ jobs:
 
       - name: Build AppImage
         run: |
-          tar -xzf "pivxie-${VERSION}-linux-x86_64.tar.gz"
+          tar -xzf "astronaut-${VERSION}-linux-x86_64.tar.gz"
           mkdir -p AppDir
           cp -r bundle/* AppDir/
-          cp appimage/pivxie/AppRun AppDir/AppRun
+          cp appimage/astronaut/AppRun AppDir/AppRun
           chmod +x AppDir/AppRun
-          cp appimage/pivxie/pivxie.desktop AppDir/
-          cp asset_sources/icon/pivxie/icon.png AppDir/pivxie.png
+          cp appimage/astronaut/astronaut.desktop AppDir/
+          cp asset_sources/icon/astronaut/icon.png AppDir/astronaut.png
           curl -fsSL -o appimagetool \
             https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool
           ARCH=x86_64 ./appimagetool --appimage-extract-and-run AppDir \
-            "pivxie-${VERSION}-x86_64.AppImage"
+            "astronaut-${VERSION}-x86_64.AppImage"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: pivxie-${{ env.VERSION }}-x86_64.AppImage
-          path: pivxie-${{ env.VERSION }}-x86_64.AppImage
+          name: astronaut-${{ env.VERSION }}-x86_64.AppImage
+          path: astronaut-${{ env.VERSION }}-x86_64.AppImage

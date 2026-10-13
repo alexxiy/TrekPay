@@ -110,6 +110,8 @@ class TransactionV2 {
     int minimumConfirms,
     int minimumCoinbaseConfirms,
   ) {
+    // Kerrigan: an InstantSend lock makes an unconfirmed tx final.
+    if (isInstantLocked && (height == null || height! <= 0)) return true;
     final confirmations = getConfirmations(currentChainHeight);
     return confirmations >=
         (isCoinbase() ? minimumCoinbaseConfirms : minimumConfirms);
@@ -137,8 +139,8 @@ class TransactionV2 {
   }
 
   Amount getAmountReceivedInThisWallet({required int fractionDigits}) {
-    final pivxAmount = _getPivxAmount();
-    if (pivxAmount != null) return pivxAmount;
+    final kerriganAmount = _getKerriganAmount();
+    if (kerriganAmount != null) return kerriganAmount;
 
     final outSum = outputs
         .where((e) => e.walletOwns)
@@ -151,8 +153,8 @@ class TransactionV2 {
     required int fractionDigits,
     required bool subtractFee,
   }) {
-    final pivxAmount = _getPivxAmount();
-    if (pivxAmount != null) return pivxAmount;
+    final kerriganAmount = _getKerriganAmount();
+    if (kerriganAmount != null) return kerriganAmount;
 
     final inSum = inputs
         .where((e) => e.walletOwns)
@@ -181,39 +183,30 @@ class TransactionV2 {
   };
 
   @ignore
-  String? get pivxKind =>
-      _getFromOtherData(key: TxV2OdKeys.pivxKind) as String?;
+  String? get kerriganKind =>
+      _getFromOtherData(key: TxV2OdKeys.kerriganKind) as String?;
 
-  /// A second kind in the same transaction: a cold staking reward whose
-  /// block also paid our masternode ([PivxTxKind.masternodeReward]) or our
-  /// proposal ([PivxTxKind.budgetPayment]).
+  /// Kerrigan: unconfirmed, but locked by InstantSend (final).
   @ignore
-  String? get pivxAlsoKind =>
-      _getFromOtherData(key: TxV2OdKeys.pivxAlsoKind) as String?;
+  bool get isInstantLocked =>
+      _getFromOtherData(key: TxV2OdKeys.instantLock) == true;
 
-  /// Label of [pivxAlsoKind], e.g. "Masternode reward".
+  /// Kerrigan change addresses among the outputs.
   @ignore
-  String? get pivxAlsoLabel => switch (pivxAlsoKind) {
-    PivxTxKind.masternodeReward => "Masternode reward",
-    PivxTxKind.budgetPayment => "Proposal payment",
-    _ => null,
-  };
-
-  /// PIVX change addresses among the outputs.
-  @ignore
-  Set<String> get pivxChangeAddresses => {
-    ...((_getFromOtherData(key: TxV2OdKeys.pivxChange) as List?) ?? const [])
+  Set<String> get kerriganChangeAddresses => {
+    ...((_getFromOtherData(key: TxV2OdKeys.kerriganChange) as List?) ??
+            const [])
         .cast<String>(),
   };
 
   @ignore
-  bool get isPivxOwnSend =>
-      _getFromOtherData(key: TxV2OdKeys.pivxOwnSend) == true;
+  bool get isKerriganOwnSend =>
+      _getFromOtherData(key: TxV2OdKeys.kerriganOwnSend) == true;
 
-  Amount? _getPivxAmount() {
+  Amount? _getKerriganAmount() {
     try {
       return Amount.fromSerializedJsonString(
-        _getFromOtherData(key: TxV2OdKeys.pivxAmount) as String,
+        _getFromOtherData(key: TxV2OdKeys.kerriganAmount) as String,
       );
     } catch (_) {
       return null;
@@ -242,7 +235,7 @@ class TransactionV2 {
         "${(isCoinbase() ? minCoinbaseConfirms : minConfirms)}"
         ")";
 
-    final pivxLabel = _pivxStatusLabel(
+    final kerriganLabel = _kerriganStatusLabel(
       confirmed: isConfirmed(
         currentChainHeight,
         minConfirms,
@@ -250,7 +243,7 @@ class TransactionV2 {
       ),
       confirms: prettyConfirms(),
     );
-    if (pivxLabel != null) return pivxLabel;
+    if (kerriganLabel != null) return kerriganLabel;
 
     if (type == TransactionType.incoming) {
       if (isConfirmed(currentChainHeight, minConfirms, minCoinbaseConfirms)) {
@@ -275,33 +268,19 @@ class TransactionV2 {
     }
   }
 
-  String? _pivxStatusLabel({
+  String? _kerriganStatusLabel({
     required bool confirmed,
     required String confirms,
   }) {
     String label(String done, String pending) =>
         confirmed ? done : "$pending $confirms";
-    switch (pivxKind) {
-      case PivxTxKind.stakeReward:
-        return label("Staking reward", "Staking reward");
-      case PivxTxKind.masternodeReward:
-        return label("Masternode reward", "Masternode reward");
-      case PivxTxKind.coldStakeReward:
-        return label("Cold staking reward", "Cold staking reward");
-      case PivxTxKind.budgetPayment:
-        return label("Proposal payment", "Proposal payment");
-      case PivxTxKind.blockReward:
+    switch (kerriganKind) {
+      case KerriganTxKind.blockReward:
         return label("Block reward", "Block reward");
-      case PivxTxKind.delegation:
-        return label("Delegated", "Delegating");
-      case PivxTxKind.undelegation:
-        return label("Undelegated", "Undelegating");
-      case PivxTxKind.shield:
+      case KerriganTxKind.shield:
         return label("Shielded", "Shielding");
-      case PivxTxKind.unshield:
+      case KerriganTxKind.unshield:
         return label("Unshielded", "Unshielding");
-      case PivxTxKind.burn:
-        return label("Burned", "Burning");
       default:
         return null;
     }
@@ -318,7 +297,7 @@ class TransactionV2 {
   bool isCoinbase() =>
       (type == TransactionType.incoming &&
           inputs.any((e) => e.coinbase != null)) ||
-      PivxTxKind.rewards.contains(pivxKind);
+      kerriganKind == KerriganTxKind.blockReward;
 
   @override
   String toString() {
@@ -346,54 +325,37 @@ abstract final class TxV2OdKeys {
   static const overrideFee = "overrideFee";
   static const memo = "onChainMemo";
 
-  /// PIVX transaction kind, see [PivxTxKind].
-  static const pivxKind = "pivxKind";
+  /// Kerrigan transaction kind, see [KerriganTxKind].
+  static const kerriganKind = "kerriganKind";
 
-  /// PIVX: a second [PivxTxKind] in the same transaction, see
-  /// [TransactionV2.pivxAlsoKind].
-  static const pivxAlsoKind = "pivxAlsoKind";
+  /// Kerrigan: amount to show instead of one derived from the outputs
+  /// (the value shielded or unshielded, without the change).
+  static const kerriganAmount = "kerriganAmount";
 
-  /// PIVX: amount to show instead of one derived from the outputs (the
-  /// reward of a coinstake, the value delegated or shielded).
-  static const pivxAmount = "pivxAmount";
+  /// Kerrigan: change addresses among the outputs (list of strings).
+  static const kerriganChange = "kerriganChange";
 
-  /// PIVX: change addresses among the outputs (list of strings).
-  static const pivxChange = "pivxChange";
-
-  /// PIVX: built and sent by this wallet; its amount and change are
+  /// Kerrigan: built and sent by this wallet; its amount and change are
   /// exact, unlike what a rescan can infer.
-  static const pivxOwnSend = "pivxOwnSend";
+  static const kerriganOwnSend = "kerriganOwnSend";
+
+  /// Kerrigan: unconfirmed but locked by InstantSend, so final.
+  static const instantLock = "instantLock";
 }
 
-/// Kinds of PIVX transactions shown with their own label.
-abstract final class PivxTxKind {
-  static const stakeReward = "stakeReward";
-  static const masternodeReward = "masternodeReward";
-  static const coldStakeReward = "coldStakeReward";
-
-  /// A budget proposal paid by the network (in a coinstake, instead of
-  /// the masternode payment).
-  static const budgetPayment = "budgetPayment";
+/// Kinds of Kerrigan transactions shown with their own label.
+abstract final class KerriganTxKind {
+  /// A coinbase output: a mining or masternode payout.
   static const blockReward = "blockReward";
-  static const delegation = "delegation";
-  static const undelegation = "undelegation";
   static const shield = "shield";
   static const unshield = "unshield";
-
-  /// Coins burnt in an OP_RETURN output (a budget proposal fee).
-  static const burn = "burn";
 
   /// Bundled history icon of [kind], or null for a plain send/receive.
   static String? iconAsset(String? kind, {required bool pending}) {
     final name = switch (kind) {
-      stakeReward || blockReward => "stake-reward",
-      masternodeReward || budgetPayment => "masternode-reward",
-      coldStakeReward => "cold-stake-reward",
-      delegation => "delegation",
-      undelegation => "undelegation",
+      blockReward => "stake-reward",
       shield => "shield",
       unshield => "unshield",
-      burn => "burn",
       _ => null,
     };
     if (name == null) return null;
@@ -401,11 +363,5 @@ abstract final class PivxTxKind {
   }
 
   /// Kinds that mint new coins: immature until coinbase maturity.
-  static const rewards = {
-    stakeReward,
-    masternodeReward,
-    coldStakeReward,
-    budgetPayment,
-    blockReward,
-  };
+  static const rewards = {blockReward};
 }

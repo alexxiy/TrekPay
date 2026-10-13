@@ -1,5 +1,5 @@
 name: 💡 Feature request
-description: Suggest an idea for PIVXie
+description: Suggest an idea for Astronaut
 title: 'Feature: <title>'
 labels: [Feature Request]
 body:
@@ -12,7 +12,7 @@ body:
   - type: textarea
     attributes:
       label: 'Your idea'
-      description: 'Describe what you would like PIVXie to do.'
+      description: 'Describe what you would like Astronaut to do.'
     validations:
       required: true
   - type: textarea
@@ -24,6 +24,6 @@ body:
   - type: textarea
     attributes:
       label: 'Anything else'
-      description: 'Screenshots, mockups, or how other PIVX wallets (such as MyPIVXWallet) handle it.'
+      description: 'Screenshots, mockups, or how other Kerrigan wallets (such as MyPIVXWallet) handle it.'
     validations:
       required: false

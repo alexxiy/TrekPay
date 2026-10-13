@@ -5,7 +5,7 @@ import 'package:paymint/utilities/amount/amount_unit.dart';
 import 'package:paymint/wallets/crypto_currency/crypto_currency.dart';
 
 void main() {
-  test("displayAmount PIV", () {
+  test("displayAmount KRGN", () {
     final Amount amount = Amount(
       rawValue: BigInt.from(1012345678),
       fractionDigits: 8,
@@ -15,37 +15,37 @@ void main() {
       AmountUnit.normal.displayAmount(
         amount: amount,
         locale: "en_US",
-        coin: Pivx(CryptoCurrencyNetwork.main),
+        coin: Kerrigan(CryptoCurrencyNetwork.main),
         maxDecimalPlaces: 8,
       ),
-      "10.12345678 PIV",
+      "10.12345678 KRGN",
     );
 
     expect(
       AmountUnit.milli.displayAmount(
         amount: amount,
         locale: "en_US",
-        coin: Pivx(CryptoCurrencyNetwork.main),
+        coin: Kerrigan(CryptoCurrencyNetwork.main),
         maxDecimalPlaces: 8,
       ),
-      "10,123.45678 mPIV",
+      "10,123.45678 mKRGN",
     );
 
     expect(
       AmountUnit.micro.displayAmount(
         amount: amount,
         locale: "en_US",
-        coin: Pivx(CryptoCurrencyNetwork.main),
+        coin: Kerrigan(CryptoCurrencyNetwork.main),
         maxDecimalPlaces: 8,
       ),
-      "10,123,456.78 µPIV",
+      "10,123,456.78 µKRGN",
     );
 
     expect(
       AmountUnit.nano.displayAmount(
         amount: amount,
         locale: "en_US",
-        coin: Pivx(CryptoCurrencyNetwork.main),
+        coin: Kerrigan(CryptoCurrencyNetwork.main),
         maxDecimalPlaces: 8,
       ),
       "1,012,345,678 sats",
@@ -63,27 +63,27 @@ void main() {
 
     expect(
       AmountUnit.normal.tryParse(
-        "10.12345678 PIV",
+        "10.12345678 KRGN",
         locale: "en_US",
-        coin: Pivx(CryptoCurrencyNetwork.main),
+        coin: Kerrigan(CryptoCurrencyNetwork.main),
       ),
       amount,
     );
 
     expect(
       AmountUnit.milli.tryParse(
-        "10,123.45678 mPIV",
+        "10,123.45678 mKRGN",
         locale: "en_US",
-        coin: Pivx(CryptoCurrencyNetwork.main),
+        coin: Kerrigan(CryptoCurrencyNetwork.main),
       ),
       amount,
     );
 
     expect(
       AmountUnit.micro.tryParse(
-        "10,123,456.7822 µPIV",
+        "10,123,456.7822 µKRGN",
         locale: "en_US",
-        coin: Pivx(CryptoCurrencyNetwork.main),
+        coin: Kerrigan(CryptoCurrencyNetwork.main),
       ),
       amount,
     );
@@ -92,7 +92,7 @@ void main() {
       AmountUnit.nano.tryParse(
         "1,012,345,678 sats",
         locale: "en_US",
-        coin: Pivx(CryptoCurrencyNetwork.main),
+        coin: Kerrigan(CryptoCurrencyNetwork.main),
       ),
       amount,
     );

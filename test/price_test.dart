@@ -27,11 +27,13 @@ void main() {
   });
 
   void expectFetchedPriceSnapshot(String prices) {
-    // Mainnet PIVX prices as coingecko's "pivx"; testnet has no price.
+    // Mainnet Kerrigan prices as coingecko's "kerrigan"; testnet and
+    // regtest have no price.
     expect(
       prices,
-      "{Instance of 'Pivx': (change24h: 0.0, value: 1), "
-      "Instance of 'Pivx': (change24h: 0.0, value: 0)}",
+      "{Instance of 'Kerrigan': (change24h: 0.0, value: 1), "
+      "Instance of 'Kerrigan': (change24h: 0.0, value: 0), "
+      "Instance of 'Kerrigan': (change24h: 0.0, value: 0)}",
     );
     expect(prices, isNot('{}'));
   }
@@ -52,7 +54,7 @@ void main() {
     ).thenAnswer(
       (_) async => Response(
         utf8.encode(
-          '[{"id":"pivx","symbol":"piv","name":"PIVX","image":"https://asse'
+          '[{"id":"kerrigan","symbol":"krgn","name":"Kerrigan","image":"https://asse'
           'ts.coingecko.com/coins/images/1/large/bitcoin.png?1547033579","curr'
           'ent_price":1.0,"market_cap":19128800,"market_cap_rank":1,"fully_dil'
           'uted_valuation":21000000,"total_volume":1272132,"high_24h":1.0,"low'
@@ -146,7 +148,7 @@ void main() {
     ).thenAnswer(
       (_) async => Response(
         utf8.encode(
-          '[{"id":"pivx","symbol":"piv","name":"PIVX","image":"https://a'
+          '[{"id":"kerrigan","symbol":"krgn","name":"Kerrigan","image":"https://a'
           'ssets.coingecko.com/coins/images/1/large/bitcoin.png?1547033579","c'
           'urrent_price":1.0,"market_cap":19128800,"market_cap_rank":1,"fully_'
           'diluted_valuation":21000000,"total_volume":1272132,"high_24h":1.0,"'

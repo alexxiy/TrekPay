@@ -21,10 +21,10 @@ void main() {
   });
 
   test("parse a valid uri string B", () {
-    const uri = "pivx:$firoAddress?amount=50&message=eggs+are+good";
+    const uri = "kerrigan:$firoAddress?amount=50&message=eggs+are+good";
     final result = AddressUtils.parsePaymentUri(uri);
     expect(result, isNotNull);
-    expect(result!.scheme, "pivx");
+    expect(result!.scheme, "kerrigan");
     expect(result.address, firoAddress);
     expect(result.amount, "50");
     expect(result.message, "eggs are good");
@@ -103,33 +103,33 @@ void main() {
   test("build a uri string with empty params", () {
     expect(
       AddressUtils.buildUriString(
-        Pivx(CryptoCurrencyNetwork.main).uriScheme,
+        Kerrigan(CryptoCurrencyNetwork.main).uriScheme,
         firoAddress,
         {},
       ),
-      "pivx:$firoAddress",
+      "kerrigan:$firoAddress",
     );
   });
 
   test("build a uri string with one param", () {
     expect(
       AddressUtils.buildUriString(
-        Pivx(CryptoCurrencyNetwork.main).uriScheme,
+        Kerrigan(CryptoCurrencyNetwork.main).uriScheme,
         firoAddress,
         {"amount": "10.0123"},
       ),
-      "pivx:$firoAddress?amount=10.0123",
+      "kerrigan:$firoAddress?amount=10.0123",
     );
   });
 
   test("build a uri string with some params", () {
     expect(
       AddressUtils.buildUriString(
-        Pivx(CryptoCurrencyNetwork.main).uriScheme,
+        Kerrigan(CryptoCurrencyNetwork.main).uriScheme,
         firoAddress,
         {"amount": "10.0123", "message": "Some kind of message!"},
       ),
-      "pivx:$firoAddress?amount=10.0123&message=Some+kind+of+message%21",
+      "kerrigan:$firoAddress?amount=10.0123&message=Some+kind+of+message%21",
     );
   });
 }

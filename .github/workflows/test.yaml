@@ -3,7 +3,7 @@ name: Test
 on:
   pull_request:
   push:
-    branches: [pivxie]
+    branches: [astronaut]
   workflow_dispatch:
 
 jobs:
@@ -20,12 +20,12 @@ jobs:
           channel: stable
           cache: true
 
-      # Writes pubspec.yaml, lib/app_config.g.dart and the PIVX plugin
+      # Writes pubspec.yaml, lib/app_config.g.dart and the Kerrigan plugin
       # interfaces. -i: no native plugin builds, -s: system libsecret.
       - name: Configure app
         run: |
           cd scripts
-          echo "yes" | ./build_app.sh -a pivxie -p linux -v 0.0.1 -b 1 -i -s
+          echo "yes" | ./build_app.sh -a astronaut -p linux -v 0.0.1 -b 1 -i -s
 
       - name: Get dependencies
         run: flutter pub get
@@ -51,9 +51,9 @@ jobs:
 
       - name: Test
         run: |
-          flutter test --concurrency=4 $(find test -name "*_test.dart" ! -path "test/pivx/*")
+          flutter test --concurrency=4 $(find test -name "*_test.dart" ! -path "test/kerrigan/*")
 
-      # The regtest tests skip themselves here: they need a PIVX Core
-      # regtest node and a pivx-bridge (see docs/building.md).
-      - name: Test PIVX
-        run: flutter test --concurrency=1 test/pivx/
+      # The regtest tests skip themselves here: they need a Kerrigan Core
+      # regtest node and a kerrigan-bridge (see docs/building.md).
+      - name: Test Kerrigan
+        run: flutter test --concurrency=1 test/kerrigan/

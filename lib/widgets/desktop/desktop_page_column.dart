@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/util.dart';
 
-/// On desktop, a phone-sized screen pushed as a full page (the PIVX
+/// On desktop, a phone-sized screen pushed as a full page (the Kerrigan
 /// screens, coin control) sits in a centered column on the app background
 /// instead of stretching across the window. [card]: a screen built for a
 /// dialog on desktop (the confirm screen) gets a dialog-like card.

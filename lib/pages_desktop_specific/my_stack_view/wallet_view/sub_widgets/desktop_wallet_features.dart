@@ -34,25 +34,13 @@ import '../../../../widgets/desktop/primary_button.dart';
 import '../../../../widgets/desktop/secondary_button.dart';
 import '../../../../widgets/static_overflow_row/static_overflow_row.dart';
 import '../../../coin_control/desktop_coin_control_view.dart';
-import '../../../../pages/pivx_cold_staking/pivx_cold_staking_view.dart';
-import '../../../../pages/pivx_governance/pivx_governance_view.dart';
-import '../../../../pages/pivx_masternodes/pivx_masternodes_view.dart';
-import '../../../../wallets/wallet/impl/pivx_wallet.dart';
+import '../../../../wallets/wallet/impl/kerrigan_wallet.dart';
 import 'more_features/more_features_dialog.dart';
 
 enum WalletFeature {
   coinControl(
     "Coin control",
     "Control, freeze, and utilize outputs at your discretion",
-  ),
-  masternodes("Masternodes", "Create, start and follow your masternodes"),
-  coldStaking(
-    "Cold staking",
-    "Delegate coins to a staker and earn rewards while they stay yours",
-  ),
-  governance(
-    "Governance",
-    "Budget proposals: follow them and vote with your masternodes",
   ),
   privatize(
     "Privatize funds",
@@ -94,12 +82,9 @@ class _DesktopWalletFeaturesState extends ConsumerState<DesktopWalletFeatures> {
     );
   }
 
-  void _push(String route) =>
-      Navigator.of(context).pushNamed(route, arguments: widget.walletId);
-
   void _onCoinControlPressed() {
-    // PIVX: the coin control that also covers shield notes.
-    if (ref.read(pWallets).getWallet(widget.walletId) is PivxWallet) {
+    // Kerrigan: the coin control that also covers shield notes.
+    if (ref.read(pWallets).getWallet(widget.walletId) is KerriganWallet) {
       Navigator.of(context).pushNamed(
         CoinControlView.routeName,
         arguments: Tuple2(widget.walletId, CoinControlViewType.manage),
@@ -111,10 +96,10 @@ class _DesktopWalletFeaturesState extends ConsumerState<DesktopWalletFeatures> {
     ).pushNamed(DesktopCoinControlView.routeName, arguments: widget.walletId);
   }
 
-  /// PIVX: shield the whole transparent balance, after a confirmation.
+  /// Kerrigan: shield the whole transparent balance, after a confirmation.
   Future<void> _onPrivatizePressed() async {
     final wallet = ref.read(pWallets).getWallet(widget.walletId);
-    if (wallet is! PivxWallet) return;
+    if (wallet is! KerriganWallet) return;
     if (wallet.info.cachedBalance.spendable <= Amount.zero) {
       unawaited(
         showFloatingFlushBar(
@@ -213,31 +198,13 @@ class _DesktopWalletFeaturesState extends ConsumerState<DesktopWalletFeatures> {
 
     final isViewOnly = wallet is ViewOnlyOptionInterface && wallet.isViewOnly;
 
-    // On the bar: governance and masternodes; the rest is under More.
+    // On the bar: privatize; the rest is under More.
     final options = <(WalletFeature, Object, FutureOr<void> Function())>[
-      if (wallet is PivxWallet)
-        (
-          WalletFeature.governance,
-          Icons.how_to_vote_rounded,
-          () => _push(PivxGovernanceView.routeName),
-        ),
-      if (wallet is PivxWallet && !isViewOnly)
-        (
-          WalletFeature.masternodes,
-          Icons.dns_rounded,
-          () => _push(PivxMasternodesView.routeName),
-        ),
+      if (wallet is KerriganWallet && wallet.supportsShield && !isViewOnly)
+        (WalletFeature.privatize, Icons.shield_rounded, _onPrivatizePressed),
     ];
 
     final moreOptions = <(WalletFeature, Object, FutureOr<void> Function())>[
-      if (wallet is PivxWallet)
-        (
-          WalletFeature.coldStaking,
-          Icons.ac_unit_rounded,
-          () => _push(PivxColdStakingView.routeName),
-        ),
-      if (wallet is PivxWallet && wallet.supportsShield && !isViewOnly)
-        (WalletFeature.privatize, Icons.shield_rounded, _onPrivatizePressed),
       if (showCoinControl)
         (WalletFeature.coinControl, Icons.checklist_rtl, _onCoinControlPressed),
     ];

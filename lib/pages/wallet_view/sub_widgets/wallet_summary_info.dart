@@ -86,7 +86,7 @@ class WalletSummaryInfo extends ConsumerWidget {
     final Amount balanceToShow;
     final String title;
 
-    // PIVX has a transparent and a shield balance, picked with the
+    // Kerrigan has a transparent and a shield balance, picked with the
     // public/private switch.
     final type = ref.watch(publicPrivateBalanceStateProvider);
     final privateBalance = ref.watch(pWalletBalanceSecondary(walletId));

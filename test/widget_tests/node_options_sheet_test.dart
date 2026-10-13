@@ -24,7 +24,7 @@ import 'support/platform_test_overrides.dart';
 
 @GenerateMocks([Wallets, Prefs, NodeService, TorService])
 void main() {
-  final pivx = Pivx(CryptoCurrencyNetwork.main);
+  final kerrigan = Kerrigan(CryptoCurrencyNetwork.main);
 
   NodeModel buildNode({required String id, required String name}) {
     return NodeModel(
@@ -34,7 +34,7 @@ void main() {
       id: id,
       useSSL: true,
       enabled: true,
-      coinName: 'PIVX',
+      coinName: 'Kerrigan',
       isFailover: false,
       isDown: false,
       torEnabled: true,
@@ -63,7 +63,7 @@ void main() {
     when(wallets.wallets).thenReturn([]);
     when(prefs.syncType).thenReturn(SyncingType.currentWalletOnly);
     when(nodeService.getNodeById(id: node.id)).thenAnswer((_) => node);
-    when(nodeService.getPrimaryNodeFor(currency: pivx))
+    when(nodeService.getPrimaryNodeFor(currency: kerrigan))
         .thenAnswer((_) => primaryNode);
   }
 
@@ -91,7 +91,7 @@ void main() {
           onGenerateRoute: onGenerateRoute,
           home: NodeOptionsSheet(
             nodeId: 'node id',
-            coin: pivx,
+            coin: kerrigan,
             popBackToRoute: popBackToRoute,
           ),
         ),
@@ -138,7 +138,7 @@ void main() {
       isNull,
     );
 
-    verify(mockNodeService.getPrimaryNodeFor(currency: pivx)).called(1);
+    verify(mockNodeService.getPrimaryNodeFor(currency: kerrigan)).called(1);
     verify(mockNodeService.getNodeById(id: 'node id')).called(1);
     verify(mockNodeService.addListener(any)).called(1);
     verifyNoMoreInteractions(mockNodeService);
@@ -210,7 +210,7 @@ void main() {
     );
     when(
       mockNodeService.setPrimaryNodeFor(
-        coin: pivx,
+        coin: kerrigan,
         node: node,
         shouldNotifyListeners: true,
       ),
@@ -239,7 +239,7 @@ void main() {
 
     verify(
       mockNodeService.setPrimaryNodeFor(
-        coin: pivx,
+        coin: kerrigan,
         node: node,
         shouldNotifyListeners: true,
       ),
@@ -286,7 +286,7 @@ void main() {
 
       verifyNever(
         mockNodeService.setPrimaryNodeFor(
-          coin: pivx,
+          coin: kerrigan,
           node: anyNamed('node'),
           shouldNotifyListeners: anyNamed('shouldNotifyListeners'),
         ),

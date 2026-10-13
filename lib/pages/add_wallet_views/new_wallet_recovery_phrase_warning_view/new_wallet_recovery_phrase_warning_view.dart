@@ -29,7 +29,7 @@ import '../../../utilities/text_styles.dart';
 import '../../../utilities/util.dart';
 import '../../../wallets/crypto_currency/crypto_currency.dart';
 import '../../../wallets/isar/models/wallet_info.dart';
-import '../../../wallets/wallet/impl/pivx_wallet.dart';
+import '../../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../../wallets/wallet/wallet.dart';
 import '../../../wallets/wallet/wallet_mixin_interfaces/mnemonic_interface.dart';
 import '../../../widgets/custom_buttons/app_bar_icon_button.dart';
@@ -170,7 +170,7 @@ class _NewWalletRecoveryPhraseWarningViewState
       );
 
       await wallet.init();
-      if (wallet is PivxWallet) await wallet.recordBirthday();
+      if (wallet is KerriganWallet) await wallet.recordBirthday();
 
       // set checkbox back to unchecked to annoy users to agree again :P
       ref.read(checkBoxStateProvider.notifier).state = false;

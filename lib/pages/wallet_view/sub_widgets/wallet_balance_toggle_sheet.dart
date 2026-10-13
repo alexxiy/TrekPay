@@ -35,7 +35,7 @@ class WalletBalanceToggleSheet extends ConsumerWidget {
     final maxHeight = MediaQuery.of(context).size.height * 0.90;
 
     final coin = ref.watch(pWalletCoin(walletId));
-    // The PIVX shield balance is the secondary balance.
+    // The Kerrigan shield balance is the secondary balance.
     final balancePrivate = ref.watch(pWalletBalanceSecondary(walletId));
 
     final balance = ref.watch(pWalletBalance(walletId));

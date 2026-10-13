@@ -135,8 +135,9 @@ class Address extends CryptoCurrencyAddress {
     final json = jsonDecode(jsonString);
     final derivationPathString = json["derivationPath"] as String?;
 
-    final DerivationPath? derivationPath =
-        derivationPathString == null ? null : DerivationPath();
+    final DerivationPath? derivationPath = derivationPathString == null
+        ? null
+        : DerivationPath();
     if (derivationPath != null) {
       derivationPath.value = derivationPathString!;
     }
@@ -177,7 +178,7 @@ enum AddressType {
   xelis,
   fact0rn,
   mweb,
-  pivxShield;
+  kerriganShield;
 
   String get readableName {
     switch (this) {
@@ -221,7 +222,7 @@ enum AddressType {
         return "FACT0RN";
       case AddressType.mweb:
         return "MWEB";
-      case AddressType.pivxShield:
+      case AddressType.kerriganShield:
         return "Shield";
     }
   }

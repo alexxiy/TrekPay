@@ -10,15 +10,15 @@
 
 namespace {
 
-// The command line is a pivx: link (as the registered handler passes it,
+// The command line is a kerrigan: link (as the registered handler passes it,
 // quoted).
 bool IsPaymentLink(const wchar_t* command_line) {
   if (command_line == nullptr) return false;
   while (*command_line == L' ' || *command_line == L'"') command_line++;
-  return _wcsnicmp(command_line, L"pivx:", 5) == 0;
+  return _wcsnicmp(command_line, L"kerrigan:", 5) == 0;
 }
 
-// Open pivx: links with this app, unless another installed app (e.g. PIVX
+// Open kerrigan: links with this app, unless another installed app (e.g. Kerrigan
 // Core) already does. Per user, so no admin rights are needed.
 void RegisterPaymentLinks() {
   wchar_t exe[MAX_PATH];
@@ -26,7 +26,7 @@ void RegisterPaymentLinks() {
 
   wchar_t current[MAX_PATH * 2];
   DWORD size = sizeof(current);
-  if (RegGetValueW(HKEY_CLASSES_ROOT, L"pivx\\shell\\open\\command", nullptr,
+  if (RegGetValueW(HKEY_CLASSES_ROOT, L"kerrigan\\shell\\open\\command", nullptr,
                    RRF_RT_REG_SZ, nullptr, current, &size) == ERROR_SUCCESS) {
     std::wstring handler(current);
     if (!handler.empty() && handler[0] == L'"') {
@@ -39,14 +39,14 @@ void RegisterPaymentLinks() {
   }
 
   const std::wstring command = L"\"" + std::wstring(exe) + L"\" \"%1\"";
-  const std::wstring name = L"URL:PIVX payment";
-  RegSetKeyValueW(HKEY_CURRENT_USER, L"Software\\Classes\\pivx", nullptr,
+  const std::wstring name = L"URL:Kerrigan payment";
+  RegSetKeyValueW(HKEY_CURRENT_USER, L"Software\\Classes\\kerrigan", nullptr,
                   REG_SZ, name.c_str(),
                   static_cast<DWORD>((name.size() + 1) * sizeof(wchar_t)));
-  RegSetKeyValueW(HKEY_CURRENT_USER, L"Software\\Classes\\pivx",
+  RegSetKeyValueW(HKEY_CURRENT_USER, L"Software\\Classes\\kerrigan",
                   L"URL Protocol", REG_SZ, L"", sizeof(wchar_t));
   RegSetKeyValueW(HKEY_CURRENT_USER,
-                  L"Software\\Classes\\pivx\\shell\\open\\command", nullptr,
+                  L"Software\\Classes\\kerrigan\\shell\\open\\command", nullptr,
                   REG_SZ, command.c_str(),
                   static_cast<DWORD>((command.size() + 1) * sizeof(wchar_t)));
 }
@@ -55,7 +55,7 @@ void RegisterPaymentLinks() {
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
-  // A pivx: link while the app runs: hand it to that window, then exit.
+  // A kerrigan: link while the app runs: hand it to that window, then exit.
   if (IsPaymentLink(command_line) && SendAppLinkToInstance()) {
     return EXIT_SUCCESS;
   }

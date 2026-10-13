@@ -25,7 +25,7 @@ import '../../../../pages/coin_control/coin_control_view.dart';
 import '../../../../pages/home_view/payment_links.dart';
 import '../../../../pages/send_view/confirm_transaction_view.dart';
 import '../../../../pages/send_view/sub_widgets/building_transaction_dialog.dart';
-import '../../../../pages/send_view/sub_widgets/pivx_change_address_sheet.dart';
+import '../../../../pages/send_view/sub_widgets/kerrigan_change_address_sheet.dart';
 import '../../../../pages/send_view/sub_widgets/transaction_fee_selection_sheet.dart';
 import '../../../../providers/providers.dart';
 import '../../../../providers/ui/preview_tx_button_state_provider.dart';
@@ -44,14 +44,14 @@ import '../../../../utilities/prefs.dart';
 import '../../../../utilities/text_styles.dart';
 import '../../../../utilities/util.dart';
 import '../../../../utilities/enums/fee_rate_type_enum.dart';
-import '../../../../wallets/crypto_currency/coins/pivx.dart';
+import '../../../../wallets/crypto_currency/coins/kerrigan.dart';
 import '../../../../wallets/crypto_currency/crypto_currency.dart';
 import '../../../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../../../wallets/models/tx_data.dart';
-import '../../../../wallets/wallet/impl/pivx_wallet.dart';
+import '../../../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../../../widgets/custom_buttons/blue_text_button.dart';
 import '../../../../widgets/desktop/desktop_dialog.dart';
-import '../../../../widgets/pivx_memo_field.dart';
+import '../../../../widgets/kerrigan_memo_field.dart';
 import '../../../../widgets/desktop/desktop_dialog_close_button.dart';
 import '../../../../widgets/desktop/primary_button.dart';
 import '../../../../widgets/desktop/qr_code_scanner_dialog.dart';
@@ -105,25 +105,25 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
   final _nonceFocusNode = FocusNode();
   final _noteFocus = FocusNode();
 
-  /// PIVX: the fee comes out of the amount instead of on top of it.
-  bool _pivxSubtractFee = false;
+  /// Kerrigan: the fee comes out of the amount instead of on top of it.
+  bool _kerriganSubtractFee = false;
 
-  /// PIVX: change of sends from the transparent balance (null: automatic).
-  String? _pivxChangeAddress;
+  /// Kerrigan: change of sends from the transparent balance (null: automatic).
+  String? _kerriganChangeAddress;
 
-  /// PIVX: change of sends from the shield balance (null: automatic).
-  String? _pivxShieldChangeAddress;
+  /// Kerrigan: change of sends from the shield balance (null: automatic).
+  String? _kerriganShieldChangeAddress;
 
-  /// PIVX wallet with a shield balance to send from.
-  bool get _pivxShield {
+  /// Kerrigan wallet with a shield balance to send from.
+  bool get _kerriganShield {
     final wallet = ref.read(pWallets).getWallet(walletId);
-    return wallet is PivxWallet && wallet.supportsShield;
+    return wallet is KerriganWallet && wallet.supportsShield;
   }
 
   /// Spending the shield balance (shield notes) rather than transparent
   /// outputs.
   bool get _fromShield =>
-      _pivxShield &&
+      _kerriganShield &&
       ref.read(publicPrivateBalanceStateProvider) == BalanceType.private;
 
   Amount get _spendable => _fromShield
@@ -131,8 +131,8 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
       : ref.read(pWalletBalance(walletId)).spendable;
 
   /// Chosen change address for the current balance (null: automatic).
-  String? get _pivxChange =>
-      _fromShield ? _pivxShieldChangeAddress : _pivxChangeAddress;
+  String? get _kerriganChange =>
+      _fromShield ? _kerriganShieldChangeAddress : _kerriganChangeAddress;
 
   Amount? _cachedAmountToSend;
   String? _address;
@@ -291,16 +291,17 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
 
       TxData txData;
 
-      // PIVX send settings: the balance spent, fee subtraction and the
+      // Kerrigan send settings: the balance spent, fee subtraction and the
       // change address.
       final fromShield = _fromShield;
-      final pivxOtherData = <String, dynamic>{
-        if (fromShield) kPivxFromShield: true,
-        if (coin is Pivx && _pivxSubtractFee) kPivxSubtractFee: true,
-        if (!fromShield && _pivxChangeAddress != null)
-          kPivxChangeAddress: _pivxChangeAddress,
-        if (fromShield && _pivxShieldChangeAddress != null)
-          kPivxChangeAddress: _pivxShieldChangeAddress,
+      final kerriganOtherData = <String, dynamic>{
+        if (fromShield) kKerriganFromShield: true,
+        if (coin is Kerrigan && _kerriganSubtractFee)
+          kKerriganSubtractFee: true,
+        if (!fromShield && _kerriganChangeAddress != null)
+          kKerriganChangeAddress: _kerriganChangeAddress,
+        if (fromShield && _kerriganShieldChangeAddress != null)
+          kKerriganChangeAddress: _kerriganShieldChangeAddress,
       };
 
       final Future<TxData> txDataFuture = wallet.prepareSend(
@@ -313,7 +314,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
               addressType: wallet.cryptoCurrency.getAddressType(_address!)!,
             ),
           ],
-          // PIVX: only a shield recipient gets the (encrypted) memo.
+          // Kerrigan: only a shield recipient gets the (encrypted) memo.
           memo: _sendsToShield && memoController.text.isNotEmpty
               ? memoController.text
               : null,
@@ -321,7 +322,9 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
           utxos: (coinControlEnabled && ref.read(pDesktopUseUTXOs).isNotEmpty)
               ? ref.read(pDesktopUseUTXOs)
               : null,
-          otherData: pivxOtherData.isEmpty ? null : jsonEncode(pivxOtherData),
+          otherData: kerriganOtherData.isEmpty
+              ? null
+              : jsonEncode(kerriganOtherData),
         ),
       );
 
@@ -520,7 +523,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
   }
 
   bool get _sendsToShield =>
-      coin is Pivx && (coin as Pivx).isShieldAddress(_address ?? "");
+      coin is Kerrigan && (coin as Kerrigan).isShieldAddress(_address ?? "");
 
   void _applyUri(PaymentUriData paymentData) {
     try {
@@ -531,7 +534,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
       // shield memo
       memoController.text = truncateUtf8(
         paymentData.additionalParams['memo'] ?? "",
-        kPivxMaxMemoBytes,
+        kKerriganMaxMemoBytes,
       );
 
       // autofill notes field.
@@ -684,10 +687,10 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
   );
 
   Future<void> _sendAllTapped(bool showCoinControl) async {
-    // PIVX never takes the fee out of the amount silently: sending
+    // Kerrigan never takes the fee out of the amount silently: sending
     // everything ticks "Subtract fee from amount" where the user sees it.
-    if (coin is Pivx && !_pivxSubtractFee) {
-      setState(() => _pivxSubtractFee = true);
+    if (coin is Kerrigan && !_kerriganSubtractFee) {
+      setState(() => _kerriganSubtractFee = true);
     }
     final Amount amount;
 
@@ -703,7 +706,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
   }
 
   void _showDesktopCoinControl() async {
-    if (coin is Pivx) return _showPivxCoinControl();
+    if (coin is Kerrigan) return _showKerriganCoinControl();
     final amount = ref.read(pSendAmount);
     await showDialog<void>(
       context: context,
@@ -714,15 +717,15 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
     );
   }
 
-  /// PIVX coin control: transparent outputs or shield notes (whichever
+  /// Kerrigan coin control: transparent outputs or shield notes (whichever
   /// balance is spent), with the summary of what the send needs.
-  Future<void> _showPivxCoinControl() async {
+  Future<void> _showKerriganCoinControl() async {
     final fromShield = _fromShield;
     final sendAmount = ref.read(pSendAmount);
     Amount? amount = sendAmount;
-    if (amount != null && amount != _spendable && !_pivxSubtractFee) {
+    if (amount != null && amount != _spendable && !_kerriganSubtractFee) {
       final wallet = ref.read(pWallets).getWallet(walletId);
-      if (wallet is PivxWallet) {
+      if (wallet is KerriganWallet) {
         amount += await wallet.estimateShieldFee(
           amount: amount,
           fromShield: fromShield,
@@ -742,7 +745,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
           shieldNotes: fromShield,
           sendAmount: sendAmount,
           toShield: _sendsToShield,
-          subtractFee: _pivxSubtractFee,
+          subtractFee: _kerriganSubtractFee,
         ),
       ),
     );
@@ -751,17 +754,17 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
     }
   }
 
-  Future<void> _pickPivxChangeAddress() async {
+  Future<void> _pickKerriganChangeAddress() async {
     final fromShield = _fromShield;
     final picked = await showDialog<String>(
       context: context,
       builder: (context) => DesktopDialog(
         maxWidth: 580,
         maxHeight: 640,
-        child: PivxChangeAddressSheet(
+        child: KerriganChangeAddressSheet(
           walletId: walletId,
-          coin: coin as Pivx,
-          current: _pivxChange,
+          coin: coin as Kerrigan,
+          current: _kerriganChange,
           shield: fromShield,
         ),
       ),
@@ -770,9 +773,9 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
       final value = picked.isEmpty ? null : picked;
       setState(() {
         if (fromShield) {
-          _pivxShieldChangeAddress = value;
+          _kerriganShieldChangeAddress = value;
         } else {
-          _pivxChangeAddress = value;
+          _kerriganChangeAddress = value;
         }
       });
     }
@@ -801,7 +804,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
     onCryptoAmountChanged = _cryptoAmountChanged;
     cryptoAmountController.addListener(onCryptoAmountChanged);
 
-    // A pivx: payment link opened for this wallet.
+    // A kerrigan: payment link opened for this wallet.
     final link = ref.read(pDesktopPaymentLink);
     if (link != null && link.walletId == walletId) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -879,7 +882,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
     super.dispose();
   }
 
-  /// One of the PIVX balances to send from, with what it can spend.
+  /// One of the Kerrigan balances to send from, with what it can spend.
   Widget _balanceChoice({
     required String title,
     required Balance balance,
@@ -931,9 +934,9 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
     ref.listen(publicPrivateBalanceStateProvider, (_, __) {
       ref.read(desktopUseUTXOs.notifier).state = {};
     });
-    final pivxShield = _pivxShield;
+    final kerriganShield = _kerriganShield;
     final fromShield =
-        pivxShield &&
+        kerriganShield &&
         ref.watch(publicPrivateBalanceStateProvider) == BalanceType.private;
     final labelStyle = STextStyles.desktopTextExtraSmall(context).copyWith(
       color: Theme.of(context)
@@ -944,7 +947,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (pivxShield) ...[
+        if (kerriganShield) ...[
           const SizedBox(height: 4),
           Text("Send from", style: labelStyle),
           const SizedBox(height: 10),
@@ -1143,10 +1146,11 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
               ],
             ),
           ),
-        if (coin is Pivx) ...[
+        if (coin is Kerrigan) ...[
           const SizedBox(height: 10),
           GestureDetector(
-            onTap: () => setState(() => _pivxSubtractFee = !_pivxSubtractFee),
+            onTap: () =>
+                setState(() => _kerriganSubtractFee = !_kerriganSubtractFee),
             child: Container(
               color: Colors.transparent,
               child: Row(
@@ -1156,9 +1160,9 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
                     height: 26,
                     child: Checkbox(
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      value: _pivxSubtractFee,
+                      value: _kerriganSubtractFee,
                       onChanged: (v) =>
-                          setState(() => _pivxSubtractFee = v ?? false),
+                          setState(() => _kerriganSubtractFee = v ?? false),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1184,11 +1188,11 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
                   style: STextStyles.desktopTextExtraExtraSmall(context),
                 ),
                 CustomTextButton(
-                  text: _pivxChange == null
+                  text: _kerriganChange == null
                       ? "Automatic"
-                      : "${_pivxChange!.substring(0, 6)}…"
-                            "${_pivxChange!.substring(_pivxChange!.length - 6)}",
-                  onTap: _pickPivxChangeAddress,
+                      : "${_kerriganChange!.substring(0, 6)}…"
+                            "${_kerriganChange!.substring(_kerriganChange!.length - 6)}",
+                  onTap: _pickKerriganChangeAddress,
                 ),
               ],
             ),
@@ -1421,7 +1425,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
             textAlign: TextAlign.left,
           ),
           const SizedBox(height: 10),
-          PivxMemoField(controller: memoController, focusNode: _memoFocus),
+          KerriganMemoField(controller: memoController, focusNode: _memoFocus),
         ],
         const SizedBox(height: 20),
         Text("Note (optional)", style: labelStyle),
@@ -1466,7 +1470,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
           walletId: walletId,
           fromShield: fromShield,
           toShield: _sendsToShield,
-          subtractFee: _pivxSubtractFee,
+          subtractFee: _kerriganSubtractFee,
           selected: ref.watch(desktopUseUTXOs),
         ),
         const SizedBox(height: 36),
