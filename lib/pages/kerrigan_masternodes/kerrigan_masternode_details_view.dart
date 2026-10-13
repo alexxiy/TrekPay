@@ -781,7 +781,8 @@ class _KerriganMasternodeDetailsViewState
                         if (mn.type == KerriganMasternodeType.broodNode)
                           Text(
                             "Install Kerrigan Core on the server and open "
-                            "port ${wallet.masternodePort}. Register with "
+                            "port ${wallet.masternodePortOf(mn.service ?? state?.service)}. "
+                            "Register with "
                             "the identity \"kerrigan-cli gethmpidentity\" "
                             "prints there, following Kerrigan's BroodNode "
                             "guide for the server's settings.",

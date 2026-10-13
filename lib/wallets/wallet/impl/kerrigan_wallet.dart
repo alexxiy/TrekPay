@@ -88,6 +88,10 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   /// value + script length + OP_RETURN + push 32 + hash.
   static const _kOpReturnOutput = 43;
 
+  /// Kerrigan Core rejects a larger (non-Sapling) transaction, even in a
+  /// block ("bad-txns-oversize").
+  static const _kMaxTxSize = 100000;
+
   @override
   int get isarTransactionVersion => 2;
 
@@ -1175,6 +1179,29 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     return a;
   }
 
+  /// What to do when a send needs more coins than fit in a transaction:
+  /// the most one transaction can move, to combine coins with first.
+  String _tooManyCoinsMessage(
+    List<UTXO> candidates,
+    List<String> outputAddresses,
+  ) {
+    final maxInputs =
+        (_kMaxTxSize - _estimateSize(0, outputAddresses)) ~/ _kP2pkhInput;
+    final largest = [...candidates]..sort((a, b) => b.value.compareTo(a.value));
+    final sum = largest.take(maxInputs).fold<int>(0, (p, u) => p + u.value);
+    final fee =
+        _estimateSize(maxInputs, outputAddresses) *
+        cryptoCurrency.minFeePerByte;
+    final most = Amount(
+      rawValue: BigInt.from(max(0, sum - fee)),
+      fractionDigits: cryptoCurrency.fractionDigits,
+    );
+    final ticker = cryptoCurrency.ticker;
+    return "This needs more coins than fit in one transaction (at most "
+        "$maxInputs). Combine them first: send up to ${most.decimal} $ticker "
+        "to one of your own addresses, then try again.";
+  }
+
   @override
   Future<TxData> prepareSend({required TxData txData}) async {
     final recipients = txData.recipients;
@@ -1260,6 +1287,13 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
           break;
         }
       }
+    }
+
+    // Many small coins (e.g. masternode rewards) may not fit in one
+    // transaction: say so before signing anything.
+    final outputAddresses = [...recipients.map((e) => e.address), "change"];
+    if (_estimateSize(selected.length, outputAddresses) > _kMaxTxSize) {
+      throw Exception(_tooManyCoinsMessage(candidates, outputAddresses));
     }
 
     // ---- outputs + fee ------------------------------------------------------

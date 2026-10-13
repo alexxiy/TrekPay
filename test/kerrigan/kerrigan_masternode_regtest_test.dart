@@ -47,11 +47,10 @@ void main() {
   late KerriganBridgeClient bridge;
   late coinlib.HDPrivateKey root;
 
-  String p2pkh(coinlib.ECPublicKey key) =>
-      coinlib.P2PKHAddress.fromPublicKey(
-        key,
-        version: params.p2pkhPrefix,
-      ).toString();
+  String p2pkh(coinlib.ECPublicKey key) => coinlib.P2PKHAddress.fromPublicKey(
+    key,
+    version: params.p2pkhPrefix,
+  ).toString();
 
   // As KerriganMasternodes derives them: m/9'/coin'/3'/feature'/index.
   coinlib.HDPrivateKey dip9(int feature, int index) =>
@@ -60,9 +59,12 @@ void main() {
       root.derivePath("m/44'/${coin.coinType}'/0'/$chain/$index");
 
   /// A UTXO of [amount] KRGN on [key]'s address, as the library takes it.
-  Future<Map<String, dynamic>> fund(coinlib.HDPrivateKey key, int amount) async {
+  Future<Map<String, dynamic>> fund(
+    coinlib.HDPrivateKey key,
+    int amount,
+  ) async {
     final address = p2pkh(key.publicKey);
-    final txid = await rpc("sendtoaddress", [address, amount]) as String;
+    final txid = await sendLarge(address, amount);
     await mine();
     final tx = await rpc("getrawtransaction", [txid, true]) as Map;
     final out = (tx["vout"] as List).cast<Map<String, dynamic>>().firstWhere((
@@ -110,12 +112,48 @@ void main() {
     }
   });
 
+  tearDownAll(() async {
+    if (skip != null) return;
+    // Spend the collateral back to the node: the masternode leaves the
+    // list, so runs leave no masternodes without a server on the chain.
+    try {
+      final wif = coinlib
+          .WIF(
+            privkey: bip44(0, 0).privateKey,
+            version: coin.networkParams.wifPrefix,
+          )
+          .toString();
+      final amount = collateral["amount"] as int;
+      final raw = await rpc("createrawtransaction", [
+        [
+          {"txid": collateral["txid"], "vout": collateral["vout"]},
+        ],
+        {await rpc("getnewaddress"): (amount - 10000) / 1e8},
+      ]);
+      final signed = await rpc("signrawtransactionwithkey", [
+        raw,
+        [wif],
+        [
+          {
+            "txid": collateral["txid"],
+            "vout": collateral["vout"],
+            "scriptPubKey": collateral["script"],
+            "amount": amount / 1e8,
+          },
+        ],
+      ]) as Map;
+      await rpc("sendrawtransaction", [signed["hex"]]);
+      await mine();
+    } catch (e) {
+      // ignore: avoid_print
+      print("Leaving the test masternode registered: $e");
+    }
+  });
+
   test("registers a masternode with keys derived from the seed", () async {
     collateral = await fund(bip44(0, 0), 10000);
     final feeCoin = await fund(bip44(0, 1), 1);
-    operator = KerriganShield.blsKeygen(
-      ikm: dip9(3, 0).privateKey.data,
-    );
+    operator = KerriganShield.blsKeygen(ikm: dip9(3, 0).privateKey.data);
     final owner = p2pkh(dip9(2, 0).publicKey);
     final voting = p2pkh(dip9(1, 0).publicKey);
     final payout = p2pkh(bip44(0, 0).publicKey);

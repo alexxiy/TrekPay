@@ -52,8 +52,9 @@ Future<dynamic> rpc(
       }),
     );
     final response = await request.close();
-    final body = jsonDecode(await response.transform(utf8.decoder).join())
-        as Map<String, dynamic>;
+    final body = jsonDecode(
+      await response.transform(utf8.decoder).join(),
+    ) as Map<String, dynamic>;
     if (body["error"] != null) {
       throw Exception("$method: ${body["error"]}");
     }
@@ -71,11 +72,41 @@ Future<void> mine([int count = 1]) async {
   await rpc("generatetoaddress", [count, _minerAddress]);
 }
 
+/// Send [amount] KRGN to [address] from the node wallet in one output.
+/// Mined coins are small (5 KRGN): a large amount is first gathered in
+/// 2000 KRGN coins, as one send of it would have too many inputs.
+Future<String> sendLarge(String address, num amount) async {
+  const chunk = 2000;
+  if (amount <= chunk) {
+    return await rpc("sendtoaddress", [address, amount]) as String;
+  }
+  final gather = await rpc("getnewaddress") as String;
+  for (var sent = 0; sent < amount + 1; sent += chunk) {
+    await rpc("sendtoaddress", [gather, chunk]);
+  }
+  await mine();
+  final coins = (await rpc("listunspent", [
+    1,
+    9999999,
+    [gather],
+  ]) as List).cast<Map<String, dynamic>>();
+  final total = coins.fold<num>(0, (p, c) => p + (c["amount"] as num));
+  const fee = 0.001;
+  final raw = await rpc("createrawtransaction", [
+    [
+      for (final c in coins) {"txid": c["txid"], "vout": c["vout"]},
+    ],
+    {
+      address: amount,
+      gather: double.parse((total - amount - fee).toStringAsFixed(8)),
+    },
+  ]);
+  final signed = await rpc("signrawtransactionwithwallet", [raw]) as Map;
+  return await rpc("sendrawtransaction", [signed["hex"]]) as String;
+}
+
 /// Wait up to [seconds] for [check].
-Future<void> waitFor(
-  Future<bool> Function() check, {
-  int seconds = 60,
-}) async {
+Future<void> waitFor(Future<bool> Function() check, {int seconds = 60}) async {
   for (int i = 0; i < seconds * 2; i++) {
     if (await check()) return;
     await Future<void>.delayed(const Duration(milliseconds: 500));

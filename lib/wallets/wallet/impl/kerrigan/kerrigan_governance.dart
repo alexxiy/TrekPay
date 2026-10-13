@@ -217,10 +217,9 @@ class KerriganPendingProposal {
   /// Why submitting failed for good (the fee is lost), if it did.
   final String? error;
 
-  Map<String, dynamic> get data =>
-      Map<String, dynamic>.from(
-        jsonDecode(utf8.decode(dataHex.toUint8ListFromHex)) as Map,
-      );
+  Map<String, dynamic> get data => Map<String, dynamic>.from(
+    jsonDecode(utf8.decode(dataHex.toUint8ListFromHex)) as Map,
+  );
 
   KerriganPendingProposal copyWith({String? feeTxid, String? error}) =>
       KerriganPendingProposal(
@@ -395,18 +394,26 @@ extension KerriganGovernanceWallet on KerriganWallet {
   // ---------------------------------------------------------------------------
   // Reading
 
-  List<KerriganPendingProposal> get pendingProposals => [
-    for (final e in (info.otherData[_kPendingProposals] as List?) ?? const [])
+  List<KerriganPendingProposal> get pendingProposals =>
+      _pendingIn(info.otherData);
+
+  List<KerriganPendingProposal> _pendingIn(Map<String, dynamic> otherData) => [
+    for (final e in (otherData[_kPendingProposals] as List?) ?? const [])
       KerriganPendingProposal.fromJson(Map<String, dynamic>.from(e as Map)),
   ];
 
-  Future<void> _savePending(List<KerriganPendingProposal> list) =>
-      info.updateOtherData(
-        newEntries: {
-          _kPendingProposals: [for (final p in list) p.toJson()],
-        },
-        isar: mainDB.isar,
-      );
+  /// Rewrite the stored list, not this wallet's possibly older copy of it.
+  Future<void> _updatePending(
+    List<KerriganPendingProposal> Function(List<KerriganPendingProposal> stored)
+    change,
+  ) => info.updateOtherDataWith(
+    isar: mainDB.isar,
+    change: (stored) => {
+      _kPendingProposals: [
+        for (final p in change(_pendingIn(stored))) p.toJson(),
+      ],
+    },
+  );
 
   /// Proposals and growth fund releases with their votes, from the
   /// bridge's node.
@@ -660,14 +667,16 @@ extension KerriganGovernanceWallet on KerriganWallet {
   Future<void> addPendingProposal(
     KerriganPendingProposal proposal,
     String feeTxid,
-  ) => _savePending([
-    ...pendingProposals.where((p) => p.hash != proposal.hash),
-    proposal.copyWith(feeTxid: feeTxid),
-  ]);
+  ) => _updatePending(
+    (stored) => [
+      ...stored.where((p) => p.hash != proposal.hash),
+      proposal.copyWith(feeTxid: feeTxid),
+    ],
+  );
 
   /// Forget a pending proposal (after it failed).
   Future<void> removePendingProposal(String hash) =>
-      _savePending([...pendingProposals.where((p) => p.hash != hash)]);
+      _updatePending((stored) => [...stored.where((p) => p.hash != hash)]);
 
   /// Confirmations of a pending proposal's fee, null while unconfirmed.
   Future<int?> feeConfirmationsOf(KerriganPendingProposal p) async {
@@ -686,16 +695,17 @@ extension KerriganGovernanceWallet on KerriganWallet {
     final pending = pendingProposals;
     if (pending.isEmpty) return;
     final known = (await bridge.governanceObjects()).keys.toSet();
-    final kept = <KerriganPendingProposal>[];
+    // By hash: submitted (or already known) ones, and lasting errors.
+    final done = <String>{};
+    final errors = <String, String>{};
     for (final p in pending) {
-      if (known.contains(p.hash)) continue;
-      if (p.error != null) {
-        kept.add(p);
+      if (known.contains(p.hash)) {
+        done.add(p.hash);
         continue;
       }
+      if (p.error != null) continue;
       final confs = await feeConfirmationsOf(p);
       if (confs == null || confs < kKerriganProposalFeeConfirmations) {
-        kept.add(p);
         continue;
       }
       try {
@@ -711,6 +721,7 @@ extension KerriganGovernanceWallet on KerriganWallet {
             "${p.hash}",
           );
         }
+        done.add(p.hash);
       } catch (e) {
         Logging.instance.w("Kerrigan: submitting proposal ${p.name}: $e");
         final message = e
@@ -721,9 +732,17 @@ extension KerriganGovernanceWallet on KerriganWallet {
         final temporary =
             message.contains("Must wait for client to sync") ||
             message.contains("confirmations");
-        kept.add(temporary ? p : p.copyWith(error: message));
+        if (!temporary) errors[p.hash] = message;
       }
     }
-    await _savePending(kept);
+    if (done.isEmpty && errors.isEmpty) return;
+    // Proposals added meanwhile stay.
+    await _updatePending(
+      (stored) => [
+        for (final p in stored)
+          if (!done.contains(p.hash))
+            errors.containsKey(p.hash) ? p.copyWith(error: errors[p.hash]) : p,
+      ],
+    );
   }
 }

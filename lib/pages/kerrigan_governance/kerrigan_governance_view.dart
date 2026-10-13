@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/global/wallets_provider.dart';
+import '../../services/event_bus/events/global/wallet_sync_status_changed_event.dart';
+import '../../services/event_bus/global_event_bus.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/amount/amount_formatter.dart';
 import '../../utilities/logger.dart';
@@ -80,10 +84,30 @@ class _KerriganGovernanceViewState
   KerriganWallet get _wallet =>
       ref.read(pWallets).getWallet(widget.walletId) as KerriganWallet;
 
+  /// The wallet submits a waiting proposal in its refresh after the
+  /// block that confirmed the fee: show it once that refresh is done.
+  late final StreamSubscription<WalletSyncStatusChangedEvent> _synced;
+
   @override
   void initState() {
     super.initState();
     _load();
+    _synced = GlobalEventBus.instance.on<WalletSyncStatusChangedEvent>().listen(
+      (e) {
+        if (e.walletId == widget.walletId &&
+            e.newStatus == WalletSyncStatus.synced &&
+            _hasPending &&
+            mounted) {
+          setState(_load);
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _synced.cancel();
+    super.dispose();
   }
 
   void _load() {

@@ -235,11 +235,25 @@ List<String> kerriganMasternodeIds(Map<String, dynamic> otherData) => [
     KerriganMasternode.fromJson(Map<String, dynamic>.from(e as Map)).id,
 ];
 
+List<KerriganMasternode> _masternodesIn(Map<String, dynamic> otherData) => [
+  for (final e in (otherData[_kMasternodesKey] as List?) ?? const [])
+    KerriganMasternode.fromJson(Map<String, dynamic>.from(e as Map)),
+];
+
 extension KerriganMasternodes on KerriganWallet {
-  List<KerriganMasternode> get masternodes => [
-    for (final e in (info.otherData[_kMasternodesKey] as List?) ?? const [])
-      KerriganMasternode.fromJson(Map<String, dynamic>.from(e as Map)),
-  ];
+  List<KerriganMasternode> get masternodes => _masternodesIn(info.otherData);
+
+  /// Rewrite the stored list, not this wallet's possibly older copy of it.
+  Future<void> _updateMasternodes(
+    List<KerriganMasternode> Function(List<KerriganMasternode> stored) change,
+  ) => info.updateOtherDataWith(
+    isar: mainDB.isar,
+    change: (stored) => {
+      _kMasternodesKey: [
+        for (final m in change(_masternodesIn(stored))) m.toJson(),
+      ],
+    },
+  );
 
   Set<String> get _masternodePayouts => {
     for (final m in masternodes) m.payoutAddress,
@@ -489,15 +503,8 @@ extension KerriganMasternodes on KerriganWallet {
       proTxHash: proTxHash,
       service: service,
     );
-    await info.updateOtherData(
-      newEntries: {
-        _kMasternodesKey: [
-          for (final m in masternodes)
-            if (m.id != mn.id) m.toJson(),
-          mn.toJson(),
-        ],
-      },
-      isar: mainDB.isar,
+    await _updateMasternodes(
+      (stored) => [...stored.where((m) => m.id != mn.id), mn],
     );
     final newLabel = addressLabel?.trim() ?? "";
     if (newLabel.isNotEmpty) {
@@ -519,25 +526,14 @@ extension KerriganMasternodes on KerriganWallet {
   /// Forget a masternode; its collateral becomes spendable again.
   /// Spending it ends the masternode on the network.
   Future<void> removeMasternode(KerriganMasternode mn) async {
-    await info.updateOtherData(
-      newEntries: {
-        _kMasternodesKey: [
-          for (final m in masternodes)
-            if (m.id != mn.id) m.toJson(),
-        ],
-      },
-      isar: mainDB.isar,
+    await _updateMasternodes(
+      (stored) => [...stored.where((m) => m.id != mn.id)],
     );
     await _freezeCollateral(mn, frozen: false);
   }
 
-  Future<void> _saveMasternode(KerriganMasternode mn) => info.updateOtherData(
-    newEntries: {
-      _kMasternodesKey: [
-        for (final m in masternodes) m.id == mn.id ? mn.toJson() : m.toJson(),
-      ],
-    },
-    isar: mainDB.isar,
+  Future<void> _saveMasternode(KerriganMasternode mn) => _updateMasternodes(
+    (stored) => [for (final m in stored) m.id == mn.id ? mn : m],
   );
 
   Future<void> _freezeCollateral(
@@ -587,9 +583,10 @@ extension KerriganMasternodes on KerriganWallet {
             BigInt.from(_kProviderFeeReserveSats)) {
       other[kKerriganExtraOutputs] = [
         {
-          "address": (await getCurrentChangeAddress() ??
-                  await _deriveAddress(chain: 1, index: 0))
-              .value,
+          "address":
+              (await getCurrentChangeAddress() ??
+                      await _deriveAddress(chain: 1, index: 0))
+                  .value,
           "amount": _kProviderFeeReserveSats,
         },
       ];
@@ -682,9 +679,7 @@ extension KerriganMasternodes on KerriganWallet {
   );
 
   /// [mn] as the network sees it.
-  Future<KerriganMasternodeState> masternodeState(
-    KerriganMasternode mn,
-  ) async {
+  Future<KerriganMasternodeState> masternodeState(KerriganMasternode mn) async {
     try {
       Map<String, dynamic>? entry;
       if (mn.proTxHash != null) {
@@ -776,14 +771,17 @@ extension KerriganMasternodes on KerriganWallet {
   Future<List<KerriganFoundMasternode>> findExistingMasternodes() async {
     final coins = {
       for (final u in await mainDB.getUTXOs(walletId).findAll())
-        if (!isKerriganShieldNote(u) && u.used != true) "${u.txid}:${u.vout}": u,
+        if (!isKerriganShieldNote(u) && u.used != true)
+          "${u.txid}:${u.vout}": u,
     };
     final listed = {for (final m in masternodes) m.id};
     final found = <KerriganFoundMasternode>[];
     final registered = await bridge.protxList();
     final candidates = [
       for (final e in registered)
-        if (coins.containsKey("${e["collateralHash"]}:${e["collateralIndex"]}") &&
+        if (coins.containsKey(
+              "${e["collateralHash"]}:${e["collateralIndex"]}",
+            ) &&
             !listed.contains("${e["collateralHash"]}:${e["collateralIndex"]}"))
           e,
     ];
@@ -1070,7 +1068,9 @@ extension KerriganMasternodes on KerriganWallet {
   Future<KerriganMasternode> sendProviderTx(KerriganProviderTx tx) async {
     final txid = await bridge.sendTx(tx.hex);
     if (txid != tx.txid) {
-      Logging.instance.w("Kerrigan: provider tx sent as $txid, built ${tx.txid}");
+      Logging.instance.w(
+        "Kerrigan: provider tx sent as $txid, built ${tx.txid}",
+      );
     }
     await mainDB.putUTXOs([for (final u in tx.spent) u.copyWith(used: true)]);
     await _saveMasternode(tx.masternode);
