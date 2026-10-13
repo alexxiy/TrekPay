@@ -29,6 +29,8 @@ import '../../services/event_bus/events/global/wallet_sync_status_changed_event.
 import '../../services/event_bus/global_event_bus.dart';
 import '../../themes/coin_icon_provider.dart';
 import '../../themes/stack_colors.dart';
+import '../kerrigan_governance/kerrigan_governance_view.dart';
+import '../kerrigan_masternodes/kerrigan_masternodes_view.dart';
 import '../../utilities/amount/amount.dart';
 import '../../utilities/assets.dart';
 import '../../utilities/clipboard_interface.dart';
@@ -802,6 +804,40 @@ class _WalletViewState extends ConsumerState<WalletView> {
                               widget.walletId,
                               CoinControlViewType.manage,
                             ),
+                          );
+                        },
+                      ),
+                    if (!viewOnly && wallet is KerriganWallet)
+                      WalletNavigationBarItemData(
+                        label: "Masternodes",
+                        icon: Icon(
+                          Icons.dns_rounded,
+                          size: 20,
+                          color: Theme.of(context)
+                              .extension<StackColors>()!
+                              .bottomNavIconIcon,
+                        ),
+                        onTap: () {
+                          Navigator.of(context).pushNamed(
+                            KerriganMasternodesView.routeName,
+                            arguments: widget.walletId,
+                          );
+                        },
+                      ),
+                    if (wallet is KerriganWallet)
+                      WalletNavigationBarItemData(
+                        label: "Governance",
+                        icon: Icon(
+                          Icons.how_to_vote_rounded,
+                          size: 20,
+                          color: Theme.of(context)
+                              .extension<StackColors>()!
+                              .bottomNavIconIcon,
+                        ),
+                        onTap: () {
+                          Navigator.of(context).pushNamed(
+                            KerriganGovernanceView.routeName,
+                            arguments: widget.walletId,
                           );
                         },
                       ),

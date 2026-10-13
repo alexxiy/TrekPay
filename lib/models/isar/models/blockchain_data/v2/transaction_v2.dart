@@ -277,6 +277,14 @@ class TransactionV2 {
     switch (kerriganKind) {
       case KerriganTxKind.blockReward:
         return label("Block reward", "Block reward");
+      case KerriganTxKind.masternodeReward:
+        return label("Masternode reward", "Masternode reward");
+      case KerriganTxKind.burn:
+        return label("Proposal fee", "Proposal fee");
+      case KerriganTxKind.masternodeRegistration:
+        return label("Masternode registered", "Registering masternode");
+      case KerriganTxKind.masternodeUpdate:
+        return label("Masternode updated", "Updating masternode");
       case KerriganTxKind.shield:
         return label("Shielded", "Shielding");
       case KerriganTxKind.unshield:
@@ -297,7 +305,7 @@ class TransactionV2 {
   bool isCoinbase() =>
       (type == TransactionType.incoming &&
           inputs.any((e) => e.coinbase != null)) ||
-      kerriganKind == KerriganTxKind.blockReward;
+      KerriganTxKind.rewards.contains(kerriganKind);
 
   @override
   String toString() {
@@ -345,8 +353,21 @@ abstract final class TxV2OdKeys {
 
 /// Kinds of Kerrigan transactions shown with their own label.
 abstract final class KerriganTxKind {
-  /// A coinbase output: a mining or masternode payout.
+  /// A coinbase output: a mining payout.
   static const blockReward = "blockReward";
+
+  /// A coinbase output paying one of the wallet's masternodes.
+  static const masternodeReward = "masternodeReward";
+
+  /// Coins burnt in an OP_RETURN output: a governance proposal fee.
+  static const burn = "burn";
+
+  /// Provider transactions: a masternode registration (ProRegTx), or an
+  /// update of its server, keys or payout (ProUpServTx, ProUpRegTx,
+  /// ProUpRevTx).
+  static const masternodeRegistration = "masternodeRegistration";
+  static const masternodeUpdate = "masternodeUpdate";
+
   static const shield = "shield";
   static const unshield = "unshield";
 
@@ -354,6 +375,8 @@ abstract final class KerriganTxKind {
   static String? iconAsset(String? kind, {required bool pending}) {
     final name = switch (kind) {
       blockReward => "stake-reward",
+      masternodeReward => "masternode-reward",
+      burn => "burn",
       shield => "shield",
       unshield => "unshield",
       _ => null,
@@ -363,5 +386,5 @@ abstract final class KerriganTxKind {
   }
 
   /// Kinds that mint new coins: immature until coinbase maturity.
-  static const rewards = {blockReward};
+  static const rewards = {blockReward, masternodeReward};
 }

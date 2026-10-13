@@ -10,6 +10,7 @@
 //! transactions itself and uses `sapling-crypto` for keys, notes, proofs
 //! and signatures.
 mod build;
+mod evo;
 mod keys;
 mod network;
 mod prover;
@@ -96,6 +97,29 @@ struct AddressArgs {
 }
 
 #[derive(Deserialize)]
+struct IkmArgs {
+    ikm: String,
+}
+
+#[derive(Deserialize)]
+struct BlsSecretArgs {
+    secret: String,
+}
+
+#[derive(Deserialize)]
+struct SignArgs {
+    key: String,
+    message: String,
+}
+
+#[derive(Deserialize)]
+struct SignHashArgs {
+    key: String,
+    /// 32 bytes, internal byte order, hex.
+    hash: String,
+}
+
+#[derive(Deserialize)]
 struct FeeArgs {
     spends: usize,
     outputs: usize,
@@ -157,8 +181,57 @@ fn dispatch(method: &str, args: &str) -> CallResult {
             let a: build::JSTxOptions = parse(args)?;
             build::create_transaction(a).and_then(to_value)
         }
+        "bls_keygen" => {
+            let a: IkmArgs = parse(args)?;
+            let ikm = hex::decode(&a.ikm).map_err(|_| "Key material is not hex")?;
+            let sk = evo::bls_keygen(&ikm)?;
+            Ok(json!({ "secret": evo::bls_secret_hex(&sk), "public": hex::encode(evo::bls_public(&sk)) }))
+        }
+        "bls_public" => {
+            let a: BlsSecretArgs = parse(args)?;
+            Ok(json!(hex::encode(evo::bls_public(&evo::parse_bls_secret(&a.secret)?))))
+        }
+        "validate_bls_public" => {
+            let a: KeyArgs = parse(args)?;
+            Ok(json!(evo::parse_bls_public(&a.key).is_ok()))
+        }
+        "sign_message" => {
+            // Compact signature (base64 as Core prints it) of a message.
+            let a: SignArgs = parse(args)?;
+            let key = evo::parse_secret_key(&a.key)?;
+            Ok(json!(base64_encode(&evo::sign_compact(&key, evo::message_hash(&a.message)))))
+        }
+        "sign_hash" => {
+            // Compact signature (base64) of a hash (`CHashSigner::SignHash`).
+            let a: SignHashArgs = parse(args)?;
+            let key = evo::parse_secret_key(&a.key)?;
+            let hash: [u8; 32] =
+                hex::decode(&a.hash).ok().and_then(|b| b.try_into().ok()).ok_or("A hash is 64 hex characters")?;
+            Ok(json!(base64_encode(&evo::sign_compact(&key, hash))))
+        }
+        "create_pro_tx" => {
+            let a: evo::JSProTxOptions = parse(args)?;
+            evo::create_pro_tx(a).and_then(to_value)
+        }
         _ => Err(format!("unknown method: {method}")),
     }
+}
+
+/// Standard base64 with padding.
+fn base64_encode(data: &[u8]) -> String {
+    const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
+    for c in data.chunks(3) {
+        let n = (u32::from(c[0]) << 16) | (u32::from(*c.get(1).unwrap_or(&0)) << 8) | u32::from(*c.get(2).unwrap_or(&0));
+        for i in 0..4 {
+            if i <= c.len() {
+                out.push(T[(n >> (18 - 6 * i)) as usize & 63] as char);
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
 }
 
 /// Call `method` with JSON `args`. Returns a heap-allocated JSON string

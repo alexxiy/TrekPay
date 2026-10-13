@@ -79,5 +79,32 @@ abstract class LibKerriganShieldInterface {
     bool useAllInputs = false,
     // The recipient pays the fee (receives amount - fee).
     bool subtractFee = false,
+    // More transparent outputs (shield notes only). An address may be
+    // `script:<hex>` for a raw output script (e.g. OP_RETURN).
+    List<({String address, int amount})> extraOutputs = const [],
   });
+
+  // ---------------------------------------------------------------------------
+  // Masternodes (DIP3) and governance
+
+  /// BLS operator key pair from 32+ bytes of key material (IETF KeyGen):
+  /// secret (32 bytes big-endian) and public key (48 bytes), hex.
+  ({String secret, String public}) blsKeygen({required List<int> ikm});
+
+  /// Public key (hex) of a BLS operator secret key (hex).
+  String blsPublicKey(String secret);
+
+  bool isValidBlsPublicKey(String key);
+
+  /// Base64 compact signature of [message] with Kerrigan's message magic
+  /// (`signmessage`).
+  String signMessage({required List<int> privateKey, required String message});
+
+  /// Base64 compact signature of a 32-byte hash (internal byte order).
+  String signHash({required List<int> privateKey, required List<int> hash});
+
+  /// Build and sign a provider transaction (ProRegTx, ProUpServTx,
+  /// ProUpRegTx, ProUpRevTx); see the native `create_pro_tx`. Returns
+  /// `txid`, `txhex`, `fee` and the spent UTXOs (`nullifiers`).
+  Future<Map<String, dynamic>> createProTx(Map<String, dynamic> options);
 }

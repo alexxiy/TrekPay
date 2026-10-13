@@ -25,6 +25,7 @@ import '../../pages_desktop_specific/my_stack_view/wallet_view/sub_widgets/deskt
 import '../../providers/providers.dart';
 import '../../route_generator.dart';
 import '../../themes/stack_colors.dart';
+import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../themes/theme_providers.dart';
 import '../../utilities/amount/amount.dart';
 import '../../utilities/amount/amount_formatter.dart';
@@ -76,9 +77,14 @@ class ConfirmTransactionView extends ConsumerStatefulWidget {
 
 class _ConfirmTransactionViewState
     extends ConsumerState<ConfirmTransactionView> {
-  /// The first recipient.
-  String get _recipientText =>
-      widget.txData.recipients?.firstOrNull?.address ?? "";
+  /// The first recipient; a proposal fee (OP_RETURN) reads as what it is.
+  String get _recipientText {
+    final address = widget.txData.recipients?.firstOrNull?.address ?? "";
+    return isKerriganOpReturn(address)
+        ? "Proposal fee, burnt (proposal "
+              "${address.substring(kKerriganOpReturnPrefix.length, kKerriganOpReturnPrefix.length + 16)}…)"
+        : address;
+  }
 
   late final String walletId;
   late final String routeOnSuccessName;

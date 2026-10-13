@@ -24,9 +24,38 @@ class AddressUtils {
     'recipient_name',
     'tx_description',
     'op_return', // For Rosen Bridge and other OP_RETURN protocols.
-    'memo', // Kerrigan shield memo (as in MyPIVXWallet).
+    'memo', // Kerrigan shield memo (ZIP 321: base64url UTF-8 text).
     // TODO [prio=med]: Add more recognized params for other coins.
   };
+
+  /// A shield memo as `kerrigan:` URIs carry it (ZIP 321, as Kerrigan
+  /// Core reads and writes them): base64url of its UTF-8 text, without
+  /// padding.
+  static String encodeMemo(String text) =>
+      base64Url.encode(utf8.encode(text)).replaceAll("=", "");
+
+  /// The text of a URI memo, or null when it isn't a valid one: not
+  /// base64url, over 512 bytes, or not text (Kerrigan Core rejects such
+  /// URIs too). Trailing zero padding is dropped.
+  static String? decodeMemo(String value) {
+    try {
+      var v = value.trim();
+      // base64url only (Dart's decoder would also take "+" and "/").
+      if (v.contains(RegExp(r"[+/]"))) return null;
+      v = v.padRight(v.length + (4 - v.length % 4) % 4, "=");
+      var bytes = base64Url.decode(v);
+      if (bytes.length > 512) return null;
+      var end = bytes.length;
+      while (end > 0 && bytes[end - 1] == 0) {
+        end--;
+      }
+      bytes = bytes.sublist(0, end);
+      if (bytes.contains(0)) return null;
+      return utf8.decode(bytes);
+    } catch (_) {
+      return null;
+    }
+  }
 
   static String condenseAddress(String address) {
     return '${address.substring(0, 5)}...${address.substring(address.length - 5)}';
@@ -110,9 +139,13 @@ class AddressUtils {
             result['tx_payment_id'] = Uri.decodeComponent(value);
             break;
           case 'memo':
-            // Already decoded by Uri.queryParameters; free text may hold
-            // '%', which a second decode would reject.
-            result['memo'] = value;
+            // Already percent-decoded by Uri.queryParameters.
+            final memo = decodeMemo(value);
+            if (memo == null) {
+              result['memo_invalid'] = 'true';
+            } else {
+              result['memo'] = memo;
+            }
             break;
           default:
             result[lowerKey] = Uri.decodeComponent(value);
@@ -157,6 +190,8 @@ class AddressUtils {
 
     try {
       final Map<String, String> parsedData = _parseUri(uri);
+      // A memo that can't be read: don't pay without it.
+      if (parsedData.containsKey('memo_invalid')) return null;
 
       // Normalize the URI scheme.
       final String scheme = parsedData['scheme'] ?? '';
@@ -189,6 +224,8 @@ class AddressUtils {
   ) {
     // Filter unrecognized parameters.
     final filteredParams = _filterParams(params);
+    final memo = filteredParams['memo'];
+    if (memo != null) filteredParams['memo'] = encodeMemo(memo);
     String uriString;
 
     // cashaddrs strike again

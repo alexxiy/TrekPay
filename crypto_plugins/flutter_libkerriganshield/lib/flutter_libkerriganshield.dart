@@ -226,8 +226,13 @@ abstract final class KerriganShield {
     String memo = "",
     bool useAllInputs = false,
     bool subtractFee = false,
+    List<({String address, int amount})> extraOutputs = const [],
   }) async {
     final r = await kerriganShieldCallAsync("create_transaction", {
+      "extra_outputs": [
+        for (final o in extraOutputs)
+          {"address": o.address, "amount": o.amount},
+      ],
       "notes": notes,
       "utxos": utxos,
       "extsk": extsk,
@@ -241,6 +246,48 @@ abstract final class KerriganShield {
     });
     return Map<String, dynamic>.from(r as Map);
   }
+
+  /// BLS operator key pair (hex) from key material (IETF KeyGen).
+  static ({String secret, String public}) blsKeygen({
+    required List<int> ikm,
+  }) {
+    final r = kerriganShieldCall("bls_keygen", {"ikm": _hex(ikm)}) as Map;
+    return (secret: r["secret"] as String, public: r["public"] as String);
+  }
+
+  static String blsPublicKey(String secret) =>
+      kerriganShieldCall("bls_public", {"secret": secret}) as String;
+
+  static bool isValidBlsPublicKey(String key) =>
+      kerriganShieldCall("validate_bls_public", {"key": key}) as bool;
+
+  static String signMessage({
+    required List<int> privateKey,
+    required String message,
+  }) =>
+      kerriganShieldCall("sign_message", {
+            "key": _hex(privateKey),
+            "message": message,
+          })
+          as String;
+
+  static String signHash({
+    required List<int> privateKey,
+    required List<int> hash,
+  }) =>
+      kerriganShieldCall("sign_hash", {
+            "key": _hex(privateKey),
+            "hash": _hex(hash),
+          })
+          as String;
+
+  /// A provider transaction (masternode registration and updates).
+  static Future<Map<String, dynamic>> createProTx(
+    Map<String, dynamic> options,
+  ) async =>
+      Map<String, dynamic>.from(
+        await kerriganShieldCallAsync("create_pro_tx", options) as Map,
+      );
 
   static ({String address, List<int> diversifierIndex}) _address(dynamic r) {
     final m = r as Map;

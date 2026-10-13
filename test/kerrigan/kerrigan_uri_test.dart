@@ -17,10 +17,38 @@ void main() {
     expect(parsed.additionalParams["memo"], memo);
   });
 
-  test("memo from a hand-written URI", () {
-    final parsed = AddressUtils.parsePaymentUri(
-      "kerrigan:$address?memo=coffee%20money",
-    )!;
-    expect(parsed.additionalParams["memo"], "coffee money");
+  test("memos are ZIP 321 base64url, as Kerrigan Core writes them", () {
+    final uri = AddressUtils.buildUriString("kerrigan", address, {
+      "memo": "coffee money",
+    });
+    expect(uri, "kerrigan:$address?memo=Y29mZmVlIG1vbmV5");
+    // Kerrigan Core's Send page omits the padding; padded works too.
+    for (final m in ["Y29mZmVlIG1vbmV5", "VGhhbmtzIQ", "VGhhbmtzIQ=="]) {
+      final parsed = AddressUtils.parsePaymentUri("kerrigan:$address?memo=$m");
+      expect(parsed, isNotNull, reason: m);
+    }
+    expect(
+      AddressUtils.parsePaymentUri(
+        "kerrigan:$address?memo=VGhhbmtzIQ",
+      )!.additionalParams["memo"],
+      "Thanks!",
+    );
+    // Non-ASCII text and characters base64url has instead of + and /.
+    const text = "Café ☕ <>?";
+    expect(AddressUtils.decodeMemo(AddressUtils.encodeMemo(text)), text);
+    expect(AddressUtils.encodeMemo("<<???>>"), isNot(contains("/")));
+  });
+
+  test("a URI with an unreadable memo is refused, like Kerrigan Core does",
+      () {
+    for (final m in ["not base64!", "_w", "a+b/", "AABB" * 200]) {
+      expect(
+        AddressUtils.parsePaymentUri("kerrigan:$address?memo=$m"),
+        isNull,
+        reason: m,
+      );
+    }
+    // Trailing zero padding is dropped.
+    expect(AddressUtils.decodeMemo("aGkAAA"), "hi");
   });
 }

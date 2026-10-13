@@ -18,6 +18,8 @@ enum KerriganTxCategory {
   received("Received"),
   sentToSelf("Sent to self"),
   blockReward("Block rewards"),
+  masternodeReward("Masternode rewards"),
+  masternode("Masternodes and proposals"),
   shield("Shielded"),
   unshield("Unshielded");
 
@@ -32,6 +34,12 @@ enum KerriganTxCategory {
     switch (tx.kerriganKind) {
       case KerriganTxKind.blockReward:
         return blockReward;
+      case KerriganTxKind.masternodeReward:
+        return masternodeReward;
+      case KerriganTxKind.burn:
+      case KerriganTxKind.masternodeRegistration:
+      case KerriganTxKind.masternodeUpdate:
+        return masternode;
       case KerriganTxKind.shield:
         return shield;
       case KerriganTxKind.unshield:

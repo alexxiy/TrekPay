@@ -35,6 +35,8 @@ import '../../../../widgets/desktop/secondary_button.dart';
 import '../../../../widgets/static_overflow_row/static_overflow_row.dart';
 import '../../../coin_control/desktop_coin_control_view.dart';
 import '../../../../wallets/wallet/impl/kerrigan_wallet.dart';
+import '../../../../pages/kerrigan_governance/kerrigan_governance_view.dart';
+import '../../../../pages/kerrigan_masternodes/kerrigan_masternodes_view.dart';
 import 'more_features/more_features_dialog.dart';
 
 enum WalletFeature {
@@ -45,6 +47,15 @@ enum WalletFeature {
   privatize(
     "Privatize funds",
     "Move your whole transparent balance to your shield balance",
+  ),
+  masternodes(
+    "Masternodes",
+    "Create, register and follow your masternodes",
+  ),
+  governance(
+    "Governance",
+    "Proposals and growth fund releases: follow them and vote with your "
+        "masternodes",
   ),
 
   // special cases
@@ -97,6 +108,9 @@ class _DesktopWalletFeaturesState extends ConsumerState<DesktopWalletFeatures> {
   }
 
   /// Kerrigan: shield the whole transparent balance, after a confirmation.
+  void _push(String route) =>
+      Navigator.of(context).pushNamed(route, arguments: widget.walletId);
+
   Future<void> _onPrivatizePressed() async {
     final wallet = ref.read(pWallets).getWallet(widget.walletId);
     if (wallet is! KerriganWallet) return;
@@ -198,8 +212,21 @@ class _DesktopWalletFeaturesState extends ConsumerState<DesktopWalletFeatures> {
 
     final isViewOnly = wallet is ViewOnlyOptionInterface && wallet.isViewOnly;
 
-    // On the bar: privatize; the rest is under More.
+    // On the bar: governance, masternodes and privatize; the rest is
+    // under More.
     final options = <(WalletFeature, Object, FutureOr<void> Function())>[
+      if (wallet is KerriganWallet)
+        (
+          WalletFeature.governance,
+          Icons.how_to_vote_rounded,
+          () => _push(KerriganGovernanceView.routeName),
+        ),
+      if (wallet is KerriganWallet && !isViewOnly)
+        (
+          WalletFeature.masternodes,
+          Icons.dns_rounded,
+          () => _push(KerriganMasternodesView.routeName),
+        ),
       if (wallet is KerriganWallet && wallet.supportsShield && !isViewOnly)
         (WalletFeature.privatize, Icons.shield_rounded, _onPrivatizePressed),
     ];

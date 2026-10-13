@@ -95,6 +95,18 @@ pub struct JSTxOptions {
     /// The recipient pays the fee: it receives `amount - fee`.
     #[serde(default)]
     pub subtract_fee: bool,
+    /// More transparent outputs paid besides `to_address` (shield notes
+    /// only), e.g. a little kept transparent for a masternode
+    /// registration fee.
+    #[serde(default)]
+    pub extra_outputs: Vec<ExtraOutput>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ExtraOutput {
+    /// Transparent address, or `script:<hex>`.
+    pub address: String,
+    pub amount: u64,
 }
 
 /// How inputs are chosen and who pays the fee.
@@ -148,8 +160,22 @@ pub fn create_transaction(o: JSTxOptions) -> Result<JSTransaction, Error> {
     if !o.memo.is_empty() && matches!(to, Destination::Transparent(_)) {
         return Err("A memo can only be sent to a shield address".into());
     }
+    let mut extra = Vec::new();
+    for e in &o.extra_outputs {
+        match decode_destination(&e.address, o.network)? {
+            Destination::Transparent(script) if e.amount > 0 => extra.push(TxOut { value: e.amount as i64, script }),
+            Destination::Transparent(_) => return Err("Extra outputs need an amount".into()),
+            Destination::Shield(_) => return Err("Extra outputs must be transparent".into()),
+        }
+    }
+    if !extra.is_empty() && o.subtract_fee {
+        return Err("Extra outputs can't be combined with subtracting the fee".into());
+    }
     match (o.notes, o.utxos) {
-        (Some(notes), None) => spend_notes(&xsk, notes, to, &o.change_address, o.amount, o.network, &o.memo, selection),
+        (Some(notes), None) => {
+            spend_notes(&xsk, notes, to, extra, &o.change_address, o.amount, o.network, &o.memo, selection)
+        }
+        (None, Some(_)) if !extra.is_empty() => Err("Extra outputs need shield notes".into()),
         (None, Some(utxos)) => shield_utxos(&xsk, utxos, to, &o.change_address, o.amount, o.network, &o.memo, selection),
         (Some(_), Some(_)) => Err("Notes and UTXOs were both provided".into()),
         (None, None) => Err("No input provided".into()),
@@ -162,12 +188,14 @@ fn spend_notes(
     xsk: &ExtendedSpendingKey,
     notes: Vec<JSSpendableNote>,
     to: Destination,
+    extra: Vec<TxOut>,
     change_address: &str,
     mut amount: u64,
     network: Network,
     memo: &str,
     selection: Selection,
 ) -> Result<JSTransaction, Error> {
+    let extra_total: u64 = extra.iter().map(|o| o.value as u64).sum();
     let dfvk = xsk.to_diversifiable_full_viewing_key();
     let keys = ViewingKeys::new(dfvk.clone());
     let mut notes = notes.iter().map(SpendableNote::from_js).collect::<Result<Vec<_>, _>>()?;
@@ -182,7 +210,8 @@ fn spend_notes(
         decode_destination(change_address, network)?
     };
     let t_out = usize::from(matches!(to, Destination::Transparent(_)))
-        + usize::from(matches!(change_to, Destination::Transparent(_)));
+        + usize::from(matches!(change_to, Destination::Transparent(_)))
+        + extra.len();
     let shield_out = MIN_SHIELD_OUTPUTS
         .max(usize::from(matches!(to, Destination::Shield(_))) + usize::from(matches!(change_to, Destination::Shield(_))));
 
@@ -201,14 +230,17 @@ fn spend_notes(
         total += n.note.value().inner();
         let spends = nullifiers.len();
         fee = fee_for(0, t_out, spends, shield_out);
-        if !selection.use_all && total >= selection.needed(amount, fee) {
+        if !selection.use_all && total >= selection.needed(amount, fee) + extra_total {
             break;
         }
     }
     if nullifiers.len() > MAX_SHIELDED_DESCRIPTIONS {
         return Err("Too many notes for one transaction; send a smaller amount".into());
     }
-    let change = selection.settle(total, &mut amount, fee)?;
+    if total < extra_total {
+        return Err("Not enough balance".into());
+    }
+    let change = selection.settle(total - extra_total, &mut amount, fee)?;
 
     let ovk = dfvk.to_ovk(Scope::External);
     let mut vout = Vec::new();
@@ -218,6 +250,7 @@ fn spend_notes(
             .map_err(|e| format!("Cannot add output: {e:?}"))?,
         Destination::Transparent(script) => vout.push(TxOut { value: amount as i64, script: script.clone() }),
     }
+    vout.extend(extra);
     if change > 0 {
         match &change_to {
             Destination::Shield(addr) => builder
@@ -325,7 +358,7 @@ pub struct TransparentSigner {
 }
 
 impl TransparentSigner {
-    fn new(u: &Utxo) -> Result<Self, Error> {
+    pub(crate) fn new(u: &Utxo) -> Result<Self, Error> {
         let key: [u8; 32] =
             hex::decode(&u.private_key).ok().and_then(|b| b.try_into().ok()).ok_or("Invalid UTXO key")?;
         let key = SecretKey::from_secret_bytes(key).map_err(|_| "Invalid UTXO key")?;
@@ -339,7 +372,12 @@ impl TransparentSigner {
         Ok(Self { key, pubkey, script })
     }
 
-    fn script_sig(&self, sighash: [u8; 32]) -> Vec<u8> {
+    /// The spent output's script (the script code signed).
+    pub(crate) fn script(&self) -> &[u8] {
+        &self.script
+    }
+
+    pub(crate) fn script_sig(&self, sighash: [u8; 32]) -> Vec<u8> {
         let sig = self.key.sign_ecdsa(Message::from_digest(sighash));
         let mut der = sig.serialize_der().to_vec();
         der.push(SIGHASH_ALL as u8);

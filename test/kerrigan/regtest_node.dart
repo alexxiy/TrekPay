@@ -21,6 +21,7 @@ const _nodeCalls = {
   "getblockcount",
   "validateaddress",
   "generatetoaddress",
+  "mnsync",
 };
 
 /// JSON-RPC call [method] with [params], on [wallet] (default: the node's

@@ -22,8 +22,10 @@ Map<String, dynamic> _tx({
   bool coinbase = false,
   String fees = "0",
   bool? instantlock,
+  int? type,
 }) => {
   "txid": "aa" * 32,
+  "type": ?type,
   "blockHeight": height,
   "blockTime": 1791871312,
   "coinbase": coinbase,
@@ -37,6 +39,7 @@ TransactionV2 _parse(
   Map<String, dynamic> json, {
   Map<String, dynamic>? shield,
   Map<String, Map<String, dynamic>> nullifierNotes = const {},
+  Set<String> masternodePayouts = const {},
 }) => parseKerriganTx(
   json,
   walletId: "test",
@@ -46,6 +49,7 @@ TransactionV2 _parse(
   shieldAddresses: {_shield},
   shield: shield,
   nullifierNotes: nullifierNotes,
+  masternodePayouts: masternodePayouts,
 )!;
 
 void main() {
@@ -159,5 +163,90 @@ void main() {
       BigInt.from(2 * _coin),
     );
     expect(tx.getFee(fractionDigits: 8).raw, BigInt.from(25000));
+  });
+
+  test("a coinbase paying one of our masternodes is a masternode reward", () {
+    final json = _tx(
+      coinbase: true,
+      vin: [
+        {"coinbase": "03aabbcc"},
+      ],
+      vout: [
+        {
+          "value": "${5 * _coin}",
+          "addresses": [_someone],
+          "hex": _p2pkh,
+        },
+        {
+          "value": "${5 * _coin}",
+          "addresses": [_ours],
+          "hex": _p2pkh,
+        },
+      ],
+    );
+    final tx = _parse(json, masternodePayouts: {_ours});
+    expect(tx.kerriganKind, KerriganTxKind.masternodeReward);
+    expect(KerriganTxCategory.of(tx), KerriganTxCategory.masternodeReward);
+    expect(tx.isCoinbase(), isTrue);
+    // Without our masternode it's a plain block reward.
+    expect(_parse(json).kerriganKind, KerriganTxKind.blockReward);
+  });
+
+  test("a proposal fee burns coins in an OP_RETURN", () {
+    final tx = _parse(
+      _tx(
+        fees: "1000",
+        vin: [
+          {
+            "txid": "bb" * 32,
+            "vout": 0,
+            "value": "${2 * _coin}",
+            "addresses": [_ours],
+          },
+        ],
+        vout: [
+          {"value": "$_coin", "addresses": <String>[], "hex": "6a20${"cd" * 32}"},
+          {
+            "value": "${_coin - 1000}",
+            "addresses": [_ours],
+            "hex": _p2pkh,
+          },
+        ],
+      ),
+    );
+    expect(tx.kerriganKind, KerriganTxKind.burn);
+    expect(tx.type, TransactionType.outgoing);
+    expect(KerriganTxCategory.of(tx), KerriganTxCategory.masternode);
+  });
+
+  test("provider transactions register or update our masternodes", () {
+    Map<String, dynamic> provider(int type) => _tx(
+      type: type,
+      fees: "450",
+      vin: [
+        {
+          "txid": "bb" * 32,
+          "vout": 0,
+          "value": "100000",
+          "addresses": [_ours],
+        },
+      ],
+      vout: [
+        {
+          "value": "99550",
+          "addresses": [_ours],
+          "hex": _p2pkh,
+        },
+      ],
+    );
+    final reg = _parse(provider(1));
+    expect(reg.kerriganKind, KerriganTxKind.masternodeRegistration);
+    expect(reg.type, TransactionType.sentToSelf);
+    for (final type in [2, 3, 4]) {
+      expect(
+        _parse(provider(type)).kerriganKind,
+        KerriganTxKind.masternodeUpdate,
+      );
+    }
   });
 }

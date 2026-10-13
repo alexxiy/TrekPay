@@ -7,6 +7,7 @@ import 'dart:typed_data';
 
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:coinlib_flutter/coinlib_flutter.dart' as coinlib;
+import 'package:decimal/decimal.dart';
 import 'package:isar_community/isar.dart';
 import 'package:mutex/mutex.dart';
 
@@ -39,6 +40,8 @@ import 'kerrigan/kerrigan_shield_state.dart';
 import 'kerrigan/kerrigan_shield_stream.dart';
 import 'kerrigan/kerrigan_tx_parser.dart';
 
+part 'kerrigan/kerrigan_governance.dart';
+part 'kerrigan/kerrigan_masternodes.dart';
 part 'kerrigan/kerrigan_wallet_shield.dart';
 
 /// Kerrigan transparent wallet backed by kerrigan-bridge.
@@ -81,6 +84,9 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   static const _kP2pkhInput = 149;
   static const _kP2pkhOutput = 34;
   static const _kP2shOutput = 32;
+
+  /// value + script length + OP_RETURN + push 32 + hash.
+  static const _kOpReturnOutput = 43;
 
   @override
   int get isarTransactionVersion => 2;
@@ -307,6 +313,15 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   Future<void> refresh() async {
     try {
       await UiStallWatch.run("Kerrigan ${info.name}: refresh", super.refresh);
+      // Announce proposals whose fee is now confirmed (like Kerrigan
+      // Core's wallet does for prepared objects).
+      if (pendingProposals.isNotEmpty) {
+        unawaited(
+          submitPendingProposals().catchError(
+            (Object e) => Logging.instance.w("Kerrigan: proposals: $e"),
+          ),
+        );
+      }
     } finally {
       _startWatching();
     }
@@ -423,7 +438,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   }
 
   bool get _reparseHistory =>
-      info.otherData[_kTxParseVersion] != _txParseVersion;
+      info.otherData[_kTxParseVersion] != _txParseVersionValue;
 
   Future<int?> _historyFromHeight() async {
     if (_reparseHistory) return null;
@@ -516,9 +531,9 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       () => _storeTxs(txns),
     );
     _syncProgress(1);
-    if (info.otherData[_kTxParseVersion] != _txParseVersion) {
+    if (info.otherData[_kTxParseVersion] != _txParseVersionValue) {
       await info.updateOtherData(
-        newEntries: {_kTxParseVersion: _txParseVersion},
+        newEntries: {_kTxParseVersion: _txParseVersionValue},
         isar: mainDB.isar,
       );
     }
@@ -526,7 +541,15 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
 
   /// Bumped when parsing changes: the next sync re-parses all history.
   static const _kTxParseVersion = "kerriganTxParseVersion";
-  static const _txParseVersion = 5;
+  static const _txParseVersion = 6;
+
+  /// The parse version and the masternode payout addresses: a new
+  /// masternode re-parses the history, so its past rewards show as
+  /// masternode rewards.
+  String get _txParseVersionValue {
+    final payouts = _masternodePayouts.toList()..sort();
+    return "$_txParseVersion|${payouts.join(",")}";
+  }
 
   /// The wallet's view of a bridge tx; see [parseKerriganTx].
   TransactionV2? _parseTx(
@@ -547,6 +570,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     shieldAddresses: sets.shield,
     shield: _shield?.txInfo[json["txid"]],
     nullifierNotes: _shield?.nullifierNotes ?? const {},
+    masternodePayouts: _masternodePayouts,
   );
 
   /// Store [txns] that are new or differ from the stored copy. Rewriting
@@ -670,8 +694,12 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
           vout: vout,
           value: int.parse(u["value"] as String),
           name: "",
-          isBlocked: false,
-          blockedReason: null,
+          // A masternode's collateral stays frozen (also when first seen
+          // after a restore).
+          isBlocked: _isMasternodeCollateral(txid, vout),
+          blockedReason: _isMasternodeCollateral(txid, vout)
+              ? _kMasternodeFrozenReason
+              : null,
           isCoinbase: u["coinbase"] == true,
           blockHash: blockHash,
           blockHeight: height,
@@ -1062,7 +1090,11 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   int _estimateSize(int inputs, Iterable<String> outputAddresses) {
     int size = _kTxOverhead + inputs * _kP2pkhInput;
     for (final a in outputAddresses) {
-      size += _isP2sh(a) ? _kP2shOutput : _kP2pkhOutput;
+      size += a.startsWith(kKerriganOpReturnPrefix)
+          ? _kOpReturnOutput
+          : _isP2sh(a)
+          ? _kP2shOutput
+          : _kP2pkhOutput;
     }
     return size;
   }
@@ -1155,6 +1187,13 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       throw Exception("Subtracting the fee needs a single recipient");
     }
     for (final r in recipients) {
+      // A proposal fee: OP_RETURN with the object hash.
+      if (r.address.startsWith(kKerriganOpReturnPrefix)) {
+        if (!isKerriganOpReturn(r.address)) {
+          throw Exception("Invalid OP_RETURN output");
+        }
+        continue;
+      }
       if (!cryptoCurrency.validateAddress(r.address)) {
         throw Exception("Invalid Kerrigan address: ${r.address}");
       }
@@ -1425,17 +1464,20 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
         .toSet();
     final tempOutputs = <OutputV2>[];
     for (final o in outputs) {
-      final output = coinlib.Output.fromAddress(
-        o.amount.raw,
-        _parseAddress(o.address),
-      );
+      final burn = isKerriganOpReturn(o.address);
+      final output = burn
+          ? coinlib.Output.fromScriptBytes(
+              o.amount.raw,
+              kerriganOpReturnScript(o.address),
+            )
+          : coinlib.Output.fromAddress(o.amount.raw, _parseAddress(o.address));
       tx = tx.addOutput(output);
       tempOutputs.add(
         OutputV2.isarCantDoRequiredInDefaultConstructor(
           scriptPubKeyHex: output.scriptPubKey.toHex,
           valueStringSats: o.amount.raw.toString(),
-          addresses: [o.address],
-          walletOwns: own.contains(o.address),
+          addresses: burn ? const [] : [o.address],
+          walletOwns: !burn && own.contains(o.address),
         ),
       );
     }

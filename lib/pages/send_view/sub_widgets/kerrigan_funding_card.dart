@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tuple/tuple.dart';
 
+import '../../../db/isar/main_db.dart';
 import '../../../models/isar/models/isar_models.dart';
 import '../../../providers/global/wallets_provider.dart';
 import '../../../themes/stack_colors.dart';
@@ -217,6 +218,226 @@ class KerriganFundingCard extends ConsumerWidget {
                 onTap: () => _chooseChange(context, coin),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One of the wallet's transparent addresses, picked from a sheet that
+/// can also create a new one.
+class KerriganOwnAddressField extends ConsumerWidget {
+  const KerriganOwnAddressField({
+    super.key,
+    required this.walletId,
+    required this.value,
+    required this.onChanged,
+    this.tags = const {},
+  });
+
+  final String walletId;
+  final String? value;
+  final ValueChanged<String> onChanged;
+
+  /// A short note per address, e.g. "owns your delegations".
+  final Map<String, String> tags;
+
+  Future<void> _pick(BuildContext context, KerriganWallet wallet) async {
+    final addresses = await wallet.ownTransparentAddresses();
+    if (!context.mounted) return;
+    final picked = await showModalBottomSheet<String>(
+      backgroundColor: Colors.transparent,
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (_) => _OwnAddressSheet(
+        walletId: walletId,
+        addresses: addresses,
+        current: value,
+        tags: tags,
+        onNew: wallet.newReceivingAddress,
+      ),
+    );
+    if (picked != null) onChanged(picked);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).extension<StackColors>()!;
+    final wallet = ref.watch(pWallets).getWallet(walletId) as KerriganWallet;
+    final address = value;
+    final title = address == null ? null : kerriganAddressTitle(walletId, address);
+    final tag = address == null ? null : tags[address];
+    return RoundedWhiteContainer(
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () => _pick(context, wallet),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Expanded(
+                child: address == null
+                    ? Text("…", style: STextStyles.w600_14(context))
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            [title, ?tag].join(" · "),
+                            style: STextStyles.w600_14(context),
+                          ),
+                          const SizedBox(height: 2),
+                          MiddleEllipsisText(
+                            address,
+                            style: STextStyles.w500_12(context)
+                                .copyWith(color: colors.textSubtitle1),
+                          ),
+                        ],
+                      ),
+              ),
+              const SizedBox(width: 8),
+              CustomTextButton(
+                text: "Change",
+                onTap: () => _pick(context, wallet),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The address label, else its kind and index.
+String kerriganAddressTitle(String walletId, String address) {
+  final label = MainDB.instance
+      .getAddressLabelSync(walletId, address)
+      ?.value
+      .trim();
+  if (label != null && label.isNotEmpty) return label;
+  final a = MainDB.instance.isar.addresses.getByValueWalletIdSync(
+    address,
+    walletId,
+  );
+  if (a == null) return "Address";
+  return a.subType == AddressSubType.change
+      ? "Change #${a.derivationIndex}"
+      : "Receiving #${a.derivationIndex}";
+}
+
+class _OwnAddressSheet extends StatefulWidget {
+  const _OwnAddressSheet({
+    required this.walletId,
+    required this.addresses,
+    required this.current,
+    required this.tags,
+    required this.onNew,
+  });
+
+  final String walletId;
+  final List<Address> addresses;
+  final String? current;
+  final Map<String, String> tags;
+  final Future<String> Function() onNew;
+
+  @override
+  State<_OwnAddressSheet> createState() => _OwnAddressSheetState();
+}
+
+class _OwnAddressSheetState extends State<_OwnAddressSheet> {
+  bool _creating = false;
+
+  Future<void> _new() async {
+    setState(() => _creating = true);
+    try {
+      final address = await widget.onNew();
+      if (mounted) Navigator.of(context).pop(address);
+    } catch (_) {
+      if (mounted) setState(() => _creating = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<StackColors>()!;
+    final secondary = STextStyles.w500_12(context)
+        .copyWith(color: colors.textSubtitle1);
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.popupBG,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text("Choose an address", style: STextStyles.pageTitleH2(context)),
+          const SizedBox(height: 12),
+          RoundedWhiteContainer(
+            padding: EdgeInsets.zero,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: _creating ? null : _new,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Icon(Icons.add_rounded, color: colors.accentColorBlue),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "Create a new address",
+                        style: STextStyles.w600_14(context)
+                            .copyWith(color: colors.accentColorBlue),
+                      ),
+                    ),
+                    if (_creating)
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                for (final a in widget.addresses)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).pop(a.value),
+                      child: RoundedWhiteContainer(
+                        borderColor: a.value == widget.current
+                            ? colors.accentColorBlue
+                            : null,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              [
+                                kerriganAddressTitle(widget.walletId, a.value),
+                                ?widget.tags[a.value],
+                              ].join(" · "),
+                              style: STextStyles.w600_14(context),
+                            ),
+                            const SizedBox(height: 2),
+                            MiddleEllipsisText(a.value, style: secondary),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),

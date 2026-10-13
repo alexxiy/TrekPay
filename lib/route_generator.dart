@@ -21,6 +21,13 @@ import 'models/isar/models/isar_models.dart';
 import 'models/keys/key_data_interface.dart';
 import 'models/keys/view_only_wallet_data.dart';
 import 'models/send_view_auto_fill_data.dart';
+import 'pages/kerrigan_governance/kerrigan_create_proposal_view.dart';
+import 'pages/kerrigan_governance/kerrigan_governance_view.dart';
+import 'pages/kerrigan_governance/kerrigan_proposal_view.dart';
+import 'pages/kerrigan_masternodes/kerrigan_create_masternode_view.dart';
+import 'pages/kerrigan_masternodes/kerrigan_masternode_details_view.dart';
+import 'pages/kerrigan_masternodes/kerrigan_masternodes_view.dart';
+import 'wallets/wallet/impl/kerrigan_wallet.dart';
 import 'pages/add_wallet_views/add_wallet_view/add_wallet_view.dart';
 import 'pages/add_wallet_views/create_or_restore_wallet_view/create_or_restore_wallet_view.dart';
 import 'pages/add_wallet_views/name_your_wallet_view/name_your_wallet_view.dart';
@@ -1046,6 +1053,100 @@ class RouteGenerator {
         return _routeError("${settings.name} invalid args: ${args.toString()}");
 
       // exchange steps
+
+      case KerriganGovernanceView.routeName:
+        if (args is String) {
+          return getRoute(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) =>
+                DesktopPageColumn(child: KerriganGovernanceView(walletId: args)),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        return _routeError("${settings.name} invalid args: ${args.toString()}");
+
+      case KerriganCreateProposalView.routeName:
+        if (args is String) {
+          return getRoute(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) => DesktopPageColumn(
+              child: KerriganCreateProposalView(walletId: args),
+            ),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        return _routeError("${settings.name} invalid args: ${args.toString()}");
+
+      case KerriganProposalView.routeName:
+        if (args
+            is ({
+              String walletId,
+              KerriganProposal proposal,
+              KerriganGovernance governance,
+            })) {
+          return getRoute<bool>(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) => DesktopPageColumn(
+              child: KerriganProposalView(
+                walletId: args.walletId,
+                proposal: args.proposal,
+                governance: args.governance,
+              ),
+            ),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        return _routeError("${settings.name} invalid args: ${args.toString()}");
+
+      case KerriganMasternodesView.routeName:
+        if (args is String) {
+          return getRoute(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) =>
+                DesktopPageColumn(child: KerriganMasternodesView(walletId: args)),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        return _routeError("${settings.name} invalid args: ${args.toString()}");
+
+      case KerriganCreateMasternodeView.routeName:
+        if (args is String) {
+          return getRoute(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) => DesktopPageColumn(
+              child: KerriganCreateMasternodeView(walletId: args),
+            ),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        if (args is ({String walletId, bool existing})) {
+          return getRoute(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) => DesktopPageColumn(
+              child: KerriganCreateMasternodeView(
+                walletId: args.walletId,
+                existing: args.existing,
+              ),
+            ),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        return _routeError("${settings.name} invalid args: ${args.toString()}");
+
+      case KerriganMasternodeDetailsView.routeName:
+        if (args is ({String walletId, String id})) {
+          return getRoute(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) => DesktopPageColumn(
+              child: KerriganMasternodeDetailsView(
+                walletId: args.walletId,
+                masternodeId: args.id,
+              ),
+            ),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        return _routeError("${settings.name} invalid args: ${args.toString()}");
 
       case AppearanceView.routeName:
         return getRoute(

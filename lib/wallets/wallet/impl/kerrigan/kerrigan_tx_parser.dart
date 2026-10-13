@@ -26,6 +26,10 @@ bool isKerriganInstantLocked(UTXO utxo) =>
 /// Core's `TransactionRecord::decomposeTransaction`:
 ///
 /// * coinbase outputs (mining or masternode payouts) show what they paid;
+///   paying only [masternodePayouts], they are masternode rewards;
+/// * coins we burnt in an OP_RETURN are a governance proposal fee;
+/// * provider transactions ([txType] 1 to 4) register or update one of
+///   our masternodes and show their fee;
 /// * receiving shows what came in;
 /// * sending shows what left the wallet (our inputs - fee - our outputs);
 /// * sending to self shows what moved, without the change: shielding
@@ -43,6 +47,8 @@ KerriganTxClass? classifyKerriganTx({
   Set<String> changeAddresses = const {},
   BigInt? fee,
   bool coinbase = false,
+  int txType = 0,
+  Set<String> masternodePayouts = const {},
 }) {
   BigInt sum(Iterable<BigInt> v) => v.fold(BigInt.zero, (p, e) => p + e);
   bool isChange(OutputV2 o) =>
@@ -56,15 +62,43 @@ KerriganTxClass? classifyKerriganTx({
   final ownedOut = sum(ownedOutputs.map((e) => e.value));
 
   if (coinbase && ownedOut > BigInt.zero) {
+    final toMasternode =
+        masternodePayouts.isNotEmpty &&
+        ownedOutputs.every((o) => o.addresses.any(masternodePayouts.contains));
     return (
       type: TransactionType.incoming,
-      kind: KerriganTxKind.blockReward,
+      kind: toMasternode
+          ? KerriganTxKind.masternodeReward
+          : KerriganTxKind.blockReward,
       amount: ownedOut,
     );
   }
 
   if (ownedIn == BigInt.zero) {
     return (type: TransactionType.incoming, kind: null, amount: ownedOut);
+  }
+
+  final burnt = sum(
+    outputs
+        .where((o) => o.scriptPubKeyHex.startsWith("6a"))
+        .map((e) => e.value),
+  );
+  if (burnt > BigInt.zero) {
+    return (
+      type: TransactionType.outgoing,
+      kind: KerriganTxKind.burn,
+      amount: burnt,
+    );
+  }
+
+  if (txType >= 1 && txType <= 4) {
+    return (
+      type: TransactionType.sentToSelf,
+      kind: txType == 1
+          ? KerriganTxKind.masternodeRegistration
+          : KerriganTxKind.masternodeUpdate,
+      amount: fee ?? BigInt.zero,
+    );
   }
 
   // What left the wallet, fee excluded.
@@ -126,7 +160,7 @@ Map<String, dynamic> kerriganTxOtherData({
   // Rewards create coins: no fee. Always set otherwise, as the inputs
   // may not show the fee (shield spends, unknown inputs).
   TxV2OdKeys.overrideFee: Amount(
-    rawValue: c.kind == KerriganTxKind.blockReward
+    rawValue: KerriganTxKind.rewards.contains(c.kind)
         ? BigInt.zero
         : (fee ?? BigInt.zero),
     fractionDigits: fractionDigits,
@@ -150,6 +184,7 @@ TransactionV2? parseKerriganTx(
   required Set<String> shieldAddresses,
   Map<String, dynamic>? shield,
   Map<String, Map<String, dynamic>> nullifierNotes = const {},
+  Set<String> masternodePayouts = const {},
 }) {
   final all = {...receiving, ...change};
   final changeAddresses = <String>{};
@@ -256,6 +291,8 @@ TransactionV2? parseKerriganTx(
     changeAddresses: changeAddresses,
     fee: fee,
     coinbase: json["coinbase"] == true,
+    txType: json["type"] as int? ?? 0,
+    masternodePayouts: masternodePayouts,
   );
   if (c == null) return null;
 

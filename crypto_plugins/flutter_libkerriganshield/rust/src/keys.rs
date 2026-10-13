@@ -100,8 +100,20 @@ pub enum Destination {
     Transparent(Vec<u8>),
 }
 
-/// Decode a shield (`ks1…`) or transparent (P2PKH / P2SH) address.
+/// Prefix of a raw output script given in place of an address, e.g. a
+/// proposal fee's `OP_RETURN`: `script:<hex>`.
+pub const SCRIPT_PREFIX: &str = "script:";
+
+/// Decode a shield (`ks1…`) or transparent (P2PKH / P2SH) address, or a
+/// raw output script ([SCRIPT_PREFIX]).
 pub fn decode_destination(s: &str, network: Network) -> Result<Destination, Error> {
+    if let Some(script) = s.strip_prefix(SCRIPT_PREFIX) {
+        let script = hex::decode(script).map_err(|_| "Invalid output script")?;
+        if script.is_empty() || script.len() > 10_000 {
+            return Err("Invalid output script".into());
+        }
+        return Ok(Destination::Transparent(script));
+    }
     if let Some(addr) = decode_address(s, network) {
         return Ok(Destination::Shield(addr));
     }

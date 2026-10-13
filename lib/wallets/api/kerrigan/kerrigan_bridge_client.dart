@@ -220,6 +220,82 @@ class KerriganBridgeClient {
     return int.parse(text.trim().replaceAll('"', ''));
   }
 
+  /// A proxied node RPC with exact JSON parameters.
+  Future<dynamic> _rpc(String method, List<Object> params) =>
+      _getJson("/$method", {if (params.isNotEmpty) "params": jsonEncode(params)});
+
+  // ---------------------------------------------------------------------------
+  // Masternodes (DIP3) and governance, through the RPC proxy
+  // ---------------------------------------------------------------------------
+
+  /// `masternode count`: `total`, `enabled` and per type.
+  Future<Map<String, dynamic>> masternodeCount() async =>
+      Map<String, dynamic>.from(await _rpc("masternode", ["count"]) as Map);
+
+  /// `protx info`: one registered masternode.
+  Future<Map<String, dynamic>> protxInfo(String proTxHash) async =>
+      Map<String, dynamic>.from(
+        await _rpc("protx", ["info", proTxHash]) as Map,
+      );
+
+  /// `protx list registered true`: every registered masternode, with its
+  /// collateral, keys and state.
+  Future<List<Map<String, dynamic>>> protxList() async => [
+    for (final e in await _rpc("protx", ["list", "registered", true]) as List)
+      Map<String, dynamic>.from(e as Map),
+  ];
+
+  /// `getgovernanceinfo`: e.g. `fundingthreshold` (absolute Yes votes a
+  /// proposal needs) and `proposalfee`.
+  Future<Map<String, dynamic>> governanceInfo() async =>
+      Map<String, dynamic>.from(await _rpc("getgovernanceinfo", []) as Map);
+
+  /// `gobject list all all`: governance objects by hash.
+  Future<Map<String, Map<String, dynamic>>> governanceObjects() async {
+    final json = await _rpc("gobject", ["list", "all", "all"]);
+    if (json is! Map) return const {};
+    return {
+      for (final e in json.entries)
+        e.key as String: Map<String, dynamic>.from(e.value as Map),
+    };
+  }
+
+  /// `gobject getcurrentvotes` of one masternode (collateral
+  /// [txid]:[vout]) on object [hash]: vote hash to
+  /// "outpoint:time:outcome:signal:weight".
+  Future<Map<String, String>> currentVotes(
+    String hash, {
+    required String txid,
+    required int vout,
+  }) async {
+    final json = await _rpc("gobject", ["getcurrentvotes", hash, txid, "$vout"]);
+    if (json is! Map) return const {};
+    return {for (final e in json.entries) e.key as String: "${e.value}"};
+  }
+
+  /// `voteraw`: relay a vote signed by the masternode's voting key.
+  /// Returns the node's answer ("Voted successfully").
+  Future<String> voteRaw({
+    required String collateralTxid,
+    required int collateralVout,
+    required String objectHash,
+    required String signal,
+    required String outcome,
+    required int time,
+    required String signatureBase64,
+  }) async =>
+      "${await _rpc("voteraw", [collateralTxid, collateralVout, objectHash, signal, outcome, time, signatureBase64])}";
+
+  /// `gobject submit`: announce an object whose fee transaction
+  /// [feeTxid] has enough confirmations. Returns the object's hash.
+  Future<String> submitGovernanceObject({
+    required int revision,
+    required int time,
+    required String dataHex,
+    required String feeTxid,
+  }) async =>
+      "${await _rpc("gobject", ["submit", "0", revision, time, dataHex, feeTxid])}";
+
   // ---------------------------------------------------------------------------
   // Transparent address index
   // ---------------------------------------------------------------------------

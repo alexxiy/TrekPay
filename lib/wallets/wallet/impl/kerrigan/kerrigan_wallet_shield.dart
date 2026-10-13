@@ -20,6 +20,32 @@ const kKerriganSubtractFee = "kerriganSubtractFee";
 /// sends from the shield balance.
 const kKerriganChangeAddress = "kerriganChangeAddress";
 
+/// Set in [TxData.otherData]: more transparent outputs paid besides the
+/// recipient, `[{"address": ..., "amount": sats}]` (sends from the shield
+/// only). E.g. a little kept transparent for masternode fees.
+const kKerriganExtraOutputs = "kerriganExtraOutputs";
+
+/// Recipient "address" of a governance proposal fee: `OP_RETURN:<object
+/// hash>`, an OP_RETURN output with the hash that burns its amount.
+const kKerriganOpReturnPrefix = "OP_RETURN:";
+
+bool isKerriganOpReturn(String address) =>
+    address.startsWith(kKerriganOpReturnPrefix) &&
+    RegExp(r"^[0-9a-f]{64}$").hasMatch(
+      address.substring(kKerriganOpReturnPrefix.length),
+    );
+
+/// `OP_RETURN <hash>` for an [isKerriganOpReturn] recipient (the hash in
+/// Kerrigan Core's internal byte order, as it looks for it).
+Uint8List kerriganOpReturnScript(String address) => Uint8List.fromList([
+  0x6a,
+  0x20,
+  ...address
+      .substring(kKerriganOpReturnPrefix.length)
+      .toUint8ListFromHex
+      .reversed,
+]);
+
 /// How the user pays a transaction: from the shield ([fromShield]) or
 /// the transparent balance, with the coins picked in coin control (none:
 /// chosen automatically) and where the change goes (null: automatic).
@@ -573,6 +599,28 @@ extension _KerriganShield on KerriganWallet {
     List<StandardInput> usedInputs = const [];
     final String changeAddress;
 
+    // The native library takes raw scripts as `script:<hex>`.
+    String libAddress(String address) => isKerriganOpReturn(address)
+        ? "script:${kerriganOpReturnScript(address).toHex}"
+        : address;
+    final extra = [
+      for (final e
+          in (txData.otherData == null
+                  ? null
+                  : (jsonDecode(txData.otherData!) as Map)[kKerriganExtraOutputs]
+                        as List?) ??
+              const [])
+        (
+          address: (e as Map)["address"] as String,
+          amount: (e["amount"] as num).toInt(),
+        ),
+    ];
+    for (final e in extra) {
+      if (!cryptoCurrency.isTransparentAddress(e.address)) {
+        throw Exception("Extra outputs go to transparent addresses");
+      }
+    }
+
     if (fromShield) {
       final custom = txData.otherData == null
           ? null
@@ -603,7 +651,8 @@ extension _KerriganShield on KerriganWallet {
       result = await libKerriganShield.createTransaction(
         notes: notes,
         extsk: await _extsk(),
-        toAddress: recipient.address,
+        toAddress: libAddress(recipient.address),
+        extraOutputs: extra,
         changeAddress: changeAddress,
         amount: recipient.amount.raw.toInt(),
         network: state.network,
@@ -627,6 +676,9 @@ extension _KerriganShield on KerriganWallet {
         throw Exception("Attempted to use an unavailable utxo");
       }
       final inputs = await _withKeys(utxos);
+      if (extra.isNotEmpty || isKerriganOpReturn(recipient.address)) {
+        throw Exception("This payment can only be made from the shield");
+      }
       result = await libKerriganShield.createTransaction(
         utxos: [
           for (final i in inputs)
@@ -671,7 +723,8 @@ extension _KerriganShield on KerriganWallet {
                 BigInt.from((state.nullifierNotes[nf]?["value"] as num?) ?? 0),
           )
         : usedInputs.fold(BigInt.zero, (p, i) => p + BigInt.from(i.utxo.value));
-    final changeValue = inputsTotal - amount - fee;
+    final extraTotal = extra.fold(BigInt.zero, (p, e) => p + BigInt.from(e.amount));
+    final changeValue = inputsTotal - amount - fee - extraTotal;
     final tempInputs = [
       if (fromShield)
         for (final nf in nullifiers)
@@ -711,6 +764,8 @@ extension _KerriganShield on KerriganWallet {
     // Shield notes have no script; transparent outputs keep theirs.
     String script(String address) => isShieldAddress(address)
         ? ""
+        : isKerriganOpReturn(address)
+        ? kerriganOpReturnScript(address).toHex
         : coinlib.Output.fromAddress(
             BigInt.zero,
             _parseAddress(address),
@@ -719,9 +774,18 @@ extension _KerriganShield on KerriganWallet {
       OutputV2.isarCantDoRequiredInDefaultConstructor(
         scriptPubKeyHex: script(recipient.address),
         valueStringSats: amount.toString(),
-        addresses: [recipient.address],
+        addresses: isKerriganOpReturn(recipient.address)
+            ? const []
+            : [recipient.address],
         walletOwns: recipientIsOurs,
       ),
+      for (final e in extra)
+        OutputV2.isarCantDoRequiredInDefaultConstructor(
+          scriptPubKeyHex: script(e.address),
+          valueStringSats: "${e.amount}",
+          addresses: [e.address],
+          walletOwns: own.contains(e.address),
+        ),
       if (changeValue > BigInt.zero)
         OutputV2.isarCantDoRequiredInDefaultConstructor(
           scriptPubKeyHex: script(changeAddress),

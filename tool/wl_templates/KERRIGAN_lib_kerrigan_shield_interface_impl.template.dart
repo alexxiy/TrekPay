@@ -76,7 +76,26 @@ class _Unavailable extends LibKerriganShieldInterface {
     String memo = "",
     bool useAllInputs = false,
     bool subtractFee = false,
+    List<({String address, int amount})> extraOutputs = const [],
   }) => _no();
+  @override
+  ({String secret, String public}) blsKeygen({required List<int> ikm}) =>
+      _no();
+  @override
+  String blsPublicKey(String secret) => _no();
+  @override
+  bool isValidBlsPublicKey(String key) => false;
+  @override
+  String signMessage({
+    required List<int> privateKey,
+    required String message,
+  }) => _no();
+  @override
+  String signHash({required List<int> privateKey, required List<int> hash}) =>
+      _no();
+  @override
+  Future<Map<String, dynamic>> createProTx(Map<String, dynamic> options) =>
+      _no();
 }
 
 //END_OFF
@@ -181,6 +200,7 @@ class _Impl extends LibKerriganShieldInterface {
     String memo = "",
     bool useAllInputs = false,
     bool subtractFee = false,
+    List<({String address, int amount})> extraOutputs = const [],
   }) => KerriganShield.createTransaction(
     notes: notes,
     utxos: utxos,
@@ -192,7 +212,33 @@ class _Impl extends LibKerriganShieldInterface {
     memo: memo,
     useAllInputs: useAllInputs,
     subtractFee: subtractFee,
+    extraOutputs: extraOutputs,
   );
+
+  @override
+  ({String secret, String public}) blsKeygen({required List<int> ikm}) =>
+      KerriganShield.blsKeygen(ikm: ikm);
+
+  @override
+  String blsPublicKey(String secret) => KerriganShield.blsPublicKey(secret);
+
+  @override
+  bool isValidBlsPublicKey(String key) =>
+      KerriganShield.isValidBlsPublicKey(key);
+
+  @override
+  String signMessage({
+    required List<int> privateKey,
+    required String message,
+  }) => KerriganShield.signMessage(privateKey: privateKey, message: message);
+
+  @override
+  String signHash({required List<int> privateKey, required List<int> hash}) =>
+      KerriganShield.signHash(privateKey: privateKey, hash: hash);
+
+  @override
+  Future<Map<String, dynamic>> createProTx(Map<String, dynamic> options) =>
+      KerriganShield.createProTx(options);
 }
 
 //END_ON
