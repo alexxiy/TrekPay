@@ -190,6 +190,15 @@ class KerriganBridgeClient {
 
   Future<String> _getText(String path, [Map<String, String>? query]) async {
     final response = await _send("GET", _uri(path, query));
+    if (response.code == 404 && response.body.trim().isEmpty) {
+      // No such route: the bridge runs without the address index.
+      final route = path.split("/").firstWhere((e) => e.isNotEmpty);
+      throw KerriganBridgeException(
+        "This bridge has no /$route: it runs without the address index "
+        "(ADDR_INDEX)",
+        statusCode: 404,
+      );
+    }
     if (response.code != 200) {
       throw KerriganBridgeException(
         _errorMessage(response.body),
@@ -221,8 +230,10 @@ class KerriganBridgeClient {
   }
 
   /// A proxied node RPC with exact JSON parameters.
-  Future<dynamic> _rpc(String method, List<Object> params) =>
-      _getJson("/$method", {if (params.isNotEmpty) "params": jsonEncode(params)});
+  Future<dynamic> _rpc(String method, List<Object> params) => _getJson(
+    "/$method",
+    {if (params.isNotEmpty) "params": jsonEncode(params)},
+  );
 
   // ---------------------------------------------------------------------------
   // Masternodes (DIP3) and governance, through the RPC proxy
@@ -268,7 +279,12 @@ class KerriganBridgeClient {
     required String txid,
     required int vout,
   }) async {
-    final json = await _rpc("gobject", ["getcurrentvotes", hash, txid, "$vout"]);
+    final json = await _rpc("gobject", [
+      "getcurrentvotes",
+      hash,
+      txid,
+      "$vout",
+    ]);
     if (json is! Map) return const {};
     return {for (final e in json.entries) e.key as String: "${e.value}"};
   }

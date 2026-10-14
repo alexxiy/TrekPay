@@ -84,9 +84,9 @@ Future<String> sendLarge(String address, num amount) async {
   for (var sent = 0; sent < amount + 1; sent += chunk) {
     await rpc("sendtoaddress", [gather, chunk]);
   }
-  await mine();
+  // Unconfirmed too: a block may not hold all the gathering txs.
   final coins = (await rpc("listunspent", [
-    1,
+    0,
     9999999,
     [gather],
   ]) as List).cast<Map<String, dynamic>>();
