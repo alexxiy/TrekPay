@@ -271,6 +271,34 @@ class KerriganMasternodeVote {
   bool get canChange => DateTime.now().isAfter(changeableAt);
 }
 
+/// Most masternodes whose votes on a proposal are asked for one by one
+/// (a node call each); more get every masternode's votes in one call.
+const kKerriganVotesOneByOneMax = 10;
+
+/// The latest funding vote of each of [masternodes] among [votes]
+/// (`gobject getcurrentvotes` values, "txid-vout:time:outcome:signal:
+/// weight"), by masternode id.
+Map<String, KerriganMasternodeVote> kerriganOwnVotes(
+  Iterable<String> votes,
+  Iterable<KerriganMasternode> masternodes,
+) {
+  final ids = {for (final m in masternodes) "${m.txid}-${m.vout}": m.id};
+  final result = <String, KerriganMasternodeVote>{};
+  for (final v in votes) {
+    final parts = v.split(":");
+    if (parts.length < 4 || parts[3] != "funding") continue;
+    final id = ids[parts[0]];
+    final vote = KerriganVote.parse(parts[2]);
+    final time = int.tryParse(parts[1]);
+    if (id == null || vote == null || time == null) continue;
+    final current = result[id];
+    if (current == null || current.time < time) {
+      result[id] = KerriganMasternodeVote(vote: vote, time: time);
+    }
+  }
+  return result;
+}
+
 /// A governance object's data: its JSON, hex encoded (`data-hex`).
 String kerriganProposalDataHex({
   required KerriganProposalType type,
@@ -451,30 +479,27 @@ extension KerriganGovernanceWallet on KerriganWallet {
 
   /// The current votes of this wallet's masternodes on [proposal], by
   /// masternode id ([KerriganMasternode.id]).
+  ///
+  /// A few masternodes are asked about one by one; past
+  /// [kKerriganVotesOneByOneMax], one request brings every masternode's
+  /// votes on [proposal] (one or two each) and ours are picked.
   Future<Map<String, KerriganMasternodeVote>> masternodeVotes(
     KerriganProposal proposal,
   ) async {
-    final result = <String, KerriganMasternodeVote>{};
-    for (final m in masternodes.where((m) => m.isRegistered)) {
-      final votes = await bridge.currentVotes(
-        proposal.hash,
-        txid: m.txid,
-        vout: m.vout,
-      );
-      for (final v in votes.values) {
-        // "txid-vout:time:outcome:signal:weight"
-        final parts = v.split(":");
-        if (parts.length < 4 || parts[3] != "funding") continue;
-        final vote = KerriganVote.parse(parts[2]);
-        final time = int.tryParse(parts[1]);
-        if (vote == null || time == null) continue;
-        final current = result[m.id];
-        if (current == null || current.time < time) {
-          result[m.id] = KerriganMasternodeVote(vote: vote, time: time);
-        }
-      }
-    }
-    return result;
+    final mine = masternodes.where((m) => m.isRegistered).toList();
+    if (mine.isEmpty) return const {};
+    final votes = <String>[
+      if (mine.length > kKerriganVotesOneByOneMax)
+        ...(await bridge.currentVotes(proposal.hash)).values
+      else
+        for (final m in mine)
+          ...(await bridge.currentVotes(
+            proposal.hash,
+            txid: m.txid,
+            vout: m.vout,
+          )).values,
+    ];
+    return kerriganOwnVotes(votes, mine);
   }
 
   /// Why [mn] can't vote, or null when it can.

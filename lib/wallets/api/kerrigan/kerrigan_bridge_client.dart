@@ -328,19 +328,19 @@ class KerriganBridgeClient {
     };
   }
 
-  /// `gobject getcurrentvotes` of one masternode (collateral
-  /// [txid]:[vout]) on object [hash]: vote hash to
-  /// "outpoint:time:outcome:signal:weight".
+  /// `gobject getcurrentvotes` on object [hash]: vote hash to
+  /// "txid-vout:time:outcome:signal:weight". Only the votes of the
+  /// masternode with collateral [txid]:[vout] when given, else every
+  /// masternode's.
   Future<Map<String, String>> currentVotes(
     String hash, {
-    required String txid,
-    required int vout,
+    String? txid,
+    int? vout,
   }) async {
     final json = await _rpc("gobject", [
       "getcurrentvotes",
       hash,
-      txid,
-      "$vout",
+      if (txid != null && vout != null) ...[txid, "$vout"],
     ]);
     if (json is! Map) return const {};
     return {for (final e in json.entries) e.key as String: "${e.value}"};

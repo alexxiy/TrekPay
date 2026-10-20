@@ -294,6 +294,22 @@ void main() {
       vout: collateral["vout"] as int,
     );
     expect(votes.values.single, contains(":yes:funding"));
+    // All of the object's votes, as a wallet with many masternodes asks:
+    // ours is found among them.
+    final ours = KerriganMasternode(
+      label: "MN",
+      type: KerriganMasternodeType.regular,
+      address: "",
+      txid: collateral["txid"] as String,
+      vout: collateral["vout"] as int,
+      createdAt: 0,
+      payoutAddress: "",
+    );
+    final all = kerriganOwnVotes((await bridge.currentVotes(hash)).values, [
+      ours,
+    ]);
+    expect(all[ours.id]?.vote, KerriganVote.yes);
+    expect(all[ours.id]?.time, time);
     final after = (await bridge.governanceObjects())[hash]!;
     expect(after["YesCount"], 1);
   }, skip: skip);

@@ -9,9 +9,10 @@ import '../../utilities/block_explorers.dart';
 import '../../utilities/text_styles.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../widgets/background.dart';
+import '../../widgets/custom_buttons/blue_text_button.dart';
 import '../../widgets/desktop/primary_button.dart';
-import '../../widgets/page_app_bar.dart';
 import '../../widgets/desktop/secondary_button.dart';
+import '../../widgets/page_app_bar.dart';
 import '../../widgets/rounded_white_container.dart';
 import '../kerrigan_masternodes/kerrigan_masternodes_view.dart';
 import 'kerrigan_governance_view.dart';
@@ -62,14 +63,9 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
       current = const {};
     }
     if (!mounted) return;
-    final done = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).extension<StackColors>()!.popupBG,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => _VoteSheet(
+    final done = await showKerriganSheet<bool>(
+      context,
+      (_) => _VoteSheet(
         wallet: _wallet,
         proposal: _proposal,
         vote: vote,
@@ -300,14 +296,53 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                                     );
                                   }
                                   final votes = snapshot.data;
+                                  final ordered = votes == null
+                                      ? masternodes
+                                      : kerriganByLatestVote(
+                                          masternodes,
+                                          votes,
+                                        );
+                                  final shown = kerriganVotesShownOf(
+                                    ordered.length,
+                                  );
+                                  final more =
+                                      votes != null && shown < ordered.length;
                                   return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
                                     children: [
-                                      for (final mn in masternodes)
-                                        _MasternodeVoteRow(
+                                      if (more) ...[
+                                        KerriganVoteCounts(
+                                          masternodes: masternodes,
+                                          votes: votes,
+                                        ),
+                                        const SizedBox(height: 4),
+                                      ],
+                                      for (final mn in ordered.take(shown))
+                                        KerriganMasternodeVoteRow(
                                           wallet: wallet,
                                           masternode: mn,
                                           vote: votes?[mn.id],
                                           loading: votes == null,
+                                        ),
+                                      if (more)
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 6,
+                                            ),
+                                            child: KerriganShowAllChip(
+                                              count: ordered.length,
+                                              onTap: () =>
+                                                  showKerriganMasternodeVotesSheet(
+                                                    context,
+                                                    wallet: wallet,
+                                                    proposalName: p.name,
+                                                    votes: votes,
+                                                  ),
+                                            ),
+                                          ),
                                         ),
                                     ],
                                   );
@@ -383,69 +418,6 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
   }
 }
 
-class _MasternodeVoteRow extends StatelessWidget {
-  const _MasternodeVoteRow({
-    required this.wallet,
-    required this.masternode,
-    required this.vote,
-    required this.loading,
-  });
-
-  final KerriganWallet wallet;
-  final KerriganMasternode masternode;
-  final KerriganMasternodeVote? vote;
-  final bool loading;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<StackColors>()!;
-    final v = vote;
-    final problem = wallet.votingProblem(masternode);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(masternode.label, style: STextStyles.w600_14(context)),
-                const SizedBox(height: 2),
-                Text(
-                  problem != null && v == null
-                      ? problem
-                      : loading
-                      ? "Checking…"
-                      : v == null
-                      ? "Not voted"
-                      : v.canChange
-                      ? "Voted ${_ago(v.time)}"
-                      : "Voted ${_ago(v.time)} · can change in "
-                            "~${kerriganDuration(v.changeableAt.difference(DateTime.now()).inSeconds)}",
-                  style: STextStyles.w500_12(context)
-                      .copyWith(color: colors.textSubtitle1),
-                ),
-              ],
-            ),
-          ),
-          if (v != null)
-            KerriganPill(
-              text: v.vote.label,
-              color: kerriganVoteColor(v.vote, colors),
-            )
-          else
-            KerriganMasternodeStatusTag(wallet: wallet, masternode: masternode),
-        ],
-      ),
-    );
-  }
-}
-
-String _ago(int time) {
-  final seconds = DateTime.now().millisecondsSinceEpoch ~/ 1000 - time;
-  return "${kerriganDuration(seconds < 0 ? 0 : seconds)} ago";
-}
-
 enum _Result { pending, running, done, failed }
 
 /// Pick the masternodes that vote [vote], then sign and relay one vote
@@ -475,12 +447,16 @@ class _VoteSheetState extends State<_VoteSheet> {
   };
   final _results = <String, (_Result, String?)>{};
   bool _running = false;
+  String _query = "";
 
   bool get _finished =>
       _results.isNotEmpty &&
       _results.values.every(
         (r) => r.$1 == _Result.done || r.$1 == _Result.failed,
       );
+
+  int _count(_Result result) =>
+      _results.values.where((r) => r.$1 == result).length;
 
   /// Why [m] can't cast this vote now, or null.
   String? _blockedReason(KerriganMasternode m) {
@@ -534,80 +510,123 @@ class _VoteSheetState extends State<_VoteSheet> {
     final voteColor = kerriganVoteColor(vote, colors);
     final secondary = STextStyles.w500_12(context)
         .copyWith(color: colors.textSubtitle1);
-    final anyDone = _results.values.any((r) => r.$1 == _Result.done);
-    final verb = vote == KerriganVote.abstain ? "Abstain" : "Vote ${vote.label}";
+    final done = _count(_Result.done);
+    final failed = _count(_Result.failed);
+    final verb = vote == KerriganVote.abstain
+        ? "Abstain"
+        : "Vote ${vote.label}";
+    final many = _masternodes.length > kKerriganManyMasternodes;
+    final shown = [
+      for (final m in _masternodes)
+        if (kerriganMasternodeMatches(m, _query)) m,
+    ];
+    // What "Select all" picks: the listed ones that can cast this vote.
+    final selectable = [
+      for (final m in shown)
+        if (_blockedReason(m) == null) m.id,
+    ];
+    final allSelected = selectable.every(_selected.contains);
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return KerriganSheetLayout(
+      fullHeight: many,
+      header: [
+        Row(
           children: [
-            Center(
-              child: Container(
-                width: 60,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colors.textFieldDefaultBG,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
+            Icon(kerriganVoteIcon(vote), color: voteColor),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(verb, style: STextStyles.pageTitleH2(context)),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Icon(kerriganVoteIcon(vote), color: voteColor),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(verb, style: STextStyles.pageTitleH2(context)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              widget.proposal.name,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: secondary,
-            ),
-            const SizedBox(height: 16),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: [for (final m in _masternodes) _row(context, m)],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Each masternode signs its vote with its voting key. A vote "
-              "can be changed once an hour.",
-              style: secondary,
-            ),
-            const SizedBox(height: 16),
-            if (_finished)
-              PrimaryButton(
-                label: "Done",
-                onPressed: () => Navigator.of(context).pop(anyDone),
-              )
-            else
-              PrimaryButton(
-                label: _running
-                    ? "Voting…"
-                    : _selected.isEmpty
-                    ? "Select a masternode"
-                    : "$verb with ${_selected.length} "
-                          "masternode${_selected.length == 1 ? "" : "s"}",
-                enabled: !_running && _selected.isNotEmpty,
-                onPressed: _run,
-              ),
           ],
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(
+          widget.proposal.name,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: secondary,
+        ),
+        if (many) ...[
+          const SizedBox(height: 12),
+          KerriganMasternodeSearchField(
+            onChanged: (q) => setState(() => _query = q),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  "${_selected.length} of ${_masternodes.length} selected",
+                  style: secondary,
+                ),
+              ),
+              if (_results.isEmpty && selectable.isNotEmpty)
+                CustomTextButton(
+                  text: allSelected ? "Select none" : "Select all",
+                  onTap: () => setState(
+                    () => allSelected
+                        ? _selected.removeAll(selectable)
+                        : _selected.addAll(selectable),
+                  ),
+                ),
+            ],
+          ),
+        ],
+        const SizedBox(height: 12),
+      ],
+      list: shown.isEmpty
+          ? kerriganNoMasternodeMatches(context, _query)
+          : ListView.builder(
+              shrinkWrap: !many,
+              itemCount: shown.length,
+              itemBuilder: (context, i) => _row(context, shown[i], many),
+            ),
+      footer: [
+        const SizedBox(height: 8),
+        if (many && _results.isNotEmpty) ...[
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: "$done of ${_results.length} accepted"),
+                if (failed > 0)
+                  TextSpan(
+                    text: " · $failed failed",
+                    style: TextStyle(color: colors.textError),
+                  ),
+              ],
+            ),
+            style: STextStyles.w600_12(context),
+          ),
+          const SizedBox(height: 4),
+        ],
+        Text(
+          "Each masternode signs its vote with its voting key. A vote "
+          "can be changed once an hour.",
+          style: secondary,
+        ),
+        const SizedBox(height: 16),
+        if (_finished)
+          PrimaryButton(
+            label: "Done",
+            onPressed: () => Navigator.of(context).pop(done > 0),
+          )
+        else
+          PrimaryButton(
+            label: _running
+                ? "Voting… ${done + failed} of ${_results.length}"
+                : _selected.isEmpty
+                ? "Select a masternode"
+                : "$verb with ${_selected.length} "
+                      "masternode${_selected.length == 1 ? "" : "s"}",
+            enabled: !_running && _selected.isNotEmpty,
+            onPressed: _run,
+          ),
+      ],
     );
   }
 
-  Widget _row(BuildContext context, KerriganMasternode m) {
+  /// [showService]: the server's address too (a long list, searched by it).
+  Widget _row(BuildContext context, KerriganMasternode m, bool showService) {
     final colors = Theme.of(context).extension<StackColors>()!;
     final blocked = _blockedReason(m);
     final result = _results[m.id];
@@ -650,6 +669,9 @@ class _VoteSheetState extends State<_VoteSheet> {
         trailing = Icon(Icons.error_rounded, color: colors.textError);
         subtitle = result!.$2;
         subtitleColor = colors.textError;
+    }
+    if (showService && m.service != null) {
+      subtitle = subtitle == null ? m.service : "${m.service} · $subtitle";
     }
 
     return Padding(

@@ -130,7 +130,7 @@ class _KerriganGovernanceViewState
     }, onError: (_) {});
   }
 
-  /// One proposal at a time: a request per masternode each.
+  /// One proposal at a time (see [KerriganGovernanceWallet.masternodeVotes]).
   Future<void> _loadVotes(KerriganGovernance g, int generation) async {
     final wallet = _wallet;
     if (!wallet.masternodes.any((m) => m.isRegistered)) return;
@@ -463,11 +463,14 @@ class _ProposalCard extends ConsumerWidget {
     final colors = Theme.of(context).extension<StackColors>()!;
     final fmt = ref.watch(pAmountFormatter(wallet.cryptoCurrency));
     final p = proposal;
-    final labels = {for (final m in wallet.masternodes) m.id: m.label};
-    final myVotes = [
-      for (final e in (votes ?? const {}).entries)
-        if (labels[e.key] != null) (label: labels[e.key]!, vote: e.value.vote),
+    final masternodes = wallet.masternodes;
+    final myVotes = votes ?? const <String, KerriganMasternodeVote>{};
+    // Latest first: a few of them, the rest behind "Show all".
+    final voted = [
+      for (final m in kerriganByLatestVote(masternodes, myVotes))
+        if (myVotes[m.id] != null) m,
     ];
+    final votesShown = kerriganVotesShownOf(voted.length);
 
     return RoundedWhiteContainer(
       padding: const EdgeInsets.all(14),
@@ -513,14 +516,24 @@ class _ProposalCard extends ConsumerWidget {
             netYes: p.absoluteYes,
             threshold: governance.threshold,
           ),
-          if (myVotes.isNotEmpty) ...[
+          if (voted.isNotEmpty) ...[
             const SizedBox(height: 10),
             Wrap(
               spacing: 6,
               runSpacing: 6,
               children: [
-                for (final v in myVotes)
-                  KerriganVoteChip(label: v.label, vote: v.vote),
+                for (final m in voted.take(votesShown))
+                  KerriganVoteChip(label: m.label, vote: myVotes[m.id]!.vote),
+                if (votesShown < voted.length)
+                  KerriganShowAllChip(
+                    count: masternodes.length,
+                    onTap: () => showKerriganMasternodeVotesSheet(
+                      context,
+                      wallet: wallet,
+                      proposalName: p.name,
+                      votes: myVotes,
+                    ),
+                  ),
               ],
             ),
           ],
