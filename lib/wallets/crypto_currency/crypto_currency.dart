@@ -7,13 +7,10 @@ export 'coins/kerrigan.dart';
 enum CryptoCurrencyNetwork {
   main,
   test,
-  stage,
-  test4,
   regtest;
 
   bool get isTestNet =>
       this == CryptoCurrencyNetwork.test ||
-      this == CryptoCurrencyNetwork.test4 ||
       this == CryptoCurrencyNetwork.regtest;
 }
 
@@ -35,16 +32,9 @@ abstract class CryptoCurrency {
   String get prettyName;
   String get uriScheme;
 
-  // override in subclass if the currency has tokens on it's network
-  // (used for eth currently)
-
-  // Override in subclass if the currency has Tor support:
-  bool get torSupport => false;
-
   int get minConfirms;
   int get minCoinbaseConfirms => minConfirms;
 
-  // TODO: [prio=low] could be handled differently as (at least) epiccash/mimblewimblecoin does not use this
   String get genesisHash;
 
   bool validateAddress(String address);

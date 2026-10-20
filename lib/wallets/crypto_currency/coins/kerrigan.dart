@@ -41,8 +41,6 @@ class Kerrigan extends Bip39HDCurrency {
         _id = "kerriganRegTest";
         _name = "rKerrigan";
         _ticker = "rKRGN";
-      default:
-        throw Exception("Unsupported network: $network");
     }
   }
 
@@ -74,9 +72,6 @@ class Kerrigan extends Bip39HDCurrency {
   int get minCoinbaseConfirms => 101;
 
   @override
-  bool get torSupport => true;
-
-  @override
   List<DerivePathType> get supportedDerivationPathTypes => [
     DerivePathType.bip44,
   ];
@@ -93,8 +88,6 @@ class Kerrigan extends Bip39HDCurrency {
         return "0013e791b16aa0491287b31d15c788d867a11d11031dac96842021d2213deb28";
       case CryptoCurrencyNetwork.regtest:
         return "3ba0907345a612be65d57a008ca271bc7f5f4d71559afde8e8f309587bc9b48a";
-      default:
-        throw Exception("Unsupported network: $network");
     }
   }
 
@@ -114,7 +107,6 @@ class Kerrigan extends Bip39HDCurrency {
     CryptoCurrencyNetwork.main => "main",
     CryptoCurrencyNetwork.test => "test",
     CryptoCurrencyNetwork.regtest => "regtest",
-    _ => throw Exception("Unsupported network: $network"),
   };
 
   /// ZIP 32 / BIP44 coin type.
@@ -125,7 +117,6 @@ class Kerrigan extends Bip39HDCurrency {
     CryptoCurrencyNetwork.main => "ks",
     CryptoCurrencyNetwork.test => "ktestsapling",
     CryptoCurrencyNetwork.regtest => "kregsapling",
-    _ => throw Exception("Unsupported network: $network"),
   };
 
   @override
@@ -136,7 +127,6 @@ class Kerrigan extends Bip39HDCurrency {
       CryptoCurrencyNetwork.main => (204, 45, 16, 0x0488ade4, 0x0488b21e),
       CryptoCurrencyNetwork.test => (239, 107, 19, 0x04358394, 0x043587cf),
       CryptoCurrencyNetwork.regtest => (239, 140, 19, 0x04358394, 0x043587cf),
-      _ => throw Exception("Unsupported network: $network"),
     };
     return coinlib.Network(
       wifPrefix: wif,
@@ -162,8 +152,6 @@ class Kerrigan extends Bip39HDCurrency {
     switch (derivePathType) {
       case DerivePathType.bip44:
         return "m/44'/$coinType'/$account'/$chain/$index";
-      default:
-        throw Exception("DerivePathType $derivePathType not supported");
     }
   }
 
@@ -179,8 +167,6 @@ class Kerrigan extends Bip39HDCurrency {
           version: networkParams.p2pkhPrefix,
         );
         return (address: addr, addressType: AddressType.p2pkh);
-      default:
-        throw Exception("DerivePathType $derivePathType not supported");
     }
   }
 
@@ -230,8 +216,6 @@ class Kerrigan extends Bip39HDCurrency {
       case CryptoCurrencyNetwork.regtest:
         // Development bridge (regtest node on the DevBox).
         host = "http://192.168.1.101:3001";
-      default:
-        throw Exception("Unsupported network: $network");
     }
     final uri = Uri.parse(host);
     return NodeModel(
@@ -240,10 +224,7 @@ class Kerrigan extends Bip39HDCurrency {
       name: DefaultNodes.defaultName,
       id: DefaultNodes.buildId(this),
       useSSL: uri.scheme == "https",
-      enabled: true,
       coinName: identifier,
-      isFailover: true,
-      isDown: false,
       torEnabled: true,
       clearnetEnabled: true,
       isPrimary: isPrimary,
@@ -286,10 +267,6 @@ class Kerrigan extends Bip39HDCurrency {
       case CryptoCurrencyNetwork.regtest:
         // No public explorer; the user can set one in the settings.
         return Uri.parse("https://explorer.kerrigan.network/#/tx/$txid");
-      default:
-        throw Exception(
-          "Unsupported network for defaultBlockExplorer(): $network",
-        );
     }
   }
 }

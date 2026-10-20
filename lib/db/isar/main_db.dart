@@ -12,7 +12,6 @@ import 'dart:io';
 
 import 'package:decimal/decimal.dart';
 import 'package:isar_community/isar.dart';
-import 'package:tuple/tuple.dart';
 
 import '../../exceptions/main_db/main_db_exception.dart';
 import '../../models/isar/models/block_explorer.dart';
@@ -51,7 +50,6 @@ class MainDB {
     if (_isar != null && isar.isOpen) return false;
     _isar = await Isar.open(
       [
-        TransactionSchema,
         TransactionNoteSchema,
         UTXOSchema,
         AddressSchema,
@@ -71,38 +69,6 @@ class MainDB {
     );
 
     return true;
-  }
-
-  Future<void> putWalletInfo(WalletInfo walletInfo) async {
-    try {
-      await isar.writeTxn(() async {
-        await isar.walletInfo.put(walletInfo);
-      });
-    } catch (e) {
-      throw MainDBException("failed putWalletInfo()", e);
-    }
-  }
-
-  Future<void> updateWalletInfo(WalletInfo walletInfo) async {
-    try {
-      await isar.writeTxn(() async {
-        final info = await isar.walletInfo
-            .where()
-            .walletIdEqualTo(walletInfo.walletId)
-            .findFirst();
-        if (info == null) {
-          throw Exception(
-            "updateWalletInfo() called with new WalletInfo."
-            " Use putWalletInfo()",
-          );
-        }
-
-        await isar.walletInfo.deleteByWalletId(walletInfo.walletId);
-        await isar.walletInfo.put(walletInfo);
-      });
-    } catch (e) {
-      throw MainDBException("failed updateWalletInfo()", e);
-    }
   }
 
   // contact entries
@@ -171,27 +137,6 @@ class MainDB {
     String walletId,
   ) => isar.addresses.where().walletIdEqualTo(walletId);
 
-  Future<int> putAddress(Address address) async {
-    try {
-      return await isar.writeTxn(() async {
-        return await isar.addresses.put(address);
-      });
-    } catch (e) {
-      throw MainDBException("failed putAddress: $address", e);
-    }
-  }
-
-  Future<List<int>> putAddresses(List<Address> addresses) async {
-    if (addresses.isEmpty) return [];
-    try {
-      return await isar.writeTxn(() async {
-        return await isar.addresses.putAll(addresses);
-      });
-    } catch (e) {
-      throw MainDBException("failed putAddresses: $addresses", e);
-    }
-  }
-
   Future<List<int>> updateOrPutAddresses(List<Address> addresses) async {
     if (addresses.isEmpty) return [];
     try {
@@ -208,12 +153,7 @@ class MainDB {
             id = await isar.addresses.put(address);
           } else {
             address.id = storedAddress.id;
-            await storedAddress.transactions.load();
-            final txns = storedAddress.transactions.toList();
-            await isar.addresses.delete(storedAddress.id);
             id = await isar.addresses.put(address);
-            address.transactions.addAll(txns);
-            await address.transactions.save();
           }
           ids.add(id);
         }
@@ -228,75 +168,11 @@ class MainDB {
     return isar.addresses.getByValueWalletId(address, walletId);
   }
 
-  Future<int> updateAddress(Address oldAddress, Address newAddress) async {
-    try {
-      return await isar.writeTxn(() async {
-        newAddress.id = oldAddress.id;
-        await oldAddress.transactions.load();
-        final txns = oldAddress.transactions.toList();
-        await isar.addresses.delete(oldAddress.id);
-        final id = await isar.addresses.put(newAddress);
-        newAddress.transactions.addAll(txns);
-        await newAddress.transactions.save();
-        return id;
-      });
-    } catch (e) {
-      throw MainDBException(
-        "failed updateAddress: from=$oldAddress to=$newAddress",
-        e,
-      );
-    }
-  }
-
   // transactions
-  QueryBuilder<Transaction, Transaction, QAfterWhereClause> getTransactions(
-    String walletId,
-  ) => isar.transactions.where().walletIdEqualTo(walletId);
-
-  Future<int> putTransaction(Transaction transaction) async {
-    try {
-      return await isar.writeTxn(() async {
-        return await isar.transactions.put(transaction);
-      });
-    } catch (e) {
-      throw MainDBException("failed putTransaction: $transaction", e);
-    }
-  }
-
-  Future<List<int>> putTransactions(List<Transaction> transactions) async {
-    if (transactions.isEmpty) return [];
-    try {
-      return await isar.writeTxn(() async {
-        return await isar.transactions.putAll(transactions);
-      });
-    } catch (e) {
-      throw MainDBException("failed putTransactions: $transactions", e);
-    }
-  }
-
-  Future<Transaction?> getTransaction(String walletId, String txid) async {
-    return isar.transactions.getByTxidWalletId(txid, walletId);
-  }
-
-  Stream<Transaction?> watchTransaction({
-    required Id id,
-    bool fireImmediately = false,
-  }) {
-    return isar.transactions.watchObject(id, fireImmediately: fireImmediately);
-  }
 
   // utxos
   QueryBuilder<UTXO, UTXO, QAfterWhereClause> getUTXOs(String walletId) =>
       isar.utxos.where().walletIdEqualTo(walletId);
-
-  QueryBuilder<UTXO, UTXO, QAfterFilterCondition> getUTXOsByAddress(
-    String walletId,
-    String address,
-  ) => isar.utxos
-      .where()
-      .walletIdEqualTo(walletId)
-      .filter()
-      .addressEqualTo(address);
 
   Future<void> putUTXO(UTXO utxo) => isar.writeTxn(() async {
     await isar.utxos.put(utxo);
@@ -308,21 +184,27 @@ class MainDB {
           await isar.utxos.putAll(utxos);
         });
 
+  /// Make [utxos] the wallet's coins: coins no longer listed are removed,
+  /// new ones added, and stored ones keep the user's flags (see below).
+  /// Returns whether any coin is new.
+  ///
+  /// Runs on every sync with all of the wallet's coins, so the stored ones
+  /// are read in one query and only rows that changed are written: one
+  /// query per coin and rewriting them all took seconds on slow phones
+  /// for a wallet with a few hundred coins.
   Future<bool> updateUTXOs(String walletId, List<UTXO> utxos) async {
     bool newUTXO = false;
 
     await isar.writeTxn(() async {
-      final set = utxos.toSet();
+      final stored = {
+        for (final u in await getUTXOs(walletId).findAll()) (u.txid, u.vout): u,
+      };
+      // By outpoint: a coin listed twice is kept once.
+      final rows = <(String, int), UTXO>{};
       for (final utxo in utxos) {
-        // check if utxo exists in db and update accordingly
-        final storedUtxo = await isar.utxos
-            .where()
-            .txidWalletIdVoutEqualTo(utxo.txid, utxo.walletId, utxo.vout)
-            .findFirst();
-
+        final storedUtxo = stored[(utxo.txid, utxo.vout)];
         if (storedUtxo != null) {
-          // update
-          // Preserve user-set flags, but allow a fresh auto-freeze (e.g. firo
+          // Preserve user-set flags, but allow a fresh auto-freeze (e.g.
           // masternode collateral detected after registration) unless the
           // user deliberately unfroze this utxo before. Never auto-unfreeze:
           // a flaky network check must not unlock coins.
@@ -330,36 +212,53 @@ class MainDB {
               utxo.isBlocked &&
               !storedUtxo.isBlocked &&
               !storedUtxo.userUnfroze;
-          set.remove(utxo);
-          set.add(
-            storedUtxo.copyWith(
-              value: utxo.value,
-              address: utxo.address,
-              blockTime: utxo.blockTime,
-              blockHeight: utxo.blockHeight,
-              blockHash: utxo.blockHash,
-              // passing null keeps the stored value
-              otherData: utxo.otherData,
-              isBlocked: applyAutoBlock ? true : null,
-              blockedReason: applyAutoBlock ? utxo.blockedReason : null,
-              name: applyAutoBlock && storedUtxo.name.isEmpty
-                  ? utxo.name
-                  : null,
-            ),
+          rows[(utxo.txid, utxo.vout)] = storedUtxo.copyWith(
+            value: utxo.value,
+            address: utxo.address,
+            blockTime: utxo.blockTime,
+            blockHeight: utxo.blockHeight,
+            blockHash: utxo.blockHash,
+            // passing null keeps the stored value
+            otherData: utxo.otherData,
+            isBlocked: applyAutoBlock ? true : null,
+            blockedReason: applyAutoBlock ? utxo.blockedReason : null,
+            name: applyAutoBlock && storedUtxo.name.isEmpty ? utxo.name : null,
           );
         } else {
           newUTXO = true;
+          rows[(utxo.txid, utxo.vout)] = utxo;
         }
       }
 
-      await isar.utxos.where().walletIdEqualTo(walletId).deleteAll();
-      if (set.isNotEmpty) {
-        await isar.utxos.putAll(set.toList());
-      }
+      final gone = [
+        for (final e in stored.entries)
+          if (!rows.containsKey(e.key)) e.value.id,
+      ];
+      final changed = [
+        for (final e in rows.entries)
+          if (!_sameUtxo(stored[e.key], e.value)) e.value,
+      ];
+      if (gone.isNotEmpty) await isar.utxos.deleteAll(gone);
+      if (changed.isNotEmpty) await isar.utxos.putAll(changed);
     });
 
     return newUTXO;
   }
+
+  static bool _sameUtxo(UTXO? a, UTXO b) =>
+      a != null &&
+      a.id == b.id &&
+      a.value == b.value &&
+      a.name == b.name &&
+      a.isBlocked == b.isBlocked &&
+      a.blockedReason == b.blockedReason &&
+      a.isCoinbase == b.isCoinbase &&
+      a.blockHash == b.blockHash &&
+      a.blockHeight == b.blockHeight &&
+      a.blockTime == b.blockTime &&
+      a.address == b.address &&
+      a.used == b.used &&
+      a.otherData == b.otherData;
 
   Stream<UTXO?> watchUTXO({required Id id, bool fireImmediately = false}) {
     return isar.utxos.watchObject(id, fireImmediately: fireImmediately);
@@ -375,28 +274,6 @@ class MainDB {
         await isar.transactionNotes.put(transactionNote);
       });
 
-  Future<void> putTransactionNotes(List<TransactionNote> transactionNotes) =>
-      isar.writeTxn(() async {
-        await isar.transactionNotes.putAll(transactionNotes);
-      });
-
-  Future<TransactionNote?> getTransactionNote(
-    String walletId,
-    String txid,
-  ) async {
-    return isar.transactionNotes.getByTxidWalletId(txid, walletId);
-  }
-
-  Stream<TransactionNote?> watchTransactionNote({
-    required Id id,
-    bool fireImmediately = false,
-  }) {
-    return isar.transactionNotes.watchObject(
-      id,
-      fireImmediately: fireImmediately,
-    );
-  }
-
   // address labels
   QueryBuilder<AddressLabel, AddressLabel, QAfterWhereClause> getAddressLabels(
     String walletId,
@@ -410,21 +287,6 @@ class MainDB {
   int putAddressLabelSync(AddressLabel addressLabel) => isar.writeTxnSync(() {
     return isar.addressLabels.putSync(addressLabel);
   });
-
-  Future<void> putAddressLabels(List<AddressLabel> addressLabels) =>
-      isar.writeTxn(() async {
-        await isar.addressLabels.putAll(addressLabels);
-      });
-
-  Future<AddressLabel?> getAddressLabel(
-    String walletId,
-    String addressString,
-  ) async {
-    return isar.addressLabels.getByAddressStringWalletId(
-      addressString,
-      walletId,
-    );
-  }
 
   AddressLabel? getAddressLabelSync(String walletId, String addressString) {
     return isar.addressLabels.getByAddressStringWalletIdSync(
@@ -453,7 +315,6 @@ class MainDB {
   //
   Future<void> deleteWalletBlockchainData(String walletId) async {
     await isar.writeTxn(() async {
-      final transactionCount = await getTransactions(walletId).count();
       final transactionCountV2 = await isar.transactionV2s
           .where()
           .walletIdEqualTo(walletId)
@@ -462,16 +323,6 @@ class MainDB {
       final utxoCount = await getUTXOs(walletId).count();
 
       const paginateLimit = 100;
-
-      // transactions
-      for (int i = 0; i < transactionCount; i += paginateLimit) {
-        final txnIds = await getTransactions(walletId)
-            .offset(i)
-            .limit(paginateLimit)
-            .idProperty()
-            .findAll();
-        await isar.transactions.deleteAll(txnIds);
-      }
 
       // transactions V2
       for (int i = 0; i < transactionCountV2; i += paginateLimit) {
@@ -535,47 +386,6 @@ class MainDB {
         await isar.transactionNotes.deleteAll(labelIds);
       }
     });
-  }
-
-  Future<void> addNewTransactionData(
-    List<Tuple2<Transaction, Address?>> transactionsData,
-    String walletId,
-  ) async {
-    if (transactionsData.isEmpty) return;
-    try {
-      await isar.writeTxn(() async {
-        for (final data in transactionsData) {
-          final tx = data.item1;
-
-          final potentiallyUnconfirmedTx = await getTransaction(
-            walletId,
-            tx.txid,
-          );
-          if (potentiallyUnconfirmedTx != null) {
-            // update use id to replace tx
-            tx.id = potentiallyUnconfirmedTx.id;
-            await isar.transactions.delete(potentiallyUnconfirmedTx.id);
-          }
-          // save transaction
-          await isar.transactions.put(tx);
-
-          if (data.item2 != null) {
-            final address = await getAddress(walletId, data.item2!.value);
-
-            // check if address exists in db and add if it does not
-            if (address == null) {
-              await isar.addresses.put(data.item2!);
-            }
-
-            // link and save address
-            tx.address.value = address ?? data.item2!;
-            await tx.address.save();
-          }
-        }
-      });
-    } catch (e) {
-      throw MainDBException("failed addNewTransactionData", e);
-    }
   }
 
   Future<List<int>> updateOrPutTransactionV2s(

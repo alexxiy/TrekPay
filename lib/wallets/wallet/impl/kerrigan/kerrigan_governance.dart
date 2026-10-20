@@ -367,6 +367,11 @@ Uint8List _compactSize(int n) => n < 0xfd
 
 const _kPendingProposals = "kerriganPendingProposals";
 
+/// Per wallet: the [KerriganGovernanceWallet.submitPendingProposals]
+/// running, which a sync finishing meanwhile joins instead of submitting
+/// again.
+final _submittingProposals = <String, Future<void>>{};
+
 extension KerriganGovernanceWallet on KerriganWallet {
   /// Transparent addresses of this wallet (receiving first), e.g. to
   /// receive a proposal's payment.
@@ -678,6 +683,19 @@ extension KerriganGovernanceWallet on KerriganWallet {
   Future<void> removePendingProposal(String hash) =>
       _updatePending((stored) => [...stored.where((p) => p.hash != hash)]);
 
+  /// After sending [proposal]'s fee failed: forget the proposal when the
+  /// network doesn't have its fee transaction. Kept when it may have it
+  /// (it is then submitted once the fee confirms).
+  Future<void> forgetUnsentProposal(KerriganPendingProposal proposal) async {
+    final saved = pendingProposals
+        .where((p) => p.hash == proposal.hash)
+        .firstOrNull;
+    if (saved == null) return;
+    if (await _stillOnNetwork(saved.feeTxid) == false) {
+      await removePendingProposal(proposal.hash);
+    }
+  }
+
   /// Confirmations of a pending proposal's fee, null while unconfirmed.
   Future<int?> feeConfirmationsOf(KerriganPendingProposal p) async {
     final tx = await mainDB.isar.transactionV2s
@@ -691,7 +709,16 @@ extension KerriganGovernanceWallet on KerriganWallet {
 
   /// Submit the pending proposals whose fee is confirmed enough; called
   /// after syncing. A proposal the network already knows is done.
-  Future<void> submitPendingProposals() async {
+  Future<void> submitPendingProposals() =>
+      _submittingProposals[walletId] ??= _submitPendingProposals().whenComplete(
+        // Not `=> remove(...)`: that returns this very future, which
+        // whenComplete would then wait for, forever.
+        () {
+          _submittingProposals.remove(walletId);
+        },
+      );
+
+  Future<void> _submitPendingProposals() async {
     final pending = pendingProposals;
     if (pending.isEmpty) return;
     final known = (await bridge.governanceObjects()).keys.toSet();

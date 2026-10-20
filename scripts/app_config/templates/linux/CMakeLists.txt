@@ -81,6 +81,23 @@ else()
   set_target_properties(secret-1 PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/linux/build/libsecret/_build/libsecret/libsecret-1.so")
 endif()
 
+# OpenCV for the camera_linux plugin (desktop QR scanner): the small static
+# build from scripts/linux/build_opencv.sh, linked into the plugin's own
+# library so the bundle runs without OpenCV installed. With
+# USE_SYSTEM_OPENCV set, the plugin links the system OpenCV instead, which
+# users then need installed.
+option(USE_SYSTEM_OPENCV "Link the camera plugin against the system OpenCV" OFF)
+if(DEFINED ENV{USE_SYSTEM_OPENCV} AND "$ENV{USE_SYSTEM_OPENCV}" STREQUAL "1")
+  set(USE_SYSTEM_OPENCV ON)
+endif()
+if(NOT USE_SYSTEM_OPENCV)
+  # Read by the plugin's CMake file (included with the plugins below).
+  set(CAMERA_LINUX_OPENCV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/linux/build/opencv/install/lib/cmake/opencv")
+  if(NOT EXISTS "${CAMERA_LINUX_OPENCV_DIR}/OpenCVConfig.cmake")
+    message(FATAL_ERROR "No static OpenCV for the camera plugin. Run scripts/linux/build_opencv.sh (scripts/build_app.sh does), or set USE_SYSTEM_OPENCV=1 to use the system OpenCV.")
+  endif()
+endif()
+
 add_definitions(-DAPPLICATION_ID="${APPLICATION_ID}")
 
 # Define the application target. To change its name, change BINARY_NAME above,
@@ -98,7 +115,10 @@ add_executable(${BINARY_NAME}
 apply_standard_settings(${BINARY_NAME})
 
 # Add dependency libraries. Add any application-specific dependencies here.
-target_link_libraries(${BINARY_NAME} PRIVATE -static-libgcc -static-libstdc++)
+# No -static-libstdc++/-static-libgcc: the plugins load the system C++
+# runtime anyway, and a second, static copy in the executable takes over
+# the exceptions plugin code throws; mixed with the system unwinder it
+# aborts the app (OpenCV's camera probe on a machine without a camera).
 target_link_libraries(${BINARY_NAME} PRIVATE flutter)
 target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::GTK)
 if(USE_SYSTEM_SECURE_STORAGE_DEPS)

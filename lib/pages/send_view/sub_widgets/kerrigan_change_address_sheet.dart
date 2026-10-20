@@ -87,6 +87,16 @@ class _KerriganChangeAddressSheetState
         : "Receiving #${a.derivationIndex}";
   }
 
+  /// The typed address is valid but not one of this wallet's: the change
+  /// would leave the wallet.
+  bool get _foreign {
+    final address = _controller.text.trim();
+    final valid = widget.shield
+        ? widget.coin.isShieldAddress(address)
+        : widget.coin.isTransparentAddress(address);
+    return valid && !_addresses.any((a) => a.value == address);
+  }
+
   void _useCustom() {
     final address = _controller.text.trim();
     if (widget.shield
@@ -156,77 +166,88 @@ class _KerriganChangeAddressSheetState
         padding: isDesktop
             ? const EdgeInsets.all(32)
             : const EdgeInsets.fromLTRB(16, 10, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (!isDesktop)
-              Center(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colors.textFieldDefaultBG,
-                    borderRadius: BorderRadius.circular(
-                      Constants.size.circularBorderRadius,
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (!isDesktop)
+                Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: colors.textFieldDefaultBG,
+                      borderRadius: BorderRadius.circular(
+                        Constants.size.circularBorderRadius,
+                      ),
                     ),
+                    width: 60,
+                    height: 4,
                   ),
-                  width: 60,
-                  height: 4,
+                ),
+              if (!isDesktop) const SizedBox(height: 24),
+              Text(
+                "Change address",
+                style: isDesktop
+                    ? STextStyles.desktopH3(context)
+                    : STextStyles.pageTitleH2(context),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    _option(
+                      title: "Automatic",
+                      subtitle: widget.shield
+                          ? "This wallet's shield change address"
+                          : "A new change address of this wallet",
+                      selected: widget.current == null,
+                      onTap: () => Navigator.of(context).pop(""),
+                    ),
+                    for (final a in _addresses)
+                      _option(
+                        title: _title(a),
+                        subtitle: a.value,
+                        selected: widget.current == a.value,
+                        onTap: () => Navigator.of(context).pop(a.value),
+                      ),
+                  ],
                 ),
               ),
-            if (!isDesktop) const SizedBox(height: 24),
-            Text(
-              "Change address",
-              style: isDesktop
-                  ? STextStyles.desktopH3(context)
-                  : STextStyles.pageTitleH2(context),
-            ),
-            const SizedBox(height: 16),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  _option(
-                    title: "Automatic",
-                    subtitle: widget.shield
-                        ? "A new shield address of this wallet"
-                        : "A new change address of this wallet",
-                    selected: widget.current == null,
-                    onTap: () => Navigator.of(context).pop(""),
-                  ),
-                  for (final a in _addresses)
-                    _option(
-                      title: _title(a),
-                      subtitle: a.value,
-                      selected: widget.current == a.value,
-                      onTap: () => Navigator.of(context).pop(a.value),
-                    ),
-                ],
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(
+                  Constants.size.circularBorderRadius,
+                ),
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _focus,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  style: STextStyles.field(context),
+                  onChanged: (_) => setState(() => _error = null),
+                  decoration: standardInputDecoration(
+                    widget.shield
+                        ? "Other shield address"
+                        : "Other transparent address",
+                    _focus,
+                    context,
+                  ).copyWith(errorText: _error),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(
-                Constants.size.circularBorderRadius,
-              ),
-              child: TextField(
-                controller: _controller,
-                focusNode: _focus,
-                autocorrect: false,
-                enableSuggestions: false,
-                style: STextStyles.field(context),
-                onChanged: (_) => setState(() => _error = null),
-                decoration: standardInputDecoration(
-                  widget.shield
-                      ? "Other shield address"
-                      : "Other transparent address",
-                  _focus,
-                  context,
-                ).copyWith(errorText: _error),
-              ),
-            ),
-            const SizedBox(height: 12),
-            PrimaryButton(label: "Use this address", onPressed: _useCustom),
-          ],
+              if (_error == null && _foreign) ...[
+                const SizedBox(height: 8),
+                Text(
+                  "This address isn't one of this wallet's. The change would go "
+                  "to whoever owns it.",
+                  style: STextStyles.label(context)
+                      .copyWith(color: colors.textError),
+                ),
+              ],
+              const SizedBox(height: 12),
+              PrimaryButton(label: "Use this address", onPressed: _useCustom),
+            ],
+          ),
         ),
       ),
     );

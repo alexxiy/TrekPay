@@ -23,6 +23,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../../../app_config.dart';
 import '../../../../../db/hive/db.dart';
 import '../../../../../db/isar/main_db.dart';
+import '../../../../../models/isar/models/address_label.dart';
 import '../../../../../models/isar/models/contact_entry.dart';
 import '../../../../../models/isar/models/transaction_note.dart';
 import '../../../../../models/keys/view_only_wallet_data.dart';
@@ -33,17 +34,20 @@ import '../../../../../notifications/show_flush_bar.dart';
 import '../../../../../services/address_book_service.dart';
 import '../../../../../services/node_service.dart';
 import '../../../../../services/wallets.dart';
+import '../../../../../themes/theme_service.dart';
+import '../../../../../utilities/amount/amount_unit.dart';
 import '../../../../../utilities/enums/stack_restoring_status.dart';
 import '../../../../../utilities/enums/sync_type_enum.dart';
 import '../../../../../utilities/flutter_secure_storage_interface.dart';
 import '../../../../../utilities/format.dart';
 import '../../../../../utilities/logger.dart';
+import '../../../../../utilities/password_rules.dart';
 import '../../../../../utilities/prefs.dart';
 import '../../../../../utilities/util.dart';
 import '../../../../../wallets/isar/models/wallet_info.dart';
+import '../../../../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../../../../wallets/wallet/wallet.dart';
 import '../../../../../wallets/wallet/wallet_mixin_interfaces/mnemonic_interface.dart';
-import '../../../../../wallets/wallet/wallet_mixin_interfaces/private_key_interface.dart';
 import '../../../../../wallets/wallet/wallet_mixin_interfaces/view_only_option_interface.dart';
 
 class PreRestoreState {
@@ -103,11 +107,13 @@ bool validateFail(
   String passphrase,
   String repeatPassphrase,
 ) {
+  final missing = passwordMissing(passphrase);
   for (final e in [
     [pathToSave.isEmpty, "Directory not chosen"],
     if (!pathToSave.startsWith("content://"))
       [!(Directory(pathToSave).existsSync()), "Directory does not exist"],
     [passphrase.isEmpty, "A passphrase is required"],
+    [missing != null, missing ?? ""],
     [passphrase != repeatPassphrase, "Passphrase does not match"],
   ]) {
     if (e[0] as bool) {
@@ -223,7 +229,6 @@ abstract class SWB {
     final NodeService nodeService = NodeService(
       secureStorageInterface: secureStorage,
     );
-    final _secureStore = secureStorage;
 
     Logging.instance.d("createStackWalletJSON awaiting DB.instance.mutex...");
     // prevent modification of data
@@ -231,13 +236,7 @@ abstract class SWB {
       Logging.instance.i("...createStackWalletJSON DB.instance.mutex acquired");
       Logging.instance.i("SWB backing up nodes");
       try {
-        final nodesFuture = nodeService.nodes.map((e) async {
-          final map = e.toMap();
-          map["password"] = await e.getPassword(_secureStore);
-          return map;
-        }).toList();
-        final nodes = await Future.wait(nodesFuture);
-        backupJson['nodes'] = nodes;
+        backupJson['nodes'] = nodeService.nodes.map((e) => e.toMap()).toList();
       } catch (e, s) {
         Logging.instance.e("", error: e, stackTrace: s);
       }
@@ -252,7 +251,6 @@ abstract class SWB {
       prefs['hasPin'] = _prefs.hasPin;
       prefs['language'] = _prefs.language;
       prefs['showFavoriteWallets'] = _prefs.showFavoriteWallets;
-      prefs['wifiOnly'] = _prefs.wifiOnly;
       prefs['syncType'] = _prefs.syncType.name;
       prefs['walletIdsSyncOnStartup'] = _prefs.walletIdsSyncOnStartup;
       prefs['showTestNetCoins'] = _prefs.showTestNetCoins;
@@ -261,6 +259,21 @@ abstract class SWB {
       prefs['autoBackupLocation'] = _prefs.autoBackupLocation;
       prefs['backupFrequencyType'] = _prefs.backupFrequencyType.toString();
       prefs['lastAutoBackup'] = _prefs.lastAutoBackup.toString();
+      prefs['enableCoinControl'] = _prefs.enableCoinControl;
+      prefs['amountUnits'] = {
+        for (final coin in AppConfig.coins)
+          coin.identifier: _prefs.amountUnit(coin).name,
+      };
+      prefs['maxDecimals'] = {
+        for (final coin in AppConfig.coins)
+          coin.identifier: _prefs.maxDecimals(coin),
+      };
+      prefs['themeId'] = _prefs.themeId;
+      prefs['enableSystemBrightness'] = _prefs.enableSystemBrightness;
+      prefs['systemBrightnessLightThemeId'] =
+          _prefs.systemBrightnessLightThemeId;
+      prefs['systemBrightnessDarkThemeId'] = _prefs.systemBrightnessDarkThemeId;
+      prefs['hideBlockExplorerWarning'] = _prefs.hideBlockExplorerWarning;
 
       backupJson['prefs'] = prefs;
 
@@ -280,7 +293,14 @@ abstract class SWB {
         backupWallet['name'] = wallet.info.name;
         backupWallet['id'] = wallet.walletId;
         backupWallet['isFavorite'] = wallet.info.isFavourite;
+        backupWallet['favouriteOrderIndex'] = wallet.info.favouriteOrderIndex;
         backupWallet['otherDataJsonString'] = wallet.info.otherDataJsonString;
+
+        if (wallet is KerriganWallet) {
+          // Coin control: frozen, unfrozen and named coins.
+          final coinFlags = await wallet.userCoinFlags();
+          if (coinFlags.isNotEmpty) backupWallet['coinFlags'] = coinFlags;
+        }
 
         if (wallet is ViewOnlyOptionInterface && wallet.isViewOnly) {
           backupWallet['viewOnlyWalletDataKey'] =
@@ -289,8 +309,6 @@ abstract class SWB {
           backupWallet['mnemonic'] = await wallet.getMnemonic();
           backupWallet['mnemonicPassphrase'] = await wallet
               .getMnemonicPassphrase();
-        } else if (wallet is PrivateKeyInterface) {
-          backupWallet['privateKey'] = await wallet.getPrivateKey();
         }
         backupWallet['coinName'] = wallet.info.coin.identifier;
         backupWallet['storedChainHeight'] = wallet.info.cachedChainHeight;
@@ -313,18 +331,21 @@ abstract class SWB {
 
         backupWallet['notes'] = notes;
 
+        // Address labels: the user's, and masternode collateral ones.
+        backupWallet['addressLabels'] = {
+          for (final l
+              in await MainDB.instance.isar.addressLabels
+                  .where()
+                  .walletIdEqualTo(wallet.walletId)
+                  .findAll())
+            if (l.value.isNotEmpty) l.addressString: l.value,
+        };
+
         backupWallets.add(backupWallet);
       }
       backupJson['wallets'] = backupWallets;
     });
     Logging.instance.d("createStackWalletJSON DB.instance.mutex released");
-
-    // // back up notifications data
-    // final notificationsService = NotificationsService();
-    // await notificationsService.init(nodeService, tradesService);
-    // backupJson["allNotifications"] = notificationsService.notifications
-    //     .map((e) => e.toMap())
-    //     .toList(growable: false);
 
     Logging.instance.d("...createStackWalletJSON complete");
     return backupJson;
@@ -340,7 +361,7 @@ abstract class SWB {
     final info = tuple.item2;
     final walletbackup = tuple.item1;
 
-    String? mnemonic, mnemonicPassphrase, privateKey;
+    String? mnemonic, mnemonicPassphrase;
 
     ViewOnlyWalletData? viewOnlyData;
     if (info.isViewOnly) {
@@ -351,22 +372,8 @@ abstract class SWB {
         viewOnlyDataEncoded,
         walletId: info.walletId,
       );
-    } else if (walletbackup['mnemonic'] == null) {
-      // probably private key based
-      if (walletbackup['privateKey'] != null) {
-        privateKey = walletbackup['privateKey'] as String;
-      }
-    } else {
-      if (walletbackup['mnemonic'] is List) {
-        final List<String> mnemonicList =
-            (walletbackup['mnemonic'] as List<dynamic>)
-                .map<String>((e) => e as String)
-                .toList();
-        mnemonic = mnemonicList.join(" ").trim();
-      } else {
-        mnemonic = walletbackup['mnemonic'] as String;
-      }
-
+    } else if (walletbackup['mnemonic'] != null) {
+      mnemonic = walletbackup['mnemonic'] as String;
       mnemonicPassphrase = walletbackup['mnemonicPassphrase'] as String? ?? "";
     }
 
@@ -387,7 +394,6 @@ abstract class SWB {
         prefs: prefs,
         mnemonic: mnemonic,
         mnemonicPassphrase: mnemonicPassphrase,
-        privateKey: privateKey,
         viewOnlyData: viewOnlyData,
       );
 
@@ -434,6 +440,26 @@ abstract class SWB {
         });
       }
 
+      for (final e in Map<String, dynamic>.from(
+        walletbackup["addressLabels"] as Map? ?? const {},
+      ).entries) {
+        final value = e.value;
+        if (value is! String || value.isEmpty) continue;
+        final existing = MainDB.instance.getAddressLabelSync(
+          info.walletId,
+          e.key,
+        );
+        await MainDB.instance.updateAddressLabel(
+          existing?.copyWith(label: value) ??
+              AddressLabel(
+                walletId: info.walletId,
+                addressString: e.key,
+                value: value,
+                tags: null,
+              ),
+        );
+      }
+
       if (_shouldCancelRestore) {
         return false;
       }
@@ -450,6 +476,11 @@ abstract class SWB {
       }
 
       await restoringFuture;
+
+      // On the coins found by the restore (older backups have none).
+      if (wallet is KerriganWallet && walletbackup['coinFlags'] is List) {
+        await wallet.restoreUserCoinFlags(walletbackup['coinFlags'] as List);
+      }
 
       final currentAddress = await wallet.getCurrentReceivingAddress();
 
@@ -499,7 +530,6 @@ abstract class SWB {
         validJSON["prefs"] as Map<String, dynamic>;
     final List<dynamic>? addressBookEntries =
         validJSON["addressBookEntries"] as List?;
-    final List<dynamic>? primaryNodes = validJSON["primaryNodes"] as List?;
     final List<dynamic>? nodes = validJSON["nodes"] as List?;
 
     uiState?.preferences = StackRestoringStatus.restoring;
@@ -519,36 +549,41 @@ abstract class SWB {
     uiState?.nodes = StackRestoringStatus.restoring;
 
     Logging.instance.d("SWB restoring nodes");
-    await _restoreNodes(nodes, primaryNodes, secureStorageInterface);
+    await _restoreNodes(nodes, secureStorageInterface);
 
     uiState?.nodes = StackRestoringStatus.success;
-    // uiState?.notifications = RestoringState.restoring;
-
-    // // restore notifications data
-    // final notificationsService = NotificationsService();
-    // await notificationsService.init(nodeService, tradesService);
-    // if (allNotifications != null) {
-    //   for (int i = 0; i < allNotifications.length - 1; i++) {
-    //     notificationsService.add(
-    //         NotificationModel.fromJson(allNotifications[i]), false);
-    //   }
-    //   // only call notifyListeners on last one added
-    //   if (allNotifications.length > 0) {
-    //     notificationsService.add(
-    //         NotificationModel.fromJson(allNotifications.last), true);
-    //   }
-    // }
-
-    // uiState?.notifications = RestoringState.done;
   }
 
+  /// Returns false when the restore was cancelled.
   static Future<bool?> restoreStackWalletJSON(
     String jsonBackup,
     StackRestoringUIState? uiState,
     SecureStorageInterface secureStorageInterface,
   ) async {
     if (!Platform.isLinux) await WakelockPlus.enable();
+    try {
+      return await _restoreStackWalletJSON(
+        jsonBackup,
+        uiState,
+        secureStorageInterface,
+      );
+    } finally {
+      // Also after a cancel or an error, or the screen stays on until the
+      // app is closed.
+      try {
+        if (!Platform.isLinux) await WakelockPlus.disable();
+      } catch (e, s) {
+        // Not worth failing a restore whose wallets are all in.
+        Logging.instance.w("SWB restore: wakelock", error: e, stackTrace: s);
+      }
+    }
+  }
 
+  static Future<bool?> _restoreStackWalletJSON(
+    String jsonBackup,
+    StackRestoringUIState? uiState,
+    SecureStorageInterface secureStorageInterface,
+  ) async {
     Logging.instance.d("SWB creating temp backup");
     final preRestoreJSON = await createStackWalletJSON(
       secureStorage: secureStorageInterface,
@@ -612,6 +647,18 @@ abstract class SWB {
 
     final Map<String, WalletRestoreState> walletStates = {};
 
+    // Favourites restored come after this device's, in their order.
+    final favouriteOrder = swbFavouriteOrder(
+      wallets,
+      after:
+          await MainDB.instance.isar.walletInfo
+              .where()
+              .sortByFavouriteOrderIndexDesc()
+              .favouriteOrderIndexProperty()
+              .findFirst() ??
+          -1,
+    );
+
     for (final walletbackup in wallets) {
       // check if cancel was requested and restore previous state
       if (_checkShouldCancel(preRestoreState, secureStorageInterface)) {
@@ -628,9 +675,6 @@ abstract class SWB {
 
       final walletName = walletbackup['name'] as String;
       final walletId = oldToNewWalletIdMap[walletbackup["id"] as String]!;
-
-      // TODO: use these for monero and possibly other coins later on?
-      // final List<String> txidList = List<String>.from(walletbackup['txidList'] as List? ?? []);
 
       Map<String, dynamic>? otherData;
       try {
@@ -656,18 +700,15 @@ abstract class SWB {
         restoreHeight: walletbackup['restoreHeight'] as int? ?? 0,
         otherDataJsonString: otherData == null ? null : jsonEncode(otherData),
         cachedChainHeight: walletbackup['storedChainHeight'] as int? ?? 0,
+        favouriteOrderIndex: favouriteOrder[walletbackup] ?? -1,
       );
 
       var node = nodeService.getPrimaryNodeFor(currency: coin);
 
       if (node == null) {
         node = coin.defaultNode(isPrimary: true);
-        await nodeService.save(node, null, false);
+        await nodeService.save(node, false);
       }
-
-      // final txTracker = TransactionNotificationTracker(walletId: walletId);
-      //
-      // final failovers = nodeService.failoverNodesFor(coin: coin);
 
       // check if cancel was requested and restore previous state
       if (_checkShouldCancel(preRestoreState, secureStorageInterface)) {
@@ -726,12 +767,6 @@ abstract class SWB {
       await status;
     }
 
-    try {
-      if (!Platform.isLinux) await WakelockPlus.disable();
-    } catch (e, s) {
-      // Not worth failing a restore whose wallets are all in.
-      Logging.instance.w("SWB restore: wakelock", error: e, stackTrace: s);
-    }
     // check if cancel was requested and restore previous state
     if (_checkShouldCancel(preRestoreState, secureStorageInterface)) {
       return false;
@@ -828,7 +863,7 @@ abstract class SWB {
         }
       }
     } else {
-      final Map<String, dynamic> preNodeMap = {};
+      final Map<String, Map<String, dynamic>> preNodeMap = {};
       for (final nodeData in nodes) {
         preNodeMap[nodeData['id'] as String] = nodeData as Map<String, dynamic>;
       }
@@ -838,23 +873,7 @@ abstract class SWB {
         if (nodeData != null) {
           // node existed before restore attempt
           // revert to pre restore node
-          await nodeService.save(
-            node.copyWith(
-              host: nodeData['host'] as String,
-              port: nodeData['port'] as int,
-              name: nodeData['name'] as String,
-              useSSL: nodeData['useSSL'] == "false" ? false : true,
-              enabled: nodeData['enabled'] == "false" ? false : true,
-              coinName: nodeData['coinName'] as String,
-              loginName: nodeData['loginName'] as String?,
-              isFailover: nodeData['isFailover'] as bool,
-              isDown: nodeData['isDown'] as bool,
-              trusted: nodeData['trusted'] as bool?,
-              isPrimary: nodeData["isPrimary"] as bool? ?? false,
-            ),
-            nodeData['password'] as String?,
-            true,
-          );
+          await nodeService.save(_nodeFromBackup(nodeData), true);
         } else {
           await nodeService.delete(node.id, true);
         }
@@ -863,19 +882,13 @@ abstract class SWB {
 
     await nodeService.updateDefaults();
 
-    // finally remove any added wallets
-    final allWalletIds =
-        (await MainDB.instance.isar.walletInfo
-                .where()
-                .walletIdProperty()
-                .findAll())
-            .toSet();
-    final walletIdsToDelete = allWalletIds.difference(revertToState.walletIds);
-    await MainDB.instance.isar.writeTxn(() async {
-      await MainDB.instance.isar.walletInfo.deleteAllByWalletId(
-        walletIdsToDelete.toList(),
-      );
-    });
+    // finally remove any added wallets, with their keys and data
+    for (final info
+        in await MainDB.instance.isar.walletInfo.where().findAll()) {
+      if (!revertToState.walletIds.contains(info.walletId)) {
+        await Wallets.sharedInstance.deleteWallet(info, secureStorageInterface);
+      }
+    }
 
     _cancelCompleter!.complete();
     _shouldCancelRestore = false;
@@ -886,11 +899,8 @@ abstract class SWB {
     final _prefs = Prefs.instance;
     await _prefs.init();
     _prefs.currency = prefs['currency'] as String;
-    // _prefs.useBiometrics = prefs['useBiometrics'] as bool;
-    // _prefs.hasPin = prefs['hasPin'] as bool;
     _prefs.language = prefs['language'] as String;
     _prefs.showFavoriteWallets = prefs['showFavoriteWallets'] as bool;
-    _prefs.wifiOnly = prefs['wifiOnly'] as bool;
     _prefs.syncType = prefs['syncType'] == "currentWalletOnly"
         ? SyncingType.currentWalletOnly
         : prefs['syncType'] == "selectedWalletsAtStartup"
@@ -908,6 +918,53 @@ abstract class SWB {
     // Auto backup stays as set up on this device: its folder and key are
     // local (the key isn't in the file), so turning it on from a backup
     // left it without a key.
+
+    // Older backups have none of these: this device's settings stay.
+    if (prefs['enableCoinControl'] is bool) {
+      _prefs.enableCoinControl = prefs['enableCoinControl'] as bool;
+    }
+    if (prefs['hideBlockExplorerWarning'] is bool) {
+      _prefs.hideBlockExplorerWarning =
+          prefs['hideBlockExplorerWarning'] as bool;
+    }
+    if (prefs['amountUnits'] is Map) {
+      final units = prefs['amountUnits'] as Map;
+      for (final coin in AppConfig.coins) {
+        final unit = AmountUnit.values.asNameMap()[units[coin.identifier]];
+        if (unit != null && AmountUnit.valuesForCoin(coin).contains(unit)) {
+          _prefs.updateAmountUnit(coin: coin, amountUnit: unit);
+        }
+      }
+    }
+    if (prefs['maxDecimals'] is Map) {
+      final decimals = prefs['maxDecimals'] as Map;
+      for (final coin in AppConfig.coins) {
+        final n = decimals[coin.identifier];
+        // Prefs' own upper bound.
+        if (n is int && n >= 0 && n <= 18) {
+          _prefs.updateMaxDecimals(coin: coin, maxDecimals: n);
+        }
+      }
+    }
+    // Only themes installed here (the app's own light and dark ones).
+    Future<String?> theme(String key) async {
+      final id = prefs[key];
+      return id is String &&
+              await ThemeService.instance.verifyInstalled(themeId: id)
+          ? id
+          : null;
+    }
+
+    if (await theme('themeId') case final id?) _prefs.themeId = id;
+    if (await theme('systemBrightnessLightThemeId') case final id?) {
+      _prefs.systemBrightnessLightThemeId = id;
+    }
+    if (await theme('systemBrightnessDarkThemeId') case final id?) {
+      _prefs.systemBrightnessDarkThemeId = id;
+    }
+    if (prefs['enableSystemBrightness'] is bool) {
+      _prefs.enableSystemBrightness = prefs['enableSystemBrightness'] as bool;
+    }
   }
 
   static Future<void> _restoreAddressBook(
@@ -946,43 +1003,56 @@ abstract class SWB {
 
   static Future<void> _restoreNodes(
     List<dynamic>? nodes,
-    List<dynamic>? primaryNodes,
     SecureStorageInterface secureStorageInterface,
   ) async {
     final NodeService nodeService = NodeService(
       secureStorageInterface: secureStorageInterface,
     );
-    if (nodes != null) {
-      final primaryIds = primaryNodes
-          ?.map((e) => e["id"] as String?)
-          .whereType<String>()
-          .toSet();
-
-      for (final node in nodes) {
-        final id = node['id'] as String;
-        await nodeService.save(
-          NodeModel(
-            host: node['host'] as String,
-            port: node['port'] as int,
-            name: node['name'] as String,
-            id: id,
-            useSSL: node['useSSL'] == "false" ? false : true,
-            enabled: node['enabled'] == "false" ? false : true,
-            coinName: node['coinName'] as String,
-            loginName: node['loginName'] as String?,
-            isFailover: node['isFailover'] as bool,
-            isDown: node['isDown'] as bool,
-            torEnabled: node['torEnabled'] as bool? ?? true,
-            clearnetEnabled: node['plainEnabled'] as bool? ?? true,
-            isPrimary:
-                node["isPrimary"] as bool? ?? primaryIds?.contains(id) ?? false,
-          ),
-          node["password"] as String?,
-          true,
-        );
-      }
+    for (final node in nodes ?? const []) {
+      await nodeService.save(
+        _nodeFromBackup(Map<String, dynamic>.from(node as Map)),
+        true,
+      );
     }
 
     await nodeService.updateDefaults();
   }
+}
+
+/// A node as [NodeModel.toMap] wrote it into a backup.
+NodeModel _nodeFromBackup(Map<String, dynamic> node) => NodeModel(
+  host: node['host'] as String,
+  port: node['port'] as int,
+  name: node['name'] as String,
+  id: node['id'] as String,
+  useSSL: node['useSSL'] as bool? ?? true,
+  coinName: node['coinName'] as String,
+  torEnabled: node['torEnabled'] as bool? ?? true,
+  clearnetEnabled: node['clearEnabled'] as bool? ?? true,
+  isPrimary: node['isPrimary'] as bool? ?? false,
+);
+
+/// Favourite order for the backed up [wallets] (their JSON maps) that are
+/// favourites: numbered from [after] + 1, in their order in the backup
+/// (older backups only say which are favourites: their order in the
+/// file). Wallets that aren't favourites aren't in the result.
+Map<Object, int> swbFavouriteOrder(
+  List<dynamic> wallets, {
+  required int after,
+}) {
+  final favourites = <({int position, int order, Object wallet})>[];
+  for (final (i, w) in wallets.indexed) {
+    if (w is! Map) continue;
+    final index = w['favouriteOrderIndex'];
+    if (index is int ? index < 0 : w['isFavorite'] != true) continue;
+    favourites.add((position: i, order: index is int ? index : i, wallet: w));
+  }
+  favourites.sort(
+    (a, b) => a.order != b.order
+        ? a.order.compareTo(b.order)
+        : a.position.compareTo(b.position),
+  );
+  return Map.identity()..addAll({
+    for (final (k, f) in favourites.indexed) f.wallet: after + 1 + k,
+  });
 }

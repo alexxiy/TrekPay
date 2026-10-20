@@ -6,9 +6,12 @@ import '../../../../utilities/stack_file_system.dart';
 /// Per-wallet Kerrigan shield (Sapling) state: viewing key, commitment
 /// tree, notes and what the history needs to know about them.
 ///
-/// Nothing here is secret (the spending key is derived from the
-/// mnemonic when needed); it is stored as a JSON file next to the app
-/// data so the large witness data stays out of Isar.
+/// Stored as a JSON file next to the app data so the large witness data
+/// stays out of Isar. No keys go in the file: the full viewing key
+/// ([extfvk]) reveals every shield transaction, past and future, so it is
+/// derived from the mnemonic when the state loads and kept in memory.
+/// The notes, amounts and memos in the file are what the wallet's history
+/// shows anyway.
 class KerriganShieldState {
   KerriganShieldState({
     required this.extfvk,
@@ -21,14 +24,17 @@ class KerriganShieldState {
     List<Map<String, dynamic>>? unspentNotes,
     Map<String, Map<String, dynamic>>? nullifierNotes,
     Map<String, List<String>>? pendingSpent,
+    Map<String, int>? pendingIncoming,
     Map<String, Map<String, dynamic>>? txInfo,
   }) : unspentNotes = unspentNotes ?? [],
        nullifierNotes = nullifierNotes ?? {},
        pendingSpent = pendingSpent ?? {},
+       pendingIncoming = pendingIncoming ?? {},
        txInfo = txInfo ?? {};
 
   static const version = 1;
 
+  /// Not saved (see the class comment).
   final String extfvk;
 
   /// "main", "test" or "regtest" (for the shield library).
@@ -57,6 +63,11 @@ class KerriganShieldState {
   /// Broadcast but unconfirmed shield spends: txid -> nullifiers.
   Map<String, List<String>> pendingSpent;
 
+  /// Broadcast but unconfirmed sends paying this wallet's shield
+  /// addresses (change above all): txid -> sats. They are notes only once
+  /// a block has them; until then the balance counts them as pending.
+  Map<String, int> pendingIncoming;
+
   /// Shield parts of wallet transactions: txid -> {received: [{value,
   /// address, memo}], spentNullifiers: [...]}.
   Map<String, Map<String, dynamic>> txInfo;
@@ -67,13 +78,6 @@ class KerriganShieldState {
   int get balance =>
       unspentNotes.fold(0, (p, n) => p + (n["value"] as num).toInt());
 
-  int get spendableBalance {
-    final pending = pendingNullifiers;
-    return unspentNotes
-        .where((n) => !pending.contains(n["nullifier"]))
-        .fold(0, (p, n) => p + (n["value"] as num).toInt());
-  }
-
   List<Map<String, dynamic>> get spendableNotes {
     final pending = pendingNullifiers;
     return unspentNotes
@@ -83,7 +87,6 @@ class KerriganShieldState {
 
   Map<String, dynamic> toJson() => {
     "version": version,
-    "extfvk": extfvk,
     "network": network,
     "startHeight": startHeight,
     "lastProcessedBlock": lastProcessedBlock,
@@ -93,16 +96,20 @@ class KerriganShieldState {
     "unspentNotes": unspentNotes,
     "nullifierNotes": nullifierNotes,
     "pendingSpent": pendingSpent,
+    "pendingIncoming": pendingIncoming,
     "txInfo": txInfo,
   };
 
-  factory KerriganShieldState.fromJson(Map<String, dynamic> json) {
+  factory KerriganShieldState.fromJson(
+    Map<String, dynamic> json, {
+    required String extfvk,
+  }) {
     Map<String, Map<String, dynamic>> mapOfMaps(dynamic v) => {
       for (final e in Map<String, dynamic>.from(v as Map? ?? {}).entries)
         e.key: Map<String, dynamic>.from(e.value as Map),
     };
     return KerriganShieldState(
-      extfvk: json["extfvk"] as String,
+      extfvk: extfvk,
       network: json["network"] as String,
       startHeight: json["startHeight"] as int,
       lastProcessedBlock: json["lastProcessedBlock"] as int,
@@ -120,6 +127,12 @@ class KerriganShieldState {
         ).entries)
           e.key: List<String>.from(e.value as List),
       },
+      pendingIncoming: {
+        for (final e in Map<String, dynamic>.from(
+          json["pendingIncoming"] as Map? ?? {},
+        ).entries)
+          e.key: (e.value as num).toInt(),
+      },
       txInfo: mapOfMaps(json["txInfo"]),
     );
   }
@@ -134,12 +147,15 @@ class KerriganShieldState {
     return File("${dir.path}/$walletId.json");
   }
 
-  static Future<KerriganShieldState?> load(String walletId) async {
+  static Future<KerriganShieldState?> load(
+    String walletId, {
+    required String extfvk,
+  }) async {
     final f = await _file(walletId);
     if (!f.existsSync()) return null;
     final json = jsonDecode(await f.readAsString()) as Map<String, dynamic>;
     if (json["version"] != version) return null;
-    return KerriganShieldState.fromJson(json);
+    return KerriganShieldState.fromJson(json, extfvk: extfvk);
   }
 
   Future<void> save(String walletId) async {

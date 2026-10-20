@@ -259,8 +259,10 @@ extension KerriganMasternodes on KerriganWallet {
     for (final m in masternodes) m.payoutAddress,
   };
 
-  bool _isMasternodeCollateral(String txid, int vout) =>
-      masternodes.any((m) => m.txid == txid && m.vout == vout);
+  /// Collateral outputs of this wallet's masternodes (`txid:vout`).
+  Set<String> get _masternodeCollaterals => {
+    for (final m in masternodes) kerriganOutpointKey(m.txid, m.vout),
+  };
 
   Amount masternodeCollateral(KerriganMasternodeType type) => Amount(
     rawValue: BigInt.from(type.collateralCoins) * cryptoCurrency.satsPerCoin,
@@ -462,13 +464,14 @@ extension KerriganMasternodes on KerriganWallet {
   /// masternode yet (e.g. a collateral sent before, or after a restore).
   Future<List<UTXO>> availableCollaterals(KerriganMasternodeType type) async {
     final raw = masternodeCollateral(type).raw.toInt();
+    final used = _masternodeCollaterals;
     return (await mainDB.getUTXOs(walletId).findAll())
         .where(
           (u) =>
               !isKerriganShieldNote(u) &&
               u.value == raw &&
               u.used != true &&
-              !_isMasternodeCollateral(u.txid, u.vout),
+              !used.contains(kerriganOutpointKey(u.txid, u.vout)),
         )
         .toList();
   }
@@ -746,9 +749,12 @@ extension KerriganMasternodes on KerriganWallet {
 
   /// Masternode rewards paid to [mn]'s payout address so far.
   Future<Amount> masternodeEarned(KerriganMasternode mn) async {
+    // The kinds are in otherData (JSON): only those rows are read.
     final txs = await mainDB.isar.transactionV2s
         .where()
         .walletIdEqualTo(walletId)
+        .filter()
+        .otherDataContains('"${KerriganTxKind.masternodeReward}"')
         .findAll();
     var total = BigInt.zero;
     for (final tx in txs) {

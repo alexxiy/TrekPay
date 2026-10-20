@@ -9,8 +9,8 @@ import '../../utilities/block_explorers.dart';
 import '../../utilities/text_styles.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../widgets/background.dart';
-import '../../widgets/custom_buttons/app_bar_icon_button.dart';
 import '../../widgets/desktop/primary_button.dart';
+import '../../widgets/page_app_bar.dart';
 import '../../widgets/desktop/secondary_button.dart';
 import '../../widgets/rounded_white_container.dart';
 import '../kerrigan_masternodes/kerrigan_masternodes_view.dart';
@@ -139,10 +139,8 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
       child: Background(
         child: Scaffold(
           backgroundColor: colors.background,
-          appBar: AppBar(
-            leading: AppBarBackButton(
-              onPressed: () => Navigator.of(context).pop(_voted),
-            ),
+          appBar: PageAppBar(
+            onBack: () => Navigator.of(context).pop(_voted),
             title: Text(p.type.label, style: STextStyles.navBarTitle(context)),
           ),
           body: SafeArea(

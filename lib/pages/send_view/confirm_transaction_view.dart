@@ -24,6 +24,7 @@ import '../../pages_desktop_specific/my_stack_view/wallet_view/desktop_wallet_vi
 import '../../pages_desktop_specific/my_stack_view/wallet_view/sub_widgets/desktop_auth_send.dart';
 import '../../providers/providers.dart';
 import '../../route_generator.dart';
+import '../../services/kerrigan_name/kerrigan_name_resolver.dart';
 import '../../themes/stack_colors.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../themes/theme_providers.dart';
@@ -60,6 +61,9 @@ class ConfirmTransactionView extends ConsumerStatefulWidget {
     required this.onSuccess,
     this.routeOnSuccessName,
     this.onSuccessInsteadOfRouteOnSuccess,
+    this.kerriganName,
+    this.beforeBroadcast,
+    this.afterFailedBroadcast,
   });
 
   static const String routeName = "/confirmTransactionView";
@@ -70,6 +74,17 @@ class ConfirmTransactionView extends ConsumerStatefulWidget {
   final VoidCallback? onSuccessInsteadOfRouteOnSuccess;
   final VoidCallback onSuccess;
 
+  /// The Kerrigan.name name being paid, with the address it was proven to point
+  /// to when the transaction was built. Checked again before sending.
+  final KerriganNameVerified? kerriganName;
+
+  /// Runs right before the transaction goes out (after the PIN), for what
+  /// must be remembered even if the app stops right after sending.
+  final Future<void> Function()? beforeBroadcast;
+
+  /// Runs when sending failed, to undo [beforeBroadcast].
+  final Future<void> Function()? afterFailedBroadcast;
+
   @override
   ConsumerState<ConfirmTransactionView> createState() =>
       _ConfirmTransactionViewState();
@@ -79,11 +94,100 @@ class _ConfirmTransactionViewState
     extends ConsumerState<ConfirmTransactionView> {
   /// The first recipient; a proposal fee (OP_RETURN) reads as what it is.
   String get _recipientText {
+    if (widget.kerriganName != null) return widget.kerriganName!.name;
     final address = widget.txData.recipients?.firstOrNull?.address ?? "";
     return isKerriganOpReturn(address)
         ? "Proposal fee, burnt (proposal "
               "${address.substring(kKerriganOpReturnPrefix.length, kKerriganOpReturnPrefix.length + 16)}…)"
         : address;
+  }
+
+  /// Under the recipient when paying a Kerrigan.name name.
+  Widget _kerriganNameDetails(BuildContext context, TextStyle style) {
+    final colors = Theme.of(context).extension<StackColors>()!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 4),
+        SelectableText(
+          widget.kerriganName!.address,
+          style: style.copyWith(color: colors.textSubtitle1),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          "Checked against the Kerrigan.name registry on BNB Smart Chain",
+          style: style.copyWith(color: colors.textSubtitle2, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  /// Change paid to an address outside the wallet (a custom change address
+  /// the user entered): it leaves the wallet like the payment does.
+  Widget _foreignChangeDetails(
+    BuildContext context,
+    TextStyle style,
+    ({String address, BigInt sats}) change,
+    CryptoCurrency coin,
+  ) {
+    final color = Theme.of(context).extension<StackColors>()!.textError;
+    final amount = ref
+        .watch(pAmountFormatter(coin))
+        .format(
+          Amount(rawValue: change.sats, fractionDigits: coin.fractionDigits),
+        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Text("Change: $amount to", style: style.copyWith(color: color)),
+        SelectableText(change.address, style: style.copyWith(color: color)),
+        const SizedBox(height: 4),
+        Text(
+          "This change address isn't one of this wallet's, so the change "
+          "goes to whoever owns it.",
+          style: style.copyWith(color: color, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  /// Right before sending, the name must still point to the address the
+  /// transaction pays, under the registry's current state: the screen may
+  /// have been open for a while, and a name can change hands.
+  Future<void> _recheckKerriganName(KerriganNameVerified checked) async {
+    final name = checked.name;
+    final resolver = KerriganNameResolver.forCoin(
+      ref.read(pWallets).getWallet(walletId).info.coin,
+    );
+    final recipients = widget.txData.recipients ?? const [];
+    if (resolver == null ||
+        recipients.length != 1 ||
+        recipients.first.address != checked.address) {
+      throw _NotSent("This payment doesn't match the address $name points to.");
+    }
+    final KerriganNameLookup now;
+    try {
+      now = await resolver.lookup(name);
+    } on KerriganNameException catch (e) {
+      throw _NotSent("Couldn't check $name again before sending. $e");
+    }
+    switch (now) {
+      case KerriganNameVerified(:final address) when address == checked.address:
+        return;
+      case KerriganNameVerified():
+        throw _NotSent(
+          "$name now points to a different address than the one shown. Go "
+          "back and preview the payment again to see the new address.",
+        );
+      case KerriganNameIndexerBehind():
+        throw _NotSent(
+          "Kerrigan.name is processing a registry update, so $name can't be "
+          "checked right now. Try again in a few minutes.",
+        );
+      case KerriganNameNotRegistered():
+        throw _NotSent("$name is no longer registered on Kerrigan.name.");
+    }
   }
 
   late final String walletId;
@@ -128,47 +232,37 @@ class _ConfirmTransactionViewState
 
     final time = Future<dynamic>.delayed(const Duration(milliseconds: 2500));
 
-    final List<String> txids = [];
-    final Future<TxData> txDataFuture;
+    final mainDB = ref.read(mainDBProvider);
 
-    final note = noteController.text;
+    // Paying a name without a note: keep the name, so the history shows who
+    // was paid.
+    final note = noteController.text.isEmpty && widget.kerriganName != null
+        ? widget.kerriganName!.name
+        : noteController.text;
 
+    final TxData confirmedTx;
     try {
-      txDataFuture = wallet.confirmSend(txData: widget.txData);
-      final results = await Future.wait([txDataFuture, time]);
-      final confirmedTx = results.first as TxData;
-
-      sendProgressController.triggerSuccess?.call();
-      await Future<void>.delayed(const Duration(seconds: 5));
-
-      txids.add(confirmedTx.txid!);
-      ref.refresh(desktopUseUTXOs);
-
-      // save note
-      for (final txid in txids) {
-        await ref
-            .read(mainDBProvider)
-            .putTransactionNote(
-              TransactionNote(walletId: walletId, txid: txid, value: note),
-            );
-      }
-
-      unawaited(wallet.refresh());
-
-      closeSendingDialog();
-
-      widget.onSuccess.call();
-
-      if (context.mounted) {
-        if (widget.onSuccessInsteadOfRouteOnSuccess == null) {
-          Navigator.of(context)
-              .popUntil(ModalRoute.withName(routeOnSuccessName));
-        } else {
-          widget.onSuccessInsteadOfRouteOnSuccess!.call();
+      if (widget.kerriganName != null) await _recheckKerriganName(widget.kerriganName!);
+      await widget.beforeBroadcast?.call();
+      try {
+        confirmedTx = await wallet.confirmSend(txData: widget.txData);
+      } catch (_) {
+        try {
+          await widget.afterFailedBroadcast?.call();
+        } catch (e, s) {
+          Logging.instance.w(
+            "Cleaning up after a failed send",
+            error: e,
+            stackTrace: s,
+          );
         }
+        rethrow;
       }
+      await time;
     } catch (e, s) {
-      const message = "Broadcast transaction failed";
+      final message = e is _NotSent
+          ? "Not sent"
+          : "Broadcast transaction failed";
       Logging.instance.e(message, error: e, stackTrace: s);
       // pop sending dialog
       if (context.mounted) {
@@ -240,6 +334,43 @@ class _ConfirmTransactionViewState
           },
         );
       }
+      return;
+    }
+
+    // Sent. What follows only records it: an error here must not read as
+    // a failed send, or the user would pay again.
+    try {
+      sendProgressController.triggerSuccess?.call();
+      // Long enough to see the tick, not to wait on it.
+      await Future<void>.delayed(const Duration(seconds: 2));
+      await mainDB.putTransactionNote(
+        TransactionNote(
+          walletId: walletId,
+          txid: confirmedTx.txid!,
+          value: note,
+        ),
+      );
+      if (mounted) ref.invalidate(desktopUseUTXOs);
+    } catch (e, s) {
+      Logging.instance.w(
+        "Sent ${confirmedTx.txid}, but saving its note failed",
+        error: e,
+        stackTrace: s,
+      );
+    }
+
+    unawaited(wallet.refresh());
+
+    closeSendingDialog();
+
+    widget.onSuccess.call();
+
+    if (context.mounted) {
+      if (widget.onSuccessInsteadOfRouteOnSuccess == null) {
+        Navigator.of(context).popUntil(ModalRoute.withName(routeOnSuccessName));
+      } else {
+        widget.onSuccessInsteadOfRouteOnSuccess!.call();
+      }
     }
   }
 
@@ -272,6 +403,15 @@ class _ConfirmTransactionViewState
     final unit = coin.ticker;
     final Amount? fee = widget.txData.fee;
     final Amount amountWithoutChange = widget.txData.amountWithoutChange!;
+    final foreignChange = kerriganForeignChange(widget.txData);
+    // What leaves the wallet, change to someone else's address included.
+    final Amount total =
+        amountWithoutChange +
+        fee! +
+        Amount(
+          rawValue: foreignChange?.sats ?? BigInt.zero,
+          fractionDigits: coin.fractionDigits,
+        );
 
     return ConditionalParent(
       condition: !isDesktop,
@@ -286,10 +426,6 @@ class _ConfirmTransactionViewState
                 .background,
             leading: AppBarBackButton(
               onPressed: () async {
-                // if (FocusScope.of(context).hasFocus) {
-                //   FocusScope.of(context).unfocus();
-                //   await Future<void>.delayed(Duration(milliseconds: 50));
-                // }
                 Navigator.of(context).pop();
               },
             ),
@@ -367,6 +503,18 @@ class _ConfirmTransactionViewState
                           _recipientText,
                           style: STextStyles.itemSubtitle12(context),
                         ),
+                        if (widget.kerriganName != null)
+                          _kerriganNameDetails(
+                            context,
+                            STextStyles.itemSubtitle12(context),
+                          ),
+                        if (foreignChange != null)
+                          _foreignChangeDetails(
+                            context,
+                            STextStyles.itemSubtitle12(context),
+                            foreignChange,
+                            coin,
+                          ),
                       ],
                     ),
                   ),
@@ -396,7 +544,7 @@ class _ConfirmTransactionViewState
                           style: STextStyles.smallMed12(context),
                         ),
                         SelectableText(
-                          ref.watch(pAmountFormatter(coin)).format(fee!),
+                          ref.watch(pAmountFormatter(coin)).format(fee),
                           style: STextStyles.itemSubtitle12(context),
                           textAlign: TextAlign.right,
                         ),
@@ -612,42 +760,21 @@ class _ConfirmTransactionViewState
                                         .textDark,
                                   ),
                             ),
+                            if (widget.kerriganName != null)
+                              _kerriganNameDetails(
+                                context,
+                                STextStyles.desktopTextExtraExtraSmall(context),
+                              ),
+                            if (foreignChange != null)
+                              _foreignChangeDetails(
+                                context,
+                                STextStyles.desktopTextExtraExtraSmall(context),
+                                foreignChange,
+                                coin,
+                              ),
                           ],
                         ),
                       ),
-                      // Container(
-                      //   height: 1,
-                      //   color: Theme.of(context)
-                      //       .extension<StackColors>()!
-                      //       .background,
-                      // ),
-                      // Padding(
-                      //   padding: const EdgeInsets.all(12),
-                      //   child: Column(
-                      //     mainAxisSize: MainAxisSize.min,
-                      //     crossAxisAlignment: CrossAxisAlignment.start,
-                      //     children: [
-                      //       Text(
-                      //         "Note",
-                      //         style: STextStyles.desktopTextExtraExtraSmall(
-                      //             context),
-                      //       ),
-                      //       const SizedBox(
-                      //         height: 2,
-                      //       ),
-                      //       Text(
-                      //         transactionInfo["note"] as String,
-                      //         style: STextStyles.desktopTextExtraExtraSmall(
-                      //                 context)
-                      //             .copyWith(
-                      //           color: Theme.of(context)
-                      //               .extension<StackColors>()!
-                      //               .textDark,
-                      //         ),
-                      //       )
-                      //     ],
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),
@@ -749,7 +876,7 @@ class _ConfirmTransactionViewState
                       .extension<StackColors>()!
                       .textFieldDefaultBG,
                   child: SelectableText(
-                    ref.watch(pAmountFormatter(coin)).format(fee!),
+                    ref.watch(pAmountFormatter(coin)).format(fee),
                     style: STextStyles.itemSubtitle(context),
                   ),
                 ),
@@ -780,7 +907,7 @@ class _ConfirmTransactionViewState
                       .extension<StackColors>()!
                       .textFieldDefaultBG,
                   child: SelectableText(
-                    "~${fee!.raw.toInt() ~/ widget.txData.vSize!}",
+                    "~${fee.raw.toInt() ~/ widget.txData.vSize!}",
                     style: STextStyles.itemSubtitle(context),
                   ),
                 ),
@@ -817,9 +944,7 @@ class _ConfirmTransactionViewState
                             ),
                     ),
                     SelectableText(
-                      ref
-                          .watch(pAmountFormatter(coin))
-                          .format(amountWithoutChange + fee!),
+                      ref.watch(pAmountFormatter(coin)).format(total),
                       style: isDesktop
                           ? STextStyles.desktopTextExtraExtraSmall(context)
                                 .copyWith(
@@ -907,20 +1032,10 @@ class _ConfirmTransactionViewState
                       ),
                     );
 
-                    if (context.mounted) {
-                      if (unlocked == true) {
-                        unawaited(_attemptSend(context));
-                      } else {
-                        unawaited(
-                          showFloatingFlushBar(
-                            type: FlushBarType.warning,
-                            message: Util.isDesktop
-                                ? "Invalid passphrase"
-                                : "Invalid PIN",
-                            context: context,
-                          ),
-                        );
-                      }
+                    // Null: the user went back. (A wrong PIN keeps the
+                    // lock screen open.)
+                    if (context.mounted && unlocked == true) {
+                      unawaited(_attemptSend(context));
                     }
                   }
                 },
@@ -932,4 +1047,14 @@ class _ConfirmTransactionViewState
       ),
     );
   }
+}
+
+/// Stopped before sending, with the reason to show.
+class _NotSent implements Exception {
+  _NotSent(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }

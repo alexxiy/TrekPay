@@ -1,14 +1,30 @@
-Astronaut is a non-custodial mobile wallet for Kerrigan. Your recovery phrase and keys never leave your phone, and nobody else can move your coins.
+Astronaut is a Kerrigan wallet that keeps you in control. Your recovery phrase and keys stay on your device. There's no account to create, and nobody else can move your coins.
 
-Highlights:
-- SHIELD private transactions: shield, unshield and send privately, with an optional encrypted memo.
-- Cold staking: delegate PIV to a staker and earn staking rewards while your coins stay in your wallet. Pick a staker from masternode.space or use your own node, and undelegate at any time.
-- Masternodes: set up a masternode from your wallet, start it, and follow its status and rewards.
-- Governance: browse budget proposals, vote with your masternodes, submit your own proposal, and see when budget payments arrive.
-- Clear history: staking rewards, masternode rewards and proposal payments are labelled, and you can filter by each type.
-- Coin control, an address book and kerrigan: payment links.
-- Encrypted backups of all your wallets and settings, plus automatic backups.
-- PIN and fingerprint lock.
-- Optional Tor for every connection.
-- Connect to your own kerrigan-bridge server if you prefer.
-- Open source (GPLv3), with no ads and no tracking.
+Privacy
+• Shielded transactions: shield, unshield and send KRGN privately, with an optional encrypted memo.
+• Optional Tor for every connection.
+• No ads and no tracking.
+
+Fast payments, masternodes and governance
+• InstantSend: payments locked by the masternode network are final within seconds.
+• Masternodes and BroodNodes: register them from the wallet and follow their status and rewards.
+• Governance: browse proposals, vote with your masternodes and submit your own.
+
+Everyday use
+• Scan QR codes and open kerrigan: payment links.
+• Address book and coin control.
+• Sign and verify messages.
+• A clear history: masternode rewards, proposal payments and shielded transactions are labelled, and you can filter by each kind.
+• Several accounts from one recovery phrase, and view-only wallets.
+
+Backups and security
+• Restore with your 12- or 24-word recovery phrase, with an optional passphrase.
+• Encrypted backups of your wallets and settings, plus automatic backups.
+• PIN and biometric lock, and a duress PIN that opens the app with only the wallets you choose.
+
+Your own server, if you like
+You can switch to your own kerrigan-bridge server at any time.
+
+Keep your recovery phrase written down somewhere safe. Whoever has it controls your coins, and nobody, the Astronaut team included, can restore it for you.
+
+Astronaut is open source under the GPLv3 license.

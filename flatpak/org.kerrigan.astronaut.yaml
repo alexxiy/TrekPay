@@ -7,7 +7,7 @@
 #   flatpak-builder --user --install build-dir org.kerrigan.astronaut.yaml
 app-id: org.kerrigan.astronaut
 runtime: org.freedesktop.Platform
-runtime-version: '24.08'
+runtime-version: '26.08'
 sdk: org.freedesktop.Sdk
 command: astronaut
 
@@ -16,7 +16,8 @@ finish-args:
   - --share=ipc
   - --socket=fallback-x11
   - --socket=wayland
-  - --device=dri
+  # GPU, and the camera for the QR scanner (OpenCV opens /dev/video*).
+  - --device=all
   # Wallet data lives in ~/.astronaut.
   - --filesystem=~/.astronaut:create
   # Secure storage (libsecret).

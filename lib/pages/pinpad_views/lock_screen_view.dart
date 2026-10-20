@@ -18,16 +18,15 @@ import '../../notifications/show_flush_bar.dart';
 import '../../providers/global/secure_store_provider.dart';
 import '../../providers/providers.dart';
 import '../../themes/stack_colors.dart';
-// import 'package:stackwallet/providers/global/should_show_lockscreen_on_resume_state_provider.dart';
 import '../../utilities/assets.dart';
 import '../../utilities/biometrics.dart';
 import '../../utilities/flutter_secure_storage_interface.dart';
+import '../../utilities/pin_attempts.dart';
 import '../../utilities/show_loading.dart';
 import '../../utilities/ui_stall_watch.dart';
 import '../../utilities/show_node_tor_settings_mismatch.dart';
 import '../../utilities/text_styles.dart';
 import '../../utilities/util.dart';
-import '../../wallets/wallet/intermediate/external_wallet.dart';
 import '../../wallets/wallet/wallet.dart';
 import '../../widgets/background.dart';
 import '../../widgets/custom_buttons/app_bar_icon_button.dart';
@@ -78,11 +77,7 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
   late final ShakeController _shakeController;
   late final bool _autoPin;
 
-  late int _attempts;
-  bool _attemptLock = false;
-  late Duration _timeout;
-  static const maxAttemptsBeforeThrottling = 3;
-  Timer? _timer;
+  late final PinAttempts _pinAttempts;
 
   /// Wallet opened right after unlocking, if any (see [_loadWallets]).
   String? _openWalletId;
@@ -130,30 +125,17 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
         return false;
       }
 
-      final Future<void> loadFuture;
-      if (wallet is ExternalWallet) {
-        loadFuture = wallet.init().then(
-          (value) async => await (wallet as ExternalWallet).open(),
-        );
-      } else {
-        loadFuture = wallet.init();
-      }
-
-      await loadFuture;
+      await wallet.init();
     }
 
     return true;
   }
 
   Future<void> _onUnlock() async {
+    await _pinAttempts.succeeded();
     final now = DateTime.now().toUtc();
     ref.read(prefsChangeNotifierProvider).lastUnlocked =
         now.millisecondsSinceEpoch ~/ 1000;
-
-    // if (widget.isInitialAppLogin) {
-    //   ref.read(hasAuthenticatedOnStartStateProvider.notifier).state = true;
-    //   ref.read(shouldShowLockscreenOnResumeStateProvider.notifier).state = true;
-    // }
 
     widget.onSuccess?.call();
 
@@ -240,27 +222,9 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
             localizedReason: localizedReason,
             cancelButtonText: cancelButtonText,
           ))) {
-        // check if initial log in
-        // if (widget.routeOnSuccess == "/mainview") {
-        //   await logIn(await walletsService.networkName, currentWalletName,
-        //       await walletsService.getWalletId(currentWalletName));
-        // }
-
         unawaited(_onUnlock());
       }
-      // leave this commented to enable pin fall back should biometrics not work properly
-      // else {
-      //   Navigator.pop(context);
-      // }
     }
-  }
-
-  @override
-  void didChangeDependencies() {
-    if (widget.isInitialAppLogin) {
-      // unawaited(Assets.precache(context));
-    }
-    super.didChangeDependencies();
   }
 
   @override
@@ -269,8 +233,7 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
 
     _secureStore = ref.read(secureStoreProvider);
     biometrics = widget.biometrics;
-    _attempts = 0;
-    _timeout = Duration.zero;
+    _pinAttempts = PinAttempts(_secureStore);
     _autoPin = ref.read(prefsChangeNotifierProvider).autoPin;
     if (_autoPin) {
       _pinTextController.addListener(_onPinChangedAutologinCheck);
@@ -281,7 +244,6 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
 
   @override
   dispose() {
-    // _shakeController.dispose();
     _pinTextController.removeListener(_onPinChangedAutologinCheck);
     super.dispose();
   }
@@ -328,17 +290,34 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
     return canUnlock;
   }
 
+  /// Lengths of the PINs that unlock this screen (a duress PIN may be
+  /// shorter or longer).
+  Future<List<int>> _pinLengths() async => [
+    if (widget.isInitialAppLogin || !ref.read(pDuress))
+      (await _secureStore.read(key: kPinKey))?.length,
+    if (widget.isInitialAppLogin || ref.read(pDuress))
+      (await _secureStore.read(key: kDuressPinKey))?.length,
+  ].nonNulls.toList();
+
   final Mutex _autoPinCheckLock = Mutex();
+
+  /// Auto PIN: unlock as soon as the PIN is right. A PIN as long as the
+  /// longest one that isn't right counts as a wrong PIN, as if submitted.
   void _onPinChangedAutologinCheck() async {
     if (mounted) {
       await _autoPinCheckLock.acquire();
     }
 
     try {
-      if (_autoPin && _pinTextController.text.length >= 4) {
-        if (await _checkCanUnlock(_pinTextController.text)) {
+      final pin = _pinTextController.text;
+      if (_autoPin && pin.length >= 4) {
+        if (await _pinAttempts.lockedFor() == null &&
+            await _checkCanUnlock(pin)) {
           await Future<void>.delayed(const Duration(milliseconds: 200));
           unawaited(_onUnlock());
+        } else if (pin.length >=
+            (await _pinLengths()).fold(4, (a, b) => a > b ? a : b)) {
+          await _onSubmitPin(pin);
         }
       }
     } finally {
@@ -346,69 +325,21 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
     }
   }
 
-  void _onSubmitPin(String pin) async {
-    _attempts++;
-
-    if (_attempts > maxAttemptsBeforeThrottling) {
-      _attemptLock = true;
-      switch (_attempts) {
-        case 4:
-          _timeout = const Duration(seconds: 30);
-          break;
-
-        case 5:
-          _timeout = const Duration(seconds: 60);
-          break;
-
-        case 6:
-          _timeout = const Duration(minutes: 5);
-          break;
-
-        case 7:
-          _timeout = const Duration(minutes: 10);
-          break;
-
-        case 8:
-          _timeout = const Duration(minutes: 20);
-          break;
-
-        case 9:
-          _timeout = const Duration(minutes: 30);
-          break;
-
-        default:
-          _timeout = const Duration(minutes: 60);
+  Future<void> _onSubmitPin(String pin) async {
+    final locked = await _pinAttempts.lockedFor();
+    if (locked != null) {
+      if (mounted) {
+        unawaited(
+          showFloatingFlushBar(
+            type: FlushBarType.warning,
+            message: PinAttempts.lockedMessage(locked),
+            context: context,
+            iconAsset: Assets.svg.alertCircle,
+          ),
+        );
       }
-
-      _timer?.cancel();
-      _timer = Timer(_timeout, () {
-        _attemptLock = false;
-        _attempts = 0;
-      });
-    }
-
-    if (_attemptLock) {
-      String prettyTime = "";
-      if (_timeout.inSeconds >= 60) {
-        prettyTime += "${_timeout.inMinutes} minutes";
-      } else {
-        prettyTime += "${_timeout.inSeconds} seconds";
-      }
-
-      unawaited(
-        showFloatingFlushBar(
-          type: FlushBarType.warning,
-          message:
-              "Incorrect PIN entered too many times. Please wait $prettyTime",
-          context: context,
-          iconAsset: Assets.svg.alertCircle,
-        ),
-      );
-
       await Future<void>.delayed(const Duration(milliseconds: 100));
-
       _pinTextController.text = '';
-
       return;
     }
 
@@ -416,12 +347,15 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
       await Future<void>.delayed(const Duration(milliseconds: 200));
       unawaited(_onUnlock());
     } else {
+      final lockout = await _pinAttempts.failed();
       unawaited(_shakeController.shake());
       if (mounted) {
         unawaited(
           showFloatingFlushBar(
             type: FlushBarType.warning,
-            message: "Incorrect PIN. Please try again",
+            message: lockout != null
+                ? PinAttempts.lockedMessage(lockout)
+                : "Wrong PIN. Try again.",
             context: context,
             iconAsset: Assets.svg.alertCircle,
           ),
@@ -437,7 +371,6 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
   Widget get _body => Background(
     child: SafeArea(
       child: Scaffold(
-        extendBodyBehindAppBar: true,
         backgroundColor: Theme.of(context).extension<StackColors>()!.background,
         appBar: AppBar(
           leading: widget.showBackButton
@@ -526,7 +459,7 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
                           .randomizePIN,
                       onSubmit: (pin) {
                         if (!_autoPinCheckLock.isLocked) {
-                          _onSubmitPin(pin);
+                          unawaited(_onSubmitPin(pin));
                         }
                       },
                     ),

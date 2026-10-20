@@ -27,6 +27,7 @@ import '../../providers/wallet/public_private_balance_state_provider.dart';
 import '../../services/event_bus/events/global/node_connection_status_changed_event.dart';
 import '../../services/event_bus/events/global/wallet_sync_status_changed_event.dart';
 import '../../services/event_bus/global_event_bus.dart';
+import '../../services/kerrigan_name/kerrigan_names_registrar.dart';
 import '../../themes/coin_icon_provider.dart';
 import '../../themes/stack_colors.dart';
 import '../kerrigan_governance/kerrigan_governance_view.dart';
@@ -42,13 +43,13 @@ import '../../wallets/crypto_currency/crypto_currency.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../address_book_views/address_book_view.dart';
+import '../kerrigan_names/kerrigan_names_common.dart';
+import '../kerrigan_names/kerrigan_names_view.dart';
 import '../../wallets/wallet/wallet_mixin_interfaces/view_only_option_interface.dart';
 import '../../widgets/background.dart';
-import '../../widgets/conditional_parent.dart';
 import '../../widgets/custom_buttons/app_bar_icon_button.dart';
 import '../../widgets/custom_buttons/blue_text_button.dart';
 import '../../widgets/custom_loading_overlay.dart';
-import '../../widgets/desktop/secondary_button.dart';
 import '../../widgets/small_tor_icon.dart';
 import '../../widgets/stack_dialog.dart';
 import '../../widgets/wallet_navigation_bar/components/icons/coin_control_nav_icon.dart';
@@ -93,15 +94,11 @@ class _WalletViewState extends ConsumerState<WalletView> {
 
   late final bool isKerriganShield;
 
-  // late final bool _shouldDisableAutoSyncOnLogOut;
-
   late WalletSyncStatus _currentSyncStatus;
   late NodeConnectionStatus _currentNodeStatus;
 
   late StreamSubscription<dynamic> _syncStatusSubscription;
   late StreamSubscription<dynamic> _nodeStatusSubscription;
-
-  bool _rescanningOnOpen = false;
 
   @override
   void initState() {
@@ -118,9 +115,6 @@ class _WalletViewState extends ConsumerState<WalletView> {
     if (!wallet.shouldAutoSync) {
       // enable auto sync if it wasn't enabled when loading wallet
       wallet.shouldAutoSync = true;
-      //   _shouldDisableAutoSyncOnLogOut = true;
-      // } else {
-      //   _shouldDisableAutoSyncOnLogOut = false;
     }
 
     isKerriganShield = wallet is KerriganWallet && wallet.supportsShield;
@@ -148,14 +142,6 @@ class _WalletViewState extends ConsumerState<WalletView> {
         .on<WalletSyncStatusChangedEvent>()
         .listen((event) async {
           if (event.walletId == widget.walletId) {
-            // switch (event.newStatus) {
-            //   case WalletSyncStatus.unableToSync:
-            //     break;
-            //   case WalletSyncStatus.synced:
-            //     break;
-            //   case WalletSyncStatus.syncing:
-            //     break;
-            // }
             setState(() {
               _currentSyncStatus = event.newStatus;
             });
@@ -166,12 +152,6 @@ class _WalletViewState extends ConsumerState<WalletView> {
         .on<NodeConnectionStatusChangedEvent>()
         .listen((event) async {
           if (event.walletId == widget.walletId) {
-            // switch (event.newStatus) {
-            //   case NodeConnectionStatus.disconnected:
-            //     break;
-            //   case NodeConnectionStatus.connected:
-            //     break;
-            // }
             setState(() {
               _currentNodeStatus = event.newStatus;
             });
@@ -188,43 +168,10 @@ class _WalletViewState extends ConsumerState<WalletView> {
     super.dispose();
   }
 
-  // DateTime? _cachedTime;
-
   Future<bool> _onWillPop() async {
-    if (_rescanningOnOpen) {
-      return false;
-    }
-
     _logout();
 
     return true;
-    // final now = DateTime.now();
-    // const timeout = Duration(milliseconds: 1500);
-    // if (_cachedTime == null || now.difference(_cachedTime!) > timeout) {
-    //   _cachedTime = now;
-    //   unawaited(
-    //     showDialog<dynamic>(
-    //       context: context,
-    //       barrierDismissible: false,
-    //       builder: (_) => WillPopScope(
-    //         onWillPop: () async {
-    //           Navigator.of(context).popUntil(
-    //             ModalRoute.withName(HomeView.routeName),
-    //           );
-    //           _logout();
-    //           return false;
-    //         },
-    //         child: const StackDialog(title: "Tap back again to exit wallet"),
-    //       ),
-    //     ).timeout(
-    //       timeout,
-    //       onTimeout: () => Navigator.of(context).popUntil(
-    //         ModalRoute.withName(WalletView.routeName),
-    //       ),
-    //     ),
-    //   );
-    // }
-    // return false;
   }
 
   void _logout() async {
@@ -361,491 +308,416 @@ class _WalletViewState extends ConsumerState<WalletView> {
 
     final viewOnly = wallet is ViewOnlyOptionInterface && wallet.isViewOnly;
 
-    return ConditionalParent(
-      condition: _rescanningOnOpen,
-      builder: (child) {
-        return WillPopScope(
-          onWillPop: () async => !_rescanningOnOpen,
-          child: Stack(
-            children: [
-              child,
-              Background(
-                child: CustomLoadingOverlay(
-                  message: "Migration in progress\nThis could take a while\nPlease don't leave this screen",
-                  subMessage: "This only needs to run once per wallet",
-                  eventBus: null,
-                  textColor: Theme.of(context)
-                      .extension<StackColors>()!
-                      .textDark,
-                  actionButton: SecondaryButton(
-                    label: "Cancel",
-                    onPressed: () async {
-                      await showDialog<void>(
-                        context: context,
-                        builder: (context) => StackDialog(
-                          title: "Warning!",
-                          message:
-                              "Skipping this process can completely"
-                              " break your wallet. It is only meant to be done in"
-                              " emergency situations where the migration fails"
-                              " and will not let you continue. Still skip?",
-                          leftButton: SecondaryButton(
-                            label: "Cancel",
-                            onPressed: Navigator.of(
-                              context,
-                              rootNavigator: true,
-                            ).pop,
-                          ),
-                          rightButton: SecondaryButton(
-                            label: "Ok",
-                            onPressed: () {
-                              Navigator.of(context, rootNavigator: true).pop();
-                              setState(() => _rescanningOnOpen = false);
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Background(
+        child: Stack(
+          children: [
+            Scaffold(
+              backgroundColor: Theme.of(context)
+                  .extension<StackColors>()!
+                  .background,
+              appBar: AppBar(
+                leading: AppBarBackButton(
+                  onPressed: () {
+                    _logout();
+                    Navigator.of(context).pop();
+                  },
                 ),
-              ),
-            ],
-          ),
-        );
-      },
-      child: WillPopScope(
-        onWillPop: _onWillPop,
-        child: Background(
-          child: Stack(
-            children: [
-              Scaffold(
-                backgroundColor: Theme.of(context)
-                    .extension<StackColors>()!
-                    .background,
-                appBar: AppBar(
-                  leading: AppBarBackButton(
-                    onPressed: () {
-                      _logout();
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                  titleSpacing: 0,
-                  title: Row(
-                    children: [
-                      SvgPicture.file(
-                        File(ref.watch(coinIconProvider(coin))),
-                        width: 24,
-                        height: 24,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          ref.watch(pWalletName(walletId)),
-                          style: STextStyles.navBarTitle(context),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  actions: [
-                    if (AppConfig.hasFeature(AppFeature.tor))
-                      const Padding(
-                        padding: EdgeInsets.only(
-                          top: 10,
-                          bottom: 10,
-                          right: 10,
-                        ),
-                        child: AspectRatio(
-                          aspectRatio: 1,
-                          child: SmallTorIcon(),
-                        ),
-                      ),
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        top: 10,
-                        bottom: 10,
-                        right: 10,
-                      ),
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: AppBarIconButton(
-                          semanticsLabel:
-                              "Network Button. Takes To Network Status Page.",
-                          key: const Key("walletViewRadioButton"),
-                          size: 36,
-                          shadows: const [],
-                          color: Theme.of(context)
-                              .extension<StackColors>()!
-                              .background,
-                          icon: _buildNetworkIcon(_currentSyncStatus),
-                          onPressed: () {
-                            Navigator.of(context).pushNamed(
-                              WalletNetworkSettingsView.routeName,
-                              arguments: Tuple3(
-                                walletId,
-                                _currentSyncStatus,
-                                _currentNodeStatus,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                titleSpacing: 0,
+                title: Row(
+                  children: [
+                    SvgPicture.file(
+                      File(ref.watch(coinIconProvider(coin))),
+                      width: 24,
+                      height: 24,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        top: 10,
-                        bottom: 10,
-                        right: 10,
-                      ),
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: AppBarIconButton(
-                          semanticsLabel:
-                              "Address Book Button. Takes To Address Book.",
-                          key: const Key("walletViewAddressBookButton"),
-                          size: 36,
-                          shadows: const [],
-                          color: Theme.of(context)
-                              .extension<StackColors>()!
-                              .background,
-                          icon: SvgPicture.asset(
-                            Assets.svg.addressBook,
-                            color: Theme.of(context)
-                                .extension<StackColors>()!
-                                .accentColorDark,
-                            width: 18,
-                            height: 18,
-                          ),
-                          onPressed: () =>
-                              Navigator.of(context)
-                                  .pushNamed(AddressBookView.routeName),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        top: 10,
-                        bottom: 10,
-                        right: 10,
-                      ),
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: AppBarIconButton(
-                          semanticsLabel:
-                              "Settings Button. Takes To Wallet Settings Page.",
-                          key: const Key("walletViewSettingsButton"),
-                          size: 36,
-                          shadows: const [],
-                          color: Theme.of(context)
-                              .extension<StackColors>()!
-                              .background,
-                          icon: SvgPicture.asset(
-                            Assets.svg.bars,
-                            color: Theme.of(context)
-                                .extension<StackColors>()!
-                                .accentColorDark,
-                            width: 20,
-                            height: 20,
-                          ),
-                          onPressed: () {
-                            //todo: check if print needed
-                            // debugPrint("wallet view settings tapped");
-                            Navigator.of(context).pushNamed(
-                              WalletSettingsView.routeName,
-                              arguments: Tuple4(
-                                walletId,
-                                coin,
-                                _currentSyncStatus,
-                                _currentNodeStatus,
-                              ),
-                            );
-                          },
-                        ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        ref.watch(pWalletName(walletId)),
+                        style: STextStyles.navBarTitle(context),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
-                body: SafeArea(
-                  child: Container(
-                    color: Theme.of(context)
-                        .extension<StackColors>()!
-                        .background,
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 10),
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: WalletSummary(
-                              walletId: walletId,
-                              aspectRatio: 1.75,
-                              initialSyncStatus:
-                                  ref
-                                      .watch(pWallets)
-                                      .getWallet(walletId)
-                                      .refreshMutex
-                                      .isLocked
-                                  ? WalletSyncStatus.syncing
-                                  : WalletSyncStatus.synced,
+                actions: [
+                  if (AppConfig.hasFeature(AppFeature.tor))
+                    const Padding(
+                      padding: EdgeInsets.only(top: 10, bottom: 10, right: 10),
+                      child: AspectRatio(aspectRatio: 1, child: SmallTorIcon()),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      top: 10,
+                      bottom: 10,
+                      right: 10,
+                    ),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: AppBarIconButton(
+                        semanticsLabel:
+                            "Network Button. Takes To Network Status Page.",
+                        key: const Key("walletViewRadioButton"),
+                        size: 36,
+                        shadows: const [],
+                        color: Theme.of(context)
+                            .extension<StackColors>()!
+                            .background,
+                        icon: _buildNetworkIcon(_currentSyncStatus),
+                        onPressed: () {
+                          Navigator.of(context).pushNamed(
+                            WalletNetworkSettingsView.routeName,
+                            arguments: Tuple3(
+                              walletId,
+                              _currentSyncStatus,
+                              _currentNodeStatus,
                             ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      top: 10,
+                      bottom: 10,
+                      right: 10,
+                    ),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: AppBarIconButton(
+                        semanticsLabel:
+                            "Address Book Button. Takes To Address Book.",
+                        key: const Key("walletViewAddressBookButton"),
+                        size: 36,
+                        shadows: const [],
+                        color: Theme.of(context)
+                            .extension<StackColors>()!
+                            .background,
+                        icon: SvgPicture.asset(
+                          Assets.svg.addressBook,
+                          color: Theme.of(context)
+                              .extension<StackColors>()!
+                              .accentColorDark,
+                          width: 18,
+                          height: 18,
+                        ),
+                        onPressed: () =>
+                            Navigator.of(context)
+                                .pushNamed(AddressBookView.routeName),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      top: 10,
+                      bottom: 10,
+                      right: 10,
+                    ),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: AppBarIconButton(
+                        semanticsLabel:
+                            "Settings Button. Takes To Wallet Settings Page.",
+                        key: const Key("walletViewSettingsButton"),
+                        size: 36,
+                        shadows: const [],
+                        color: Theme.of(context)
+                            .extension<StackColors>()!
+                            .background,
+                        icon: SvgPicture.asset(
+                          Assets.svg.bars,
+                          color: Theme.of(context)
+                              .extension<StackColors>()!
+                              .accentColorDark,
+                          width: 20,
+                          height: 20,
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pushNamed(
+                            WalletSettingsView.routeName,
+                            arguments: Tuple4(
+                              walletId,
+                              coin,
+                              _currentSyncStatus,
+                              _currentNodeStatus,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              body: SafeArea(
+                child: Container(
+                  color: Theme.of(context).extension<StackColors>()!.background,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 10),
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: WalletSummary(
+                            walletId: walletId,
+                            aspectRatio: 1.75,
+                            initialSyncStatus:
+                                ref
+                                    .watch(pWallets)
+                                    .getWallet(walletId)
+                                    .refreshMutex
+                                    .isLocked
+                                ? WalletSyncStatus.syncing
+                                : WalletSyncStatus.synced,
                           ),
                         ),
-                        if (isKerriganShield && !viewOnly)
-                          const SizedBox(height: 10),
-                        if (isKerriganShield && !viewOnly)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: TextButton(
-                                    style: Theme.of(context)
-                                        .extension<StackColors>()!
-                                        .getSecondaryEnabledButtonStyle(
-                                          context,
-                                        ),
-                                    onPressed: () async {
-                                      await showDialog<void>(
-                                        context: context,
-                                        builder: (context) => StackDialog(
-                                          title: "Attention!",
-                                          message: "You're about to privatize all of your public funds.",
-                                          leftButton: TextButton(
-                                            onPressed: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                            child: Text(
-                                              "Cancel",
-                                              style: STextStyles.button(context)
-                                                  .copyWith(
-                                                    color: Theme.of(context)
-                                                        .extension<
-                                                          StackColors
-                                                        >()!
-                                                        .accentColorDark,
-                                                  ),
-                                            ),
-                                          ),
-                                          rightButton: TextButton(
-                                            onPressed: () async {
-                                              Navigator.of(context).pop();
-
-                                              unawaited(attemptAnonymize());
-                                            },
-                                            style: Theme.of(context)
-                                                .extension<StackColors>()!
-                                                .getPrimaryEnabledButtonStyle(
-                                                  context,
-                                                ),
-                                            child: Text(
-                                              "Continue",
-                                              style: STextStyles.button(
-                                                context,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: Text(
-                                      "Privatize funds",
-                                      style: STextStyles.button(context)
-                                          .copyWith(
-                                            color: Theme.of(context)
-                                                .extension<StackColors>()!
-                                                .buttonTextSecondary,
-                                          ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        const SizedBox(height: 20),
+                      ),
+                      if (isKerriganShield && !viewOnly) const SizedBox(height: 10),
+                      if (isKerriganShield && !viewOnly)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                "Transactions",
-                                style: STextStyles.itemSubtitle(context)
-                                    .copyWith(
+                              Expanded(
+                                child: TextButton(
+                                  style: Theme.of(context)
+                                      .extension<StackColors>()!
+                                      .getSecondaryEnabledButtonStyle(context),
+                                  onPressed: () async {
+                                    await showDialog<void>(
+                                      context: context,
+                                      builder: (context) => StackDialog(
+                                        title: "Attention!",
+                                        message: "You're about to privatize all of your public funds.",
+                                        leftButton: TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: Text(
+                                            "Cancel",
+                                            style: STextStyles.button(context)
+                                                .copyWith(
+                                                  color: Theme.of(context)
+                                                      .extension<StackColors>()!
+                                                      .accentColorDark,
+                                                ),
+                                          ),
+                                        ),
+                                        rightButton: TextButton(
+                                          onPressed: () async {
+                                            Navigator.of(context).pop();
+
+                                            unawaited(attemptAnonymize());
+                                          },
+                                          style: Theme.of(context)
+                                              .extension<StackColors>()!
+                                              .getPrimaryEnabledButtonStyle(
+                                                context,
+                                              ),
+                                          child: Text(
+                                            "Continue",
+                                            style: STextStyles.button(context),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    "Privatize funds",
+                                    style: STextStyles.button(context).copyWith(
                                       color: Theme.of(context)
                                           .extension<StackColors>()!
-                                          .textDark3,
+                                          .buttonTextSecondary,
                                     ),
-                              ),
-                              CustomTextButton(
-                                text: "See all",
-                                onTap: () {
-                                  Navigator.of(context).pushNamed(
-                                    AllTransactionsV2View.routeName,
-                                    arguments: walletId,
-                                  );
-                                },
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(
-                                  Constants.size.circularBorderRadius,
-                                ),
-                                bottom: Radius.circular(
-                                  // WalletView.navBarHeight / 2.0,
-                                  Constants.size.circularBorderRadius,
-                                ),
+                      const SizedBox(height: 20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Transactions",
+                              style: STextStyles.itemSubtitle(context).copyWith(
+                                color: Theme.of(context)
+                                    .extension<StackColors>()!
+                                    .textDark3,
                               ),
-                              child: ShaderMask(
-                                blendMode: BlendMode.dstOut,
-                                shaderCallback: (Rect bounds) {
-                                  return const LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.transparent,
-                                      Colors.white,
-                                    ],
-                                    stops: [0.0, 0.8, 1.0],
-                                  ).createShader(bounds);
-                                },
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(
-                                      Constants.size.circularBorderRadius,
-                                    ),
+                            ),
+                            CustomTextButton(
+                              text: "See all",
+                              onTap: () {
+                                Navigator.of(context).pushNamed(
+                                  AllTransactionsV2View.routeName,
+                                  arguments: walletId,
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(
+                                Constants.size.circularBorderRadius,
+                              ),
+                              bottom: Radius.circular(
+                                // WalletView.navBarHeight / 2.0,
+                                Constants.size.circularBorderRadius,
+                              ),
+                            ),
+                            child: ShaderMask(
+                              blendMode: BlendMode.dstOut,
+                              shaderCallback: (Rect bounds) {
+                                return const LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.transparent,
+                                    Colors.white,
+                                  ],
+                                  stops: [0.0, 0.8, 1.0],
+                                ).createShader(bounds);
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.transparent,
+                                  borderRadius: BorderRadius.circular(
+                                    Constants.size.circularBorderRadius,
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      Expanded(
-                                        child: TransactionsV2List(
-                                          walletId: widget.walletId,
-                                        ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      child: TransactionsV2List(
+                                        walletId: widget.walletId,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              SafeArea(
-                child: WalletNavigationBar(
-                  items: [
-                    if (!viewOnly)
-                      WalletNavigationBarItemData(
-                        label: "Send",
-                        icon: const SendNavIcon(),
-                        onTap: () {
-                          // not sure what this is supposed to accomplish?
-                          // switch (ref
-                          //     .read(walletBalanceToggleStateProvider.state)
-                          //     .state) {
-                          //   case WalletBalanceToggleState.full:
-                          //     ref
-                          //         .read(publicPrivateBalanceStateProvider.state)
-                          //         .state = "Public";
-                          //     break;
-                          //   case WalletBalanceToggleState.available:
-                          //     ref
-                          //         .read(publicPrivateBalanceStateProvider.state)
-                          //         .state = "Private";
-                          //     break;
-                          // }
-                          Navigator.of(context).pushNamed(
-                            SendView.routeName,
-                            arguments: (walletId: walletId, coin: coin),
-                          );
-                        },
-                      ),
+            ),
+            SafeArea(
+              child: WalletNavigationBar(
+                items: [
+                  if (!viewOnly)
                     WalletNavigationBarItemData(
-                      label: "Receive",
-                      icon: const ReceiveNavIcon(),
+                      label: "Send",
+                      icon: const SendNavIcon(),
                       onTap: () {
-                        if (mounted) {
-                          unawaited(
-                            Navigator.of(context).pushNamed(
-                              ReceiveView.routeName,
-                              arguments: walletId,
-                            ),
-                          );
-                        }
+                        Navigator.of(context).pushNamed(
+                          SendView.routeName,
+                          arguments: (walletId: walletId, coin: coin),
+                        );
                       },
                     ),
-                  ],
-                  moreItems: <WalletNavigationBarItemData>[
-                    if (ref.watch(
-                      prefsChangeNotifierProvider.select(
-                        (value) => value.enableCoinControl,
-                      ),
-                    ))
-                      WalletNavigationBarItemData(
-                        label: "Coin control",
-                        icon: const CoinControlNavIcon(),
-                        onTap: () {
+                  WalletNavigationBarItemData(
+                    label: "Receive",
+                    icon: const ReceiveNavIcon(),
+                    onTap: () {
+                      if (mounted) {
+                        unawaited(
                           Navigator.of(context).pushNamed(
-                            CoinControlView.routeName,
-                            arguments: Tuple2(
-                              widget.walletId,
-                              CoinControlViewType.manage,
-                            ),
-                          );
-                        },
+                            ReceiveView.routeName,
+                            arguments: walletId,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ],
+                moreItems: <WalletNavigationBarItemData>[
+                  if (ref.watch(
+                    prefsChangeNotifierProvider.select(
+                      (value) => value.enableCoinControl,
+                    ),
+                  ))
+                    WalletNavigationBarItemData(
+                      label: "Coin control",
+                      icon: const CoinControlNavIcon(),
+                      onTap: () {
+                        Navigator.of(context).pushNamed(
+                          CoinControlView.routeName,
+                          arguments: Tuple2(
+                            widget.walletId,
+                            CoinControlViewType.manage,
+                          ),
+                        );
+                      },
+                    ),
+                  if (!viewOnly && wallet is KerriganWallet)
+                    WalletNavigationBarItemData(
+                      label: "Masternodes",
+                      icon: Icon(
+                        Icons.dns_rounded,
+                        size: 20,
+                        color: Theme.of(context)
+                            .extension<StackColors>()!
+                            .bottomNavIconIcon,
                       ),
-                    if (!viewOnly && wallet is KerriganWallet)
-                      WalletNavigationBarItemData(
-                        label: "Masternodes",
-                        icon: Icon(
-                          Icons.dns_rounded,
-                          size: 20,
-                          color: Theme.of(context)
-                              .extension<StackColors>()!
-                              .bottomNavIconIcon,
-                        ),
-                        onTap: () {
-                          Navigator.of(context).pushNamed(
-                            KerriganMasternodesView.routeName,
-                            arguments: widget.walletId,
-                          );
-                        },
+                      onTap: () {
+                        Navigator.of(context).pushNamed(
+                          KerriganMasternodesView.routeName,
+                          arguments: widget.walletId,
+                        );
+                      },
+                    ),
+                  if (wallet is KerriganWallet)
+                    WalletNavigationBarItemData(
+                      label: "Governance",
+                      icon: Icon(
+                        Icons.how_to_vote_rounded,
+                        size: 20,
+                        color: Theme.of(context)
+                            .extension<StackColors>()!
+                            .bottomNavIconIcon,
                       ),
-                    if (wallet is KerriganWallet)
-                      WalletNavigationBarItemData(
-                        label: "Governance",
-                        icon: Icon(
-                          Icons.how_to_vote_rounded,
-                          size: 20,
-                          color: Theme.of(context)
-                              .extension<StackColors>()!
-                              .bottomNavIconIcon,
-                        ),
-                        onTap: () {
-                          Navigator.of(context).pushNamed(
-                            KerriganGovernanceView.routeName,
-                            arguments: widget.walletId,
-                          );
-                        },
-                      ),
-                  ],
-                ),
+                      onTap: () {
+                        Navigator.of(context).pushNamed(
+                          KerriganGovernanceView.routeName,
+                          arguments: widget.walletId,
+                        );
+                      },
+                    ),
+                  if (!viewOnly &&
+                      wallet is KerriganWallet &&
+                      KerriganNamesService.forCoin(coin) != null)
+                    WalletNavigationBarItemData(
+                      label: "Names",
+                      icon: const KerriganNamesLogo(size: 20, small: true),
+                      onTap: () {
+                        Navigator.of(context).pushNamed(
+                          KerriganNamesView.routeName,
+                          arguments: widget.walletId,
+                        );
+                      },
+                    ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

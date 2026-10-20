@@ -26,6 +26,7 @@ import '../../../utilities/extensions/extensions.dart';
 import '../../../utilities/flutter_secure_storage_interface.dart';
 import '../../../services/event_bus/events/global/refresh_percent_changed_event.dart';
 import '../../../services/event_bus/global_event_bus.dart';
+import '../../../services/kerrigan_name/kerrigan_names_identity.dart';
 import '../../../services/tor_service.dart';
 import '../../../utilities/logger.dart';
 import '../../../utilities/stack_file_system.dart';
@@ -35,6 +36,7 @@ import '../../api/kerrigan/kerrigan_bridge_client.dart';
 import '../../crypto_currency/crypto_currency.dart';
 import '../../models/tx_data.dart';
 import '../intermediate/bip39_hd_wallet.dart';
+import '../wallet.dart';
 import '../wallet_mixin_interfaces/coin_control_interface.dart';
 import 'kerrigan/kerrigan_shield_state.dart';
 import 'kerrigan/kerrigan_shield_stream.dart';
@@ -42,7 +44,63 @@ import 'kerrigan/kerrigan_tx_parser.dart';
 
 part 'kerrigan/kerrigan_governance.dart';
 part 'kerrigan/kerrigan_masternodes.dart';
+part 'kerrigan/kerrigan_names.dart';
 part 'kerrigan/kerrigan_wallet_shield.dart';
+
+/// Which account of its recovery phrase a Kerrigan wallet is, in
+/// [WalletInfo.otherData]. Most wallets are account 0; "Add account"
+/// makes accounts 1, 2, …, each a wallet of its own with its own BIP44
+/// account and shield account.
+const kKerriganAccountKey = "kerriganAccount";
+
+/// BIP44 path of [account] (`m/44'/99888'/n'`).
+String kerriganAccountPath(Kerrigan coin, int account) => coin
+    .constructDerivePath(
+      derivePathType: DerivePathType.bip44,
+      account: account,
+      chain: 0,
+      index: 0,
+    )
+    .replaceFirst(RegExp(r"/0/0$"), "");
+
+/// Account-level xpub of [account], serialised with the network's
+/// `pubHDPrefix`.
+String kerriganAccountXpub(
+  coinlib.HDPrivateKey root,
+  Kerrigan coin,
+  int account,
+) => root
+    .derivePath(kerriganAccountPath(coin, account))
+    .hdPublicKey
+    .encode(coin.networkParams.pubHDPrefix);
+
+/// The used accounts from [from] on, BIP44 style: looking stops after
+/// [gap] unused accounts in a row, or [max] accounts (a bridge saying
+/// every account is used can't add wallets without end). A skipped
+/// account or two (added, never used) is looked past.
+Future<List<int>> kerriganFindAccounts({
+  required int from,
+  required Future<bool> Function(int account) isUsed,
+  int gap = 3,
+  int max = 20,
+}) async {
+  final found = <int>[];
+  for (int n = from, unused = 0; unused < gap && n < from + max; n++) {
+    if (await isUsed(n)) {
+      found.add(n);
+      unused = 0;
+    } else {
+      unused++;
+    }
+  }
+  return found;
+}
+
+/// Whether a bridge `/xpub` answer (any `details`) shows the account used.
+bool kerriganXpubIsUsed(Map<String, dynamic> json) =>
+    (json["usedTokens"] as num? ?? 0) > 0 ||
+    (json["txs"] as num? ?? 0) > 0 ||
+    (json["unconfirmedTxs"] as num? ?? 0) > 0;
 
 /// Kerrigan transparent wallet backed by kerrigan-bridge.
 ///
@@ -58,9 +116,13 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
 
   KerriganShieldState? _shield;
 
+  /// The first load of [_shield], which callers at the same time share:
+  /// two loads would give two states, one overwriting the other's file.
+  Future<KerriganShieldState>? _shieldLoading;
+
   /// Remove what a Kerrigan wallet keeps outside the wallet tables: the
-  /// shield state file (it holds the full viewing key). For wallet
-  /// deletion.
+  /// shield state file (its notes and history; it holds the full viewing
+  /// key). For wallet deletion.
   static Future<void> deleteLocalData({
     required String walletId,
     required Map<String, dynamic> otherData,
@@ -77,6 +139,10 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   /// pick up reorged / late-confirmed transactions.
   static const _kResyncDepth = 10;
   static const _kBridgeGap = 20;
+
+  /// Bridge requests run at once when many are needed (previous
+  /// transactions, history pages).
+  static const _kParallelRequests = 6;
 
   /// Upper-bound serialized sizes (bytes) for fee estimation. A P2PKH
   /// input is 148 bytes, or 149 with a 73-byte DER signature.
@@ -111,6 +177,14 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
 
   KerriganBridgeClient get bridge {
     final node = getCurrentNode();
+    // As the warning on opening the wallet says: such a node isn't used.
+    if (prefs.useTor ? !node.torEnabled : !node.clearnetEnabled) {
+      throw KerriganBridgeException(
+        prefs.useTor
+            ? "This node is set to be used without Tor"
+            : "This node is set to be used only over Tor",
+      );
+    }
     final key = "${node.host}|${node.port}|${node.useSSL}|${prefs.useTor}";
     if (_client == null || _clientKey != key) {
       _client?.close();
@@ -137,19 +211,14 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   Future<coinlib.HDPrivateKey> getRootHDNode() async =>
       coinlib.HDPrivateKey.fromSeed(await _seed());
 
-  String get _accountPath => cryptoCurrency
-      .constructDerivePath(
-        derivePathType: DerivePathType.bip44,
-        chain: 0,
-        index: 0,
-      )
-      .replaceFirst(RegExp(r"/0/0$"), "");
+  /// This wallet's account of its recovery phrase ([kKerriganAccountKey]).
+  late final int account = info.otherData[kKerriganAccountKey] as int? ?? 0;
 
   String? _accountXpub;
   coinlib.HDPublicKey? _accountKey;
 
-  /// BIP44 account-level xpub (`m/44'/119'/0'`), serialised with the
-  /// network's `pubHDPrefix`.
+  /// BIP44 account-level xpub (`m/44'/99888'/n'`, see
+  /// [kerriganAccountXpub]).
   Future<String> get accountXpub async {
     if (_accountXpub != null) return _accountXpub!;
     if (isViewOnly) {
@@ -161,11 +230,11 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       }
       _accountXpub = data.xPubs.first.encoded;
     } else {
-      final root = await getRootHDNode();
-      _accountXpub = root
-          .derivePath(_accountPath)
-          .hdPublicKey
-          .encode(cryptoCurrency.networkParams.pubHDPrefix);
+      _accountXpub = kerriganAccountXpub(
+        await getRootHDNode(),
+        cryptoCurrency,
+        account,
+      );
     }
     return _accountXpub!;
   }
@@ -176,6 +245,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   }) async {
     final path = cryptoCurrency.constructDerivePath(
       derivePathType: DerivePathType.bip44,
+      account: account,
       chain: chain,
       index: index,
     );
@@ -212,40 +282,105 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     return min(1000, max(_kBridgeGap, max(r, c) + 1));
   }
 
+  /// Highest receiving index the bridge has reported as used.
+  static const _kLastUsedReceive = "kerriganLastUsedReceive";
+
+  int get _lastUsedReceive => info.otherData[_kLastUsedReceive] as int? ?? -1;
+
+  /// The receiving address after the newest one handed out, or null when
+  /// it would be more than [_kBridgeGap] past the last used one: a wallet
+  /// restored from the recovery phrase (here or in another wallet) stops looking
+  /// there, and wouldn't see payments to it. Change addresses don't count,
+  /// they have their own chain.
+  Future<Address?> _nextReceivingAddress() async {
+    final current = await getCurrentReceivingAddress();
+    final index = (current?.derivationIndex ?? -1) + 1;
+    if (index > _lastUsedReceive + _kBridgeGap) return null;
+    return await _deriveAddress(chain: 0, index: index);
+  }
+
+  @override
+  Future<Address> generateNextReceivingAddress({
+    required DerivePathType derivePathType,
+  }) async {
+    final address = await _nextReceivingAddress();
+    if (address == null) throw Exception(kerriganAddressGapMessage);
+    return address;
+  }
+
+  // The base class derives these from account 0; a Kerrigan wallet uses its
+  // own account (and its account xpub when it's watch only).
+
+  @override
+  Future<void> checkSaveInitialReceivingAddress() async {
+    if (isViewOnly && viewOnlyType == ViewOnlyWalletType.addressOnly) return;
+    if (await getCurrentReceivingAddress() != null) return;
+    await mainDB.updateOrPutAddresses([
+      await _deriveAddress(chain: 0, index: 0),
+    ]);
+  }
+
+  @override
+  Future<void> generateNewReceivingAddress() async {
+    if (isViewOnly && viewOnlyType == ViewOnlyWalletType.addressOnly) return;
+    final current = await getCurrentReceivingAddress();
+    final address = await _deriveAddress(
+      chain: 0,
+      index: current == null ? 0 : current.derivationIndex + 1,
+    );
+    await mainDB.updateOrPutAddresses([address]);
+    await info.updateReceivingAddress(
+      newAddress: address.value,
+      isar: mainDB.isar,
+    );
+  }
+
+  @override
+  Future<void> generateNewChangeAddress() async {
+    if (isViewOnly && viewOnlyType == ViewOnlyWalletType.addressOnly) return;
+    final current = await getCurrentChangeAddress();
+    await mainDB.updateOrPutAddresses([
+      await _deriveAddress(
+        chain: 1,
+        index: current == null ? 0 : current.derivationIndex + 1,
+      ),
+    ]);
+  }
+
+  /// Makes the next receiving address current and returns it; null when
+  /// the last [_kBridgeGap] are all unused (see [_nextReceivingAddress]).
+  Future<String?> generateNewTransparentAddress() async {
+    final address = await _nextReceivingAddress();
+    if (address == null) return null;
+    await mainDB.updateOrPutAddresses([address]);
+    await info.updateReceivingAddress(
+      newAddress: address.value,
+      isar: mainDB.isar,
+    );
+    return address.value;
+  }
+
   /// Store the bridge's used addresses (`tokens`) and make sure the
   /// current receiving/change addresses are fresh ones.
   Future<void> _syncAddresses(List<dynamic>? tokens) async {
-    final pathRe = RegExp(r"/(\d+)/(\d+)$");
-    int maxReceive = -1;
-    int maxChange = -1;
-    final toStore = <Address>[];
-    final existing = (await mainDB.getAddresses(walletId).findAll())
-        .map((e) => e.value)
-        .toSet();
-
-    for (final t in tokens ?? const []) {
-      final token = Map<String, dynamic>.from(t as Map);
-      final name = token["name"] as String;
-      final m = pathRe.firstMatch(token["path"] as String? ?? "");
-      if (m == null) continue;
-      final chain = int.parse(m.group(1)!);
-      final index = int.parse(m.group(2)!);
-      if (chain == 0) maxReceive = max(maxReceive, index);
-      if (chain == 1) maxChange = max(maxChange, index);
-      if (existing.contains(name)) continue;
-
-      final address = await _deriveAddress(chain: chain, index: index);
-      if (address.value != name) {
-        Logging.instance.e(
-          "Kerrigan: bridge address $name at ${token["path"]} does not match "
-          "local derivation ${address.value}; ignoring",
-        );
-        continue;
-      }
-      toStore.add(address);
+    final used = await kerriganUsedAddresses(
+      tokens: tokens ?? const [],
+      stored: {
+        for (final a in await mainDB.getAddresses(walletId).findAll())
+          a.value: a,
+      },
+      derive: (chain, index) => _deriveAddress(chain: chain, index: index),
+    );
+    if (used.derived.isNotEmpty) {
+      await mainDB.updateOrPutAddresses(used.derived);
     }
-    if (toStore.isNotEmpty) {
-      await mainDB.updateOrPutAddresses(toStore);
+    final maxReceive = used.maxReceive;
+    final maxChange = used.maxChange;
+    if (maxReceive > _lastUsedReceive) {
+      await info.updateOtherData(
+        newEntries: {_kLastUsedReceive: maxReceive},
+        isar: mainDB.isar,
+      );
     }
 
     // Next unused receiving address.
@@ -288,6 +423,8 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     }
   }
 
+  /// The next request goes to the (new) node. Callers refresh the wallets
+  /// that should sync; the others stay as they are.
   @override
   Future<void> updateNode() async {
     _client?.close();
@@ -295,7 +432,6 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     _clientKey = null;
     _stopWatching();
     _noWatch = false;
-    await refresh();
   }
 
   // ===========================================================================
@@ -493,8 +629,25 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     );
   }
 
+  /// Completes once [updateTransactions] has fetched the history, so
+  /// [updateUTXOs] (run alongside it) finds the blocks of new outputs
+  /// there.
+  Completer<void>? _historyFetched;
+
+  /// Blocks of the transactions the last history fetch returned.
+  Map<String, ({String? blockHash, int? blockTime})> _historyTxs = const {};
+
   @override
   Future<void> updateTransactions() async {
+    final fetched = _historyFetched = Completer<void>();
+    try {
+      await _updateTransactions(fetched);
+    } finally {
+      if (!fetched.isCompleted) fetched.complete();
+    }
+  }
+
+  Future<void> _updateTransactions(Completer<void> fetched) async {
     _lastProgress = -1;
     _syncProgress(0);
     final xpub = await accountXpub;
@@ -506,6 +659,15 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
         gap: await _bridgeGap(),
       ),
     );
+    _historyTxs = {
+      for (final json in result.txs)
+        json["txid"] as String: (
+          blockHash: json["blockHash"] as String?,
+          blockTime: json["blockTime"] as int?,
+        ),
+    };
+    fetched.complete();
+
     await UiStallWatch.run(
       "Kerrigan ${info.name}: addresses",
       () => _syncAddresses(result.info["tokens"] as List?),
@@ -534,6 +696,15 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       "Kerrigan ${info.name}: store ${txns.length} txs",
       () => _storeTxs(txns),
     );
+    try {
+      await _checkUnconfirmed();
+    } catch (e, s) {
+      Logging.instance.w(
+        "Kerrigan: checking unconfirmed transactions failed",
+        error: e,
+        stackTrace: s,
+      );
+    }
     _syncProgress(1);
     if (info.otherData[_kTxParseVersion] != _txParseVersionValue) {
       await info.updateOtherData(
@@ -545,7 +716,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
 
   /// Bumped when parsing changes: the next sync re-parses all history.
   static const _kTxParseVersion = "kerriganTxParseVersion";
-  static const _txParseVersion = 6;
+  static const _txParseVersion = 7;
 
   /// The parse version and the masternode payout addresses: a new
   /// masternode re-parses the history, so its past rewards show as
@@ -660,6 +831,118 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       "${o.valueStringSats}:${o.addresses.join(",")}:${o.walletOwns}",
   ].join("|");
 
+  // ===========================================================================
+  // Unconfirmed transactions
+
+  /// Unconfirmed transactions are checked with the bridge once this old.
+  static const _kCheckUnconfirmedAfter = Duration(minutes: 5);
+
+  /// One the network doesn't have, and this wallet can't send again (a
+  /// payment received, or no raw transaction kept), is forgotten after
+  /// this long.
+  static const _kForgetUnknownAfter = Duration(hours: 1);
+
+  /// Sends unconfirmed transactions of this wallet again when the network
+  /// lost them (e.g. the bridge's node restarted), and forgets ones it no
+  /// longer accepts (their coins spent elsewhere): they leave the history
+  /// and their coins count again. Without this, a dropped send stayed
+  /// pending forever, and its coins (shield notes above all) out of the
+  /// balance.
+  Future<void> _checkUnconfirmed() async {
+    final now = DateTime.timestamp().millisecondsSinceEpoch ~/ 1000;
+    final rows = await mainDB.isar.transactionV2s
+        .where()
+        .walletIdEqualTo(walletId)
+        .filter()
+        .heightIsNull()
+        .sortByTimestamp()
+        .findAll();
+    // Oldest first: a parent goes out again before its child.
+    final byTxid = {for (final t in rows) t.txid: t};
+    final txids = {...byTxid.keys, ...?_shield?.pendingSpent.keys};
+    for (final txid in txids) {
+      final row = byTxid[txid];
+      final age = row == null ? null : now - row.timestamp;
+      if (age != null && age < _kCheckUnconfirmedAfter.inSeconds) continue;
+      final raw = row?.kerriganRawTx;
+      if (await _stillOnNetwork(txid, raw: raw) != false) continue;
+      if (raw == null && age != null && age < _kForgetUnknownAfter.inSeconds) {
+        continue;
+      }
+      Logging.instance.w("Kerrigan: $txid is no longer on the network; forgot it");
+      await _forgetUnconfirmed(txid, row);
+    }
+  }
+
+  /// Whether unconfirmed [txid] is still on the network: true when the
+  /// bridge's node has it or takes [raw] again, false when it doesn't
+  /// have it and refuses [raw] (or there is none), null when that can't
+  /// be told now (the bridge unreachable, ...).
+  Future<bool?> _stillOnNetwork(String txid, {String? raw}) async {
+    try {
+      await bridge.tx(txid);
+      return true;
+    } on KerriganBridgeException catch (e) {
+      // Any other error (the node down, ...) tells nothing.
+      if (e.statusCode != 404 || !e.message.contains("No such mempool")) {
+        return null;
+      }
+    } catch (_) {
+      return null;
+    }
+    if (raw == null) return false;
+    try {
+      await bridge.sendTx(raw);
+      Logging.instance.i("Kerrigan: the network lost $txid; sent it again");
+      return true;
+    } on KerriganBridgeException catch (e) {
+      final reason = e.message;
+      // "transaction already in block chain": confirmed meanwhile.
+      if (reason.contains("already")) return true;
+      if (e.statusCode != 400) return null;
+      // A full mempool, its fee floor or a long chain of unconfirmed
+      // parents may pass; a conflict or an invalid transaction won't.
+      if (reason.contains("mempool") && !reason.contains("conflict")) {
+        return null;
+      }
+      Logging.instance.w("Kerrigan: $txid refused: $reason");
+      return false;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Drop unconfirmed [txid] ([row] in the history, if any): its coins
+  /// and shield notes become spendable again.
+  Future<void> _forgetUnconfirmed(String txid, TransactionV2? row) async {
+    if (row != null) {
+      final spent = {
+        for (final i in row.inputs)
+          if (i.outpoint case final o?) kerriganOutpointKey(o.txid, o.vout),
+      };
+      await _utxoLock.protect(() async {
+        final freed = [
+          for (final u in await mainDB.getUTXOs(walletId).findAll())
+            if (u.used == true &&
+                spent.contains(kerriganOutpointKey(u.txid, u.vout)))
+              u.copyWith(used: false),
+        ];
+        if (freed.isNotEmpty) await mainDB.putUTXOs(freed);
+      });
+      await mainDB.isar.writeTxn(
+        () => mainDB.isar.transactionV2s.delete(row.id),
+      );
+    }
+    final state = _shield;
+    if (state == null) return;
+    final nullifiers = state.pendingSpent.remove(txid);
+    final incoming = state.pendingIncoming.remove(txid);
+    if (nullifiers != null || incoming != null) {
+      await state.save(walletId);
+      await _writeShieldNoteRows(state);
+    }
+  }
+
   final _blockHashes = <int, String>{};
 
   Future<String> _blockHashAt(int height) async =>
@@ -669,8 +952,11 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   Future<bool> updateUTXOs() async {
     final xpub = await accountXpub;
     final list = await bridge.utxo(xpub, gap: await _bridgeGap());
+    // Let the history arrive first: it has the blocks of new outputs.
+    await _historyFetched?.future;
     final txs = await _storedTxs(list.map((u) => u["txid"] as String));
 
+    final collaterals = _masternodeCollaterals;
     final utxos = <UTXO>[];
     for (final u in list) {
       final txid = u["txid"] as String;
@@ -685,9 +971,12 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       String? blockHash;
       int? blockTime;
       if (height != null) {
-        blockHash = tx?.blockHash ?? await _blockHashAt(height);
+        final fetched = _historyTxs[txid];
+        blockHash =
+            tx?.blockHash ?? fetched?.blockHash ?? await _blockHashAt(height);
         blockTime =
             tx?.timestamp ??
+            fetched?.blockTime ??
             DateTime.timestamp().millisecondsSinceEpoch ~/ 1000;
       }
 
@@ -700,8 +989,8 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
           name: "",
           // A masternode's collateral stays frozen (also when first seen
           // after a restore).
-          isBlocked: _isMasternodeCollateral(txid, vout),
-          blockedReason: _isMasternodeCollateral(txid, vout)
+          isBlocked: collaterals.contains(kerriganOutpointKey(txid, vout)),
+          blockedReason: collaterals.contains(kerriganOutpointKey(txid, vout))
               ? _kMasternodeFrozenReason
               : null,
           isCoinbase: u["coinbase"] == true,
@@ -753,6 +1042,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
         await _recover(isRescan: isRescan);
       } finally {
         _recovering = false;
+        _recoverCancelled = false;
       }
     });
     if (!doNotFireRefreshEvents) {
@@ -760,8 +1050,24 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     }
   }
 
+  /// Set by [cancelRecover]: the running [recover] stops at the next
+  /// batch of shield blocks.
+  bool _recoverCancelled = false;
+
+  /// Stop the [recover] running (the user cancelled a restore): a shield
+  /// scan from the restore height can take long.
+  void cancelRecover() => _recoverCancelled = true;
+
   Future<void> _recover({required bool isRescan}) async {
+    // A rescan deletes the coin rows: the user's freezes, unfreezes and
+    // coin names are put back on the coins found again.
+    final kept = <String, UTXO>{};
     if (isRescan) {
+      for (final u in await mainDB.getUTXOs(walletId).findAll()) {
+        if (u.isBlocked || u.userUnfroze || u.name.isNotEmpty) {
+          kept[kerriganOutpointKey(u.txid, u.vout)] = u;
+        }
+      }
       await mainDB.deleteWalletBlockchainData(walletId);
     }
     await checkSaveInitialReceivingAddress();
@@ -773,22 +1079,52 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     }
     await updateChainHeight();
     if (_shieldSupported) {
-      await _resetShield(
-        fromHeight: info.restoreHeight > 0
-            ? info.restoreHeight
-            : _defaultShieldRestoreHeight,
-      );
+      await _resetShield(fromHeight: shieldRestoreHeight);
     }
     await updateTransactions();
     await updateUTXOs();
+    if (kept.isNotEmpty) await _restoreUserCoinState(kept);
     await updateBalance();
   }
 
+  /// The user's freezes, unfreezes and coin names, for a backup (see
+  /// [restoreUserCoinFlags]).
+  Future<List<Map<String, dynamic>>> userCoinFlags() async => [
+    for (final u in await mainDB.getUTXOs(walletId).findAll())
+      if (u.isBlocked || u.userUnfroze || u.name.isNotEmpty)
+        kerriganCoinFlagsToJson(u),
+  ];
+
+  /// Put the coin flags of a backup ([userCoinFlags]) back on the coins
+  /// found again, e.g. once a restored wallet has synced.
+  Future<void> restoreUserCoinFlags(List<dynamic> flags) async {
+    final kept = kerriganCoinFlagsFromJson(flags, walletId);
+    if (kept.isEmpty) return;
+    await _restoreUserCoinState(kept);
+    await updateBalance();
+  }
+
+  Future<void> _restoreUserCoinState(Map<String, UTXO> kept) =>
+      _utxoLock.protect(() async {
+        final rows = <UTXO>[];
+        for (final u in await mainDB.getUTXOs(walletId).findAll()) {
+          final old = kept[kerriganOutpointKey(u.txid, u.vout)];
+          if (old == null) continue;
+          rows.add(
+            u.copyWith(
+              // Frozen by the user, or unfrozen by the user after the
+              // wallet froze it (the reason stays to tell).
+              isBlocked: old.isBlocked || (u.isBlocked && !old.userUnfroze),
+              blockedReason: old.blockedReason,
+              name: old.name.isNotEmpty ? old.name : null,
+            ),
+          );
+        }
+        await mainDB.isar.writeTxn(() => mainDB.isar.utxos.putAll(rows));
+      });
+
   // ===========================================================================
   // Sync progress
-
-  @override
-  bool get reportsSyncProgress => true;
 
   /// Set while [recover] runs: progress then covers the whole 0-100 %
   /// (a rescan or restore has no refresh around it).
@@ -826,6 +1162,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   Future<void> updateBalance() async {
     final utxos = await mainDB.getUTXOs(walletId).findAll();
     final height = await chainHeight;
+    final collaterals = _masternodeCollaterals;
     var total = BigInt.zero;
     var spendable = BigInt.zero;
     var pending = BigInt.zero;
@@ -834,7 +1171,10 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       if (ignoreUtxoInBalance(u)) continue;
       final value = BigInt.from(u.value);
       total += value;
-      if (u.isBlocked) {
+      // Masternode collateral is never spent by an ordinary send, even
+      // when unfrozen.
+      if (u.isBlocked ||
+          collaterals.contains(kerriganOutpointKey(u.txid, u.vout))) {
         blocked += value;
       } else if (_isFinal(u, height)) {
         spendable += value;
@@ -884,6 +1224,30 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   bool isShieldAddress(String address) =>
       libKerriganShield.isAvailable &&
       libKerriganShield.isValidAddress(address, network: _network);
+
+  /// Where a restore starts the shield scan: the restore height, or the
+  /// shield launch when there's none.
+  int get shieldRestoreHeight => info.restoreHeight > 0
+      ? info.restoreHeight
+      : _defaultShieldRestoreHeight;
+
+  /// The other accounts of this wallet's recovery phrase, after this one,
+  /// that have been used: what restoring the phrase brings back. Only the
+  /// transparent side is looked at (a shield-only account takes a full
+  /// shield scan to find).
+  Future<List<int>> findUsedAccounts() async {
+    final root = await getRootHDNode();
+    return kerriganFindAccounts(
+      from: account + 1,
+      isUsed: (n) async => kerriganXpubIsUsed(
+        await bridge.xpub(
+          kerriganAccountXpub(root, cryptoCurrency, n),
+          details: "basic",
+          gap: _kBridgeGap,
+        ),
+      ),
+    );
+  }
 
   /// A wallet made in the app has no history before now: remember the tip
   /// as its birthday. The shield scan starts there, and so do a rescan and
@@ -970,6 +1334,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       values = _spendable(
         selected?.toList() ?? await mainDB.getUTXOs(walletId).findAll(),
         await chainHeight,
+        collateral: selected != null,
       ).map((u) => u.value).toList();
     }
     values.sort((a, b) => b.compareTo(a));
@@ -1045,10 +1410,6 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     );
   }
 
-  /// Download (once, ~50 MB) and load the Sapling proving parameters.
-  Future<void> prepareShieldProver({void Function(double)? onProgress}) =>
-      _ensureProver(onProgress: onProgress);
-
   @override
   Future<void> recoverViewOnly() => recover(isRescan: false);
 
@@ -1114,15 +1475,19 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
 
   /// Spendable transparent outputs (shield note rows excluded): not
   /// frozen, not being spent, and confirmed or InstantSend-locked.
-  List<UTXO> _spendable(List<UTXO> utxos, int chainHeight) => utxos
-      .where(
-        (u) =>
-            !isKerriganShieldNote(u) &&
-            !u.isBlocked &&
-            u.used != true &&
-            _isFinal(u, chainHeight),
-      )
-      .toList();
+  /// Masternode collateral only when [collateral] (picked by the user).
+  List<UTXO> _spendable(
+    List<UTXO> utxos,
+    int chainHeight, {
+    bool collateral = false,
+  }) => kerriganSpendable(
+    utxos,
+    chainHeight: chainHeight,
+    minConfirms: cryptoCurrency.minConfirms,
+    minCoinbaseConfirms: cryptoCurrency.minCoinbaseConfirms,
+    collaterals: _masternodeCollaterals,
+    collateral: collateral,
+  );
 
   @override
   Future<Amount> estimateFeeFor(Amount amount, BigInt feeRate) async {
@@ -1244,7 +1609,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
           .whereType<StandardInput>()
           .map((e) => e.utxo)
           .toList();
-      final usable = _spendable(candidates, currentHeight);
+      final usable = _spendable(candidates, currentHeight, collateral: true);
       if (usable.length != candidates.length) {
         throw Exception("Attempted to use an unavailable utxo");
       }
@@ -1392,11 +1757,24 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       throw Exception("Fee estimate too low ($fee < $required); please retry");
     }
 
+    // Change to an address outside the wallet leaves it like the payment.
+    final change = outputs.where((o) => o.isChange).firstOrNull;
+    var otherData = built.txData.otherData;
+    if (change != null &&
+        await mainDB.getAddress(walletId, change.address) == null) {
+      otherData = _withForeignChange(
+        otherData,
+        change.address,
+        change.amount.raw,
+      );
+    }
+
     return built.txData.copyWith(
       recipients: outputs,
       fee: Amount(rawValue: fee, fractionDigits: cryptoCurrency.fractionDigits),
       vSize: built.size,
       usedUTXOs: inputs,
+      otherData: otherData,
     );
   }
 
@@ -1414,8 +1792,15 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   /// difference into fee. Check each input against its previous
   /// transaction, which must hash to its txid.
   Future<void> _verifyInputValues(List<UTXO> utxos) async {
+    // The previous transactions, a few requests at a time.
+    final txids = {for (final u in utxos) u.txid}.toList();
+    for (var i = 0; i < txids.length; i += _kParallelRequests) {
+      await Future.wait(
+        txids.skip(i).take(_kParallelRequests).map(_verifiedOutputs),
+      );
+    }
     for (final u in utxos) {
-      final outputs = await _verifiedOutputs(u.txid);
+      final outputs = _prevOuts[u.txid]!;
       if (u.vout >= outputs.length ||
           outputs[u.vout].value != BigInt.from(u.value)) {
         throw Exception(
@@ -1426,11 +1811,19 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     }
   }
 
-  /// Keys for [utxos].
-  Future<List<StandardInput>> _withKeys(List<UTXO> utxos) async {
-    final root = isViewOnly ? null : await getRootHDNode();
-    if (root == null) throw Exception("View only wallets cannot sign");
-    await _verifyInputValues(utxos);
+  /// Keys for [utxos], from [root] (else derived from the seed).
+  ///
+  /// With [verifyValues] (legacy signatures, which don't commit to the
+  /// value spent), each value is checked against its previous transaction
+  /// first.
+  Future<List<StandardInput>> _withKeys(
+    List<UTXO> utxos, {
+    coinlib.HDPrivateKey? root,
+    bool verifyValues = true,
+  }) async {
+    if (isViewOnly) throw Exception("View only wallets cannot sign");
+    root ??= await getRootHDNode();
+    if (verifyValues) await _verifyInputValues(utxos);
     final result = <StandardInput>[];
     for (final u in utxos) {
       final address = await mainDB.getAddress(walletId, u.address!);
@@ -1519,6 +1912,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     for (int i = 0; i < inputs.length; i++) {
       tx = tx.signLegacy(inputN: i, key: inputs[i].key!.privateKey!);
     }
+    final raw = tx.toHex();
 
     // Pending history entry, classified like confirmed ones.
     final changeAddresses = {
@@ -1537,7 +1931,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     return (
       size: tx.size,
       txData: txData.copyWith(
-        raw: tx.toHex(),
+        raw: raw,
         txid: tx.txid,
         tempTx: TransactionV2(
           walletId: walletId,
@@ -1558,6 +1952,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
               changeAddresses: changeAddresses,
               fee: fee,
               ownSend: true,
+              rawTx: raw,
             ),
           ),
         ),
@@ -1571,21 +1966,9 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
         (jsonDecode(txData.otherData!) as Map)[_kOdShieldTx] == true) {
       return _confirmShieldSend(txData);
     }
+    final String txid;
     try {
-      final txid = await bridge.sendTx(txData.raw!);
-      final used = txData.usedUTXOs!
-          .whereType<StandardInput>()
-          .map(
-            (e) => StandardInput(
-              e.utxo.copyWith(used: true),
-              derivePathType: e.derivePathType,
-            ),
-          )
-          .toList();
-      await mainDB.putUTXOs(used.map((e) => e.utxo).toList());
-      return await updateSentCachedTxData(
-        txData: txData.copyWith(usedUTXOs: used, txid: txid, txHash: txid),
-      );
+      txid = await bridge.sendTx(txData.raw!);
     } catch (e, s) {
       Logging.instance.e(
         "Kerrigan confirmSend failed",
@@ -1594,5 +1977,172 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       );
       rethrow;
     }
+    // Sent: what follows only records it. An error here must not read
+    // as a failed send, or the user would pay again.
+    final used = txData.usedUTXOs!
+        .whereType<StandardInput>()
+        .map(
+          (e) => StandardInput(
+            e.utxo.copyWith(used: true),
+            derivePathType: e.derivePathType,
+          ),
+        )
+        .toList();
+    final sent = txData.copyWith(usedUTXOs: used, txid: txid, txHash: txid);
+    try {
+      await _utxoLock.protect(
+        () => mainDB.putUTXOs(used.map((e) => e.utxo).toList()),
+      );
+      return await updateSentCachedTxData(txData: sent);
+    } catch (e, s) {
+      Logging.instance.e(
+        "Kerrigan: $txid sent, but recording it failed",
+        error: e,
+        stackTrace: s,
+      );
+      return sent;
+    }
   }
 }
+
+/// What deleting [wallet] loses that its recovery phrase doesn't bring
+/// back; null when nothing.
+String? kerriganDeleteWarning(Wallet wallet) {
+  if (wallet is! KerriganWallet) return null;
+  final warnings = [
+    if (wallet.masternodes.isNotEmpty)
+      "The masternodes come back with the recovery phrase, but only once "
+          "you add them again on the Masternodes screen. Until then their "
+          "collateral isn't frozen, and a send could spend it and stop "
+          "them.",
+    if (wallet.pendingProposals.any((p) => p.error == null))
+      "Proposals still waiting to be submitted will be lost, along with "
+          "the fees already paid for them.",
+  ];
+  return warnings.isEmpty ? null : warnings.join("\n\n");
+}
+
+/// Why "New address" gave none: see [KerriganWallet.generateNewTransparentAddress].
+const kerriganAddressGapMessage =
+    "You already have 20 unused addresses. Use one of them first: a wallet "
+    "restored from the recovery phrase only looks 20 addresses past the "
+    "last used one.";
+
+/// Chain (0 receiving, 1 change) and index of a bridge token path such as
+/// `m/44'/99888'/0'/0/5`; null for any other path.
+({int chain, int index})? kerriganTokenPath(String? path) {
+  final m = RegExp(r"/([01])/(\d{1,10})$").firstMatch(path ?? "");
+  if (m == null) return null;
+  final index = int.parse(m.group(2)!);
+  // Hardened indices can't be derived from the account xpub.
+  if (index >= 0x80000000) return null;
+  return (chain: int.parse(m.group(1)!), index: index);
+}
+
+/// The used addresses a bridge reports ([tokens]: `name` and `path`), as
+/// this wallet's own: [stored] rows, and new ones from [derive] whose
+/// address matches the name. The highest used index per chain counts
+/// these only: a path the bridge sends is never taken on trust, or a
+/// lying bridge could move the next receiving address beyond what any
+/// wallet scans.
+Future<({List<Address> derived, int maxReceive, int maxChange})>
+kerriganUsedAddresses({
+  required List<dynamic> tokens,
+  required Map<String, Address> stored,
+  required Future<Address> Function(int chain, int index) derive,
+}) async {
+  final derived = <Address>[];
+  int maxReceive = -1;
+  int maxChange = -1;
+  for (final t in tokens) {
+    final token = Map<String, dynamic>.from(t as Map);
+    final name = token["name"] as String?;
+    if (name == null) continue;
+    var address = stored[name];
+    if (address == null) {
+      final path = kerriganTokenPath(token["path"] as String?);
+      if (path == null) continue;
+      final candidate = await derive(path.chain, path.index);
+      if (candidate.value != name) {
+        Logging.instance.e(
+          "Kerrigan: bridge address $name at ${token["path"]} does not match "
+          "local derivation ${candidate.value}; ignoring",
+        );
+        continue;
+      }
+      derived.add(candidate);
+      address = candidate;
+    }
+    if (address.type == AddressType.kerriganShield) continue;
+    if (address.subType == AddressSubType.receiving) {
+      maxReceive = max(maxReceive, address.derivationIndex);
+    } else if (address.subType == AddressSubType.change) {
+      maxChange = max(maxChange, address.derivationIndex);
+    }
+  }
+  return (derived: derived, maxReceive: maxReceive, maxChange: maxChange);
+}
+
+/// `txid:vout`, as masternode ids are written.
+String kerriganOutpointKey(String txid, int vout) => "$txid:$vout";
+
+/// A coin's flags the user set in coin control (frozen, unfrozen after
+/// the wallet froze it, its name), as kept in a backup.
+Map<String, dynamic> kerriganCoinFlagsToJson(UTXO u) => {
+  "txid": u.txid,
+  "vout": u.vout,
+  "frozen": u.isBlocked,
+  if (u.blockedReason != null) "reason": u.blockedReason,
+  if (u.name.isNotEmpty) "name": u.name,
+};
+
+/// [kerriganCoinFlagsToJson] read back, by outpoint, as the coin rows
+/// [KerriganWallet]'s rescan keeps (only the flags are set). Entries that
+/// aren't readable are left out.
+Map<String, UTXO> kerriganCoinFlagsFromJson(List<dynamic> json, String walletId) {
+  final result = <String, UTXO>{};
+  for (final e in json) {
+    if (e is! Map) continue;
+    final txid = e["txid"], vout = e["vout"];
+    if (txid is! String || vout is! int) continue;
+    final reason = e["reason"], name = e["name"];
+    result[kerriganOutpointKey(txid, vout)] = UTXO(
+      walletId: walletId,
+      txid: txid,
+      vout: vout,
+      value: 0,
+      name: name is String ? name : "",
+      isBlocked: e["frozen"] == true,
+      blockedReason: reason is String ? reason : null,
+      isCoinbase: false,
+      blockHash: null,
+      blockHeight: null,
+      blockTime: null,
+    );
+  }
+  return result;
+}
+
+/// Transparent outputs a send may spend: confirmed or locked by
+/// InstantSend, not already being spent, not frozen, no shield note rows.
+/// Masternode [collaterals] only with [collateral], when the user picked
+/// them: an unfrozen collateral would otherwise be the first coin an
+/// ordinary send spends (largest first), stopping the masternode.
+List<UTXO> kerriganSpendable(
+  Iterable<UTXO> utxos, {
+  required int chainHeight,
+  required int minConfirms,
+  required int minCoinbaseConfirms,
+  Set<String> collaterals = const {},
+  bool collateral = false,
+}) => [
+  for (final u in utxos)
+    if (!isKerriganShieldNote(u) &&
+        !u.isBlocked &&
+        (collateral ||
+            !collaterals.contains(kerriganOutpointKey(u.txid, u.vout))) &&
+        u.used != true &&
+        (isKerriganInstantLocked(u) ||
+            u.isConfirmed(chainHeight, minConfirms, minCoinbaseConfirms)))
+      u,
+];

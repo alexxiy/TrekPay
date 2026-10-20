@@ -25,6 +25,7 @@ import '../../utilities/amount/amount_formatter.dart';
 import '../../utilities/assets.dart';
 import '../../utilities/constants.dart';
 import '../../utilities/text_styles.dart';
+import '../../utilities/util.dart';
 import '../../wallets/crypto_currency/crypto_currency.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
@@ -40,6 +41,7 @@ import '../../widgets/desktop/primary_button.dart';
 import '../../widgets/desktop/secondary_button.dart';
 import '../../widgets/expandable2.dart';
 import '../../widgets/icon_widgets/x_icon.dart';
+import '../../widgets/page_app_bar.dart';
 import '../../widgets/rounded_container.dart';
 import '../../widgets/rounded_white_container.dart';
 import '../../widgets/toggle.dart';
@@ -268,12 +270,6 @@ class _CoinControlViewState extends ConsumerState<CoinControlView> {
   Widget build(BuildContext context) {
     debugPrint("BUILD: $runtimeType");
 
-    final minConfirms = ref
-        .watch(pWallets)
-        .getWallet(widget.walletId)
-        .cryptoCurrency
-        .minConfirms;
-
     final coin = ref.watch(pWalletCoin(widget.walletId));
     final currentHeight = ref.watch(pWalletChainHeight(widget.walletId));
 
@@ -324,25 +320,38 @@ class _CoinControlViewState extends ConsumerState<CoinControlView> {
               .background,
           appBar: AppBar(
             automaticallyImplyLeading: false,
+            // Also opened in the desktop window: sized like PageAppBar.
+            toolbarHeight: PageAppBar.height,
+            leadingWidth: PageAppBar.leadingWidth,
+            actionsPadding: PageAppBar.actionsPadding,
             leading: _isSearching
                 ? null
                 : widget.type == CoinControlViewType.use &&
                       _selectedAvailable.isNotEmpty
-                ? AppBarIconButton(
-                    icon: XIcon(
-                      width: 24,
-                      height: 24,
-                      color: Theme.of(context)
-                          .extension<StackColors>()!
-                          .topNavIconPrimary,
+                ? Padding(
+                    padding: Util.isDesktop
+                        ? const EdgeInsets.symmetric(
+                            vertical: 20,
+                            horizontal: 24,
+                          )
+                        : EdgeInsets.zero,
+                    child: AppBarIconButton(
+                      icon: XIcon(
+                        width: 24,
+                        height: 24,
+                        color: Theme.of(context)
+                            .extension<StackColors>()!
+                            .topNavIconPrimary,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _selectedAvailable.clear();
+                        });
+                      },
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _selectedAvailable.clear();
-                      });
-                    },
                   )
-                : AppBarBackButton(
+                : PageAppBar.backButton(
+                    context,
                     onPressed: () {
                       unawaited(_refreshBalance());
                       Navigator.of(context).pop(
@@ -487,12 +496,12 @@ class _CoinControlViewState extends ConsumerState<CoinControlView> {
                           RoundedWhiteContainer(
                             child: Text(
                               _shieldNotes == true
-                                  ? "This option allows you to control, freeze, and "
-                                        "utilize shield notes at your discretion. Tap "
-                                        "the note circle to select."
-                                  : "This option allows you to control, freeze, and utilize "
-                                        "outputs at your discretion. Tap the output circle to "
-                                        "select.",
+                                  ? "Choose which shield notes a send uses, and "
+                                        "freeze the ones you want to keep. Tap a "
+                                        "note's circle to select it."
+                                  : "Choose which outputs a send uses, and freeze "
+                                        "the ones you want to keep. Tap an output's "
+                                        "circle to select it.",
                               style: STextStyles.w500_14(context).copyWith(
                                 color: Theme.of(context)
                                     .extension<StackColors>()!

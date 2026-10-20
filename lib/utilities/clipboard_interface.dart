@@ -8,6 +8,8 @@
  *
  */
 
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 
 abstract class ClipboardInterface {
@@ -29,16 +31,23 @@ class ClipboardWrapper implements ClipboardInterface {
   }
 }
 
-class FakeClipboard implements ClipboardInterface {
-  String? _value;
-
-  @override
-  Future<ClipboardData?> getData(String format) async {
-    return _value == null ? null : ClipboardData(text: _value!);
-  }
-
-  @override
-  Future<void> setData(ClipboardData data) async {
-    _value = data.text;
+extension SecretClipboard on ClipboardInterface {
+  /// Copy a secret (a recovery phrase, a masternode key) and clear the
+  /// clipboard again after [after], unless something else was copied
+  /// meanwhile.
+  Future<void> setSecret(
+    String text, {
+    Duration after = const Duration(minutes: 1),
+  }) async {
+    await setData(ClipboardData(text: text));
+    Timer(after, () async {
+      try {
+        if ((await getData(Clipboard.kTextPlain))?.text == text) {
+          await setData(const ClipboardData(text: ""));
+        }
+      } catch (_) {
+        // The clipboard can't be read (e.g. in the background on Android).
+      }
+    });
   }
 }

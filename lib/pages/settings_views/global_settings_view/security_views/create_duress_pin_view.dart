@@ -3,18 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../notifications/show_flush_bar.dart';
+import '../../../../providers/global/prefs_provider.dart';
+import '../../../../providers/global/secure_store_provider.dart';
+import '../../../../themes/stack_colors.dart';
+import '../../../../utilities/assets.dart';
+import '../../../../utilities/flutter_secure_storage_interface.dart';
+import '../../../../utilities/text_styles.dart';
+import '../../../../widgets/background.dart';
+import '../../../../widgets/custom_buttons/app_bar_icon_button.dart';
+import '../../../../widgets/custom_pin_put/custom_pin_put.dart';
 import '../../../pinpad_views/lock_screen_view.dart';
 import 'security_view.dart';
-import '../../../../../notifications/show_flush_bar.dart';
-import '../../../../../providers/global/prefs_provider.dart';
-import '../../../../../providers/global/secure_store_provider.dart';
-import '../../../../../themes/stack_colors.dart';
-import '../../../../../utilities/assets.dart';
-import '../../../../../utilities/flutter_secure_storage_interface.dart';
-import '../../../../../utilities/text_styles.dart';
-import '../../../../../widgets/background.dart';
-import '../../../../../widgets/custom_buttons/app_bar_icon_button.dart';
-import '../../../../../widgets/custom_pin_put/custom_pin_put.dart';
 
 class CreateDuressPinView extends ConsumerStatefulWidget {
   const CreateDuressPinView({super.key});
@@ -132,13 +132,23 @@ class _CreateDuressPinViewState extends ConsumerState<CreateDuressPinView> {
                     submittedFieldDecoration: _pinPutDecoration,
                     selectedFieldDecoration: _pinPutDecoration,
                     followingFieldDecoration: _pinPutDecoration,
-                    onSubmit: (String pin) {
-                      if (pin.length < 4) {
-                        showFloatingFlushBar(
-                          type: FlushBarType.warning,
-                          message: "PIN not long enough!",
-                          iconAsset: Assets.svg.alertCircle,
-                          context: context,
+                    onSubmit: (String pin) async {
+                      // The same PIN would always open duress mode, hiding
+                      // every other wallet for good.
+                      final isMainPin =
+                          pin == await _secureStore.read(key: kPinKey);
+                      if (!context.mounted) return;
+                      if (pin.length < 4 || isMainPin) {
+                        if (isMainPin) _pinPutController1.clear();
+                        unawaited(
+                          showFloatingFlushBar(
+                            type: FlushBarType.warning,
+                            message: isMainPin
+                                ? "That's your PIN. Pick a different duress PIN."
+                                : "PIN not long enough!",
+                            iconAsset: Assets.svg.alertCircle,
+                            context: context,
+                          ),
                         );
                       } else {
                         _pageController.nextPage(

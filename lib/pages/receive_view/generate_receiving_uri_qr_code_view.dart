@@ -13,7 +13,6 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-// import 'package:document_file_save_plus/document_file_save_plus.dart';
 import 'package:decimal/decimal.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -118,11 +117,6 @@ class _GenerateUriQrCodeViewState extends State<GenerateUriQrCodeView> {
               ),
             );
           }
-        } else {
-          //   await DocumentFileSavePlus.saveFile(
-          //       pngBytes,
-          //       "receive_qr_code_${DateTime.now().toLocal().toIso8601String()}.png",
-          //       "image/png");
         }
       } else {
         final tempDir = await getTemporaryDirectory();

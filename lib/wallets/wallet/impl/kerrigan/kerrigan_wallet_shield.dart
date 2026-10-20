@@ -7,6 +7,7 @@ const _kShieldBatchBlocks = 200;
 /// library (anything touching a shield address or shield balance).
 const _kOdShieldTx = "kerriganShieldTx";
 const _kOdShieldNullifiers = "kerriganShieldNullifiers";
+const _kOdShieldPendingIn = "kerriganShieldPendingIn";
 
 /// Set in [TxData.otherData] by the UI to spend the shield balance.
 const kKerriganFromShield = "kerriganFromShield";
@@ -45,6 +46,35 @@ Uint8List kerriganOpReturnScript(String address) => Uint8List.fromList([
       .toUint8ListFromHex
       .reversed,
 ]);
+
+/// Set in [TxData.otherData] by [KerriganWallet.prepareSend] when the change
+/// goes to an address that is not this wallet's (a custom change address):
+/// `{"address": ..., "sats": "..."}`. The confirm screen shows it, since
+/// that change leaves the wallet like the payment does.
+const kKerriganForeignChange = "kerriganForeignChange";
+
+/// Change of [txData] that leaves the wallet (see [kKerriganForeignChange]).
+({String address, BigInt sats})? kerriganForeignChange(TxData txData) {
+  if (txData.otherData == null) return null;
+  final v = (jsonDecode(txData.otherData!) as Map)[kKerriganForeignChange];
+  if (v is! Map) return null;
+  return (
+    address: v["address"] as String,
+    sats: BigInt.parse(v["sats"] as String),
+  );
+}
+
+/// [otherData] (JSON) with [kKerriganForeignChange] set.
+String _withForeignChange(String? otherData, String address, BigInt sats) =>
+    jsonEncode({
+      if (otherData != null) ...jsonDecode(otherData) as Map<String, dynamic>,
+      kKerriganForeignChange: {"address": address, "sats": sats.toString()},
+    });
+
+/// The Sapling parameters download and load, shared by every wallet (the
+/// prover is loaded once per process); progress goes to every caller.
+Future<void>? _proverLoading;
+final _proverProgress = <void Function(double)>{};
 
 /// How the user pays a transaction: from the shield ([fromShield]) or
 /// the transparent balance, with the coins picked in coin control (none:
@@ -105,21 +135,29 @@ extension _KerriganShield on KerriganWallet {
   /// pool is young, so that is quick.
   int get _defaultShieldRestoreHeight => 0;
 
-  /// ZIP 32 spending key from the full BIP39 seed, like Kerrigan Core
-  /// derives it from its HD seed (`m_Sapling/32'/coin_type'/0'`), so the
-  /// same recovery phrase finds the same shield funds in both.
-  Future<String> _extsk() async {
-    final seed = await _seed();
-    return libKerriganShield.extendedSpendingKey(
-      seed: seed,
-      coinType: cryptoCurrency.coinType,
-    );
-  }
+  /// ZIP 32 spending key of this wallet's account, from the full BIP39
+  /// seed like Kerrigan Core derives it from its HD seed
+  /// (`m_Sapling/32'/coin_type'/account'`), so the same recovery phrase
+  /// finds the same shield funds in both.
+  Future<String> _extsk() async => _extskFromSeed(await _seed());
 
-  Future<KerriganShieldState> _createShieldState(int fromHeight) async {
-    final extfvk = libKerriganShield.extendedFullViewingKey(
-      extsk: await _extsk(),
-    );
+  String _extskFromSeed(Uint8List seed) =>
+      libKerriganShield.extendedSpendingKey(
+        seed: seed,
+        coinType: cryptoCurrency.coinType,
+        accountIndex: account,
+      );
+
+  /// Full viewing key: derived when the wallet's shield state loads and
+  /// kept in memory only (it reveals every shield transaction, past and
+  /// future, so it isn't written to the state file).
+  Future<String> _extfvk() async =>
+      libKerriganShield.extendedFullViewingKey(extsk: await _extsk());
+
+  Future<KerriganShieldState> _createShieldState(
+    int fromHeight, {
+    required String extfvk,
+  }) async {
     final cp = libKerriganShield.closestCheckpoint(
       height: fromHeight,
       network: _network,
@@ -147,16 +185,22 @@ extension _KerriganShield on KerriganWallet {
   /// Loaded (or newly created) shield state. A wallet without state was
   /// created in-app, so scanning starts near the current tip; restores
   /// reset the state in [KerriganWallet.recover].
-  Future<KerriganShieldState> _loadShield() async {
-    if (_shield != null) return _shield!;
-    var state = await KerriganShieldState.load(walletId);
+  Future<KerriganShieldState> _loadShield() async =>
+      _shield ??
+      await (_shieldLoading ??= _readShield().whenComplete(
+        () => _shieldLoading = null,
+      ));
+
+  Future<KerriganShieldState> _readShield() async {
+    final extfvk = await _extfvk();
+    var state = await KerriganShieldState.load(walletId, extfvk: extfvk);
     if (state == null) {
       int from = info.restoreHeight;
       if (from <= 0) {
         from = await chainHeight;
         if (from <= 0) from = await bridge.getBlockCount();
       }
-      state = await _createShieldState(from);
+      state = await _createShieldState(from, extfvk: extfvk);
     }
     await _storeShieldAddresses(state);
     _shield = state;
@@ -223,11 +267,22 @@ extension _KerriganShield on KerriganWallet {
   }
 
   Future<void> _resetShield({required int fromHeight}) async {
+    final extfvk = _shield?.extfvk ?? await _extfvk();
     await KerriganShieldState.delete(walletId);
-    _shield = null;
-    _shield = await _createShieldState(fromHeight);
-    await _storeShieldAddresses(_shield!);
+    // The old state stays in use until the new one is ready.
+    final state = await _createShieldState(fromHeight, extfvk: extfvk);
+    _shield = state;
+    await _storeShieldAddresses(state);
   }
+
+  /// Where automatic shield change goes: the internal (change) key's
+  /// address, as Kerrigan Core does. The scan tells change notes by their
+  /// key, and a wallet restored in Kerrigan Core finds them too.
+  String _shieldChangeAddress(KerriganShieldState state) =>
+      libKerriganShield.changeAddress(
+        extfvk: state.extfvk,
+        network: state.network,
+      );
 
   // ===========================================================================
   // Sync
@@ -256,6 +311,9 @@ extension _KerriganShield on KerriganWallet {
         await for (final block in parseKerriganShieldStream(
           bridge.shieldData(state.lastProcessedBlock + 1),
         )) {
+          if (_recovering && _recoverCancelled) {
+            throw Exception("Restore cancelled");
+          }
           progress(block.height);
           batch.add(block);
           if (batch.length >= _kShieldBatchBlocks) {
@@ -341,6 +399,8 @@ extension _KerriganShield on KerriganWallet {
     for (final w in r["wallet_transactions"] as List) {
       final wtx = Map<String, dynamic>.from(w as Map);
       final txid = wtx["txid"] as String;
+      // Its notes are in [unspentNotes] now.
+      state.pendingIncoming.remove(txid);
       for (final n in wtx["received"] as List) {
         final note = state.nullifierNotes[(n as Map)["nullifier"]];
         if (note != null) {
@@ -384,12 +444,16 @@ extension _KerriganShield on KerriganWallet {
 
   Future<void> _storeShieldHistory(Set<String> txids) async {
     final sets = await _addressSets();
-    final txns = <TransactionV2>[];
-    for (final txid in txids) {
-      final tx = _parseTx(await bridge.tx(txid), sets: sets);
-      if (tx != null) txns.add(tx);
+    final ids = txids.toList();
+    final fetched = <Map<String, dynamic>>[];
+    for (var i = 0; i < ids.length; i += KerriganWallet._kParallelRequests) {
+      fetched.addAll(
+        await Future.wait(
+          ids.skip(i).take(KerriganWallet._kParallelRequests).map(bridge.tx),
+        ),
+      );
     }
-    await _storeTxs(txns);
+    await _storeTxs([for (final json in fetched) ?_parseTx(json, sets: sets)]);
   }
 
   /// [UTXO] rows for the unspent notes (see [kKerriganShieldNoteKey]).
@@ -482,16 +546,33 @@ extension _KerriganShield on KerriganWallet {
       total += v;
       if (frozen.contains(n["nullifier"])) blocked += v;
     }
+    // Change (or a send to self) of sends still unconfirmed: without it
+    // the balance dropped by the whole spent note until the next block.
+    // Only while the send is unconfirmed in the history: a dropped send is
+    // forgotten, a confirmed one is in the notes above.
+    var pending = 0;
+    if (state.pendingIncoming.isNotEmpty) {
+      final unconfirmed = await mainDB.isar.transactionV2s
+          .where()
+          .walletIdEqualTo(walletId)
+          .filter()
+          .heightIsNull()
+          .txidProperty()
+          .findAll();
+      for (final e in state.pendingIncoming.entries) {
+        if (unconfirmed.contains(e.key)) pending += e.value;
+      }
+    }
     Amount amount(int v) => Amount(
       rawValue: BigInt.from(v),
       fractionDigits: cryptoCurrency.fractionDigits,
     );
     await info.updateBalanceSecondary(
       newBalance: Balance(
-        total: amount(total),
+        total: amount(total + pending),
         spendable: amount(total - blocked),
         blockedTotal: amount(blocked),
-        pendingSpendable: amount(0),
+        pendingSpendable: amount(pending),
       ),
       isar: mainDB.isar,
     );
@@ -504,24 +585,40 @@ extension _KerriganShield on KerriganWallet {
     void Function(double progress)? onProgress,
   }) async {
     if (libKerriganShield.proverIsLoaded()) return;
+    // One download at a time: two would write the same files.
+    if (onProgress != null) _proverProgress.add(onProgress);
+    try {
+      await (_proverLoading ??= _loadProver().whenComplete(
+        () => _proverLoading = null,
+      ));
+    } finally {
+      if (onProgress != null) _proverProgress.remove(onProgress);
+    }
+  }
+
+  Future<void> _loadProver() async {
+    void onProgress(double p) {
+      for (final listener in [..._proverProgress]) {
+        listener(p);
+      }
+    }
+
     final root = await StackFileSystem.applicationRootDirectory();
     final dir = Directory("${root.path}/sapling-params");
     if (!dir.existsSync()) dir.createSync(recursive: true);
     final output = File("${dir.path}/sapling-output.params");
     final spend = File("${dir.path}/sapling-spend.params");
 
-    final proxy = bridge.useTor
-        ? TorService.sharedInstance.getProxyInfo()
-        : null;
     // The bridge serves them; Zcash's download server is the fallback
     // (Kerrigan uses the Zcash Sapling parameters).
     final sources = [
       bridge.baseUri.toString(),
       "https://download.z.cash/downloads",
     ];
-    for (final (file, name, weight, base) in [
-      (output, "sapling-output.params", 0.07, 0.0),
-      (spend, "sapling-spend.params", 0.93, 0.07),
+    // Sizes of the files whose hashes the prover checks.
+    for (final (file, name, size, weight, base) in [
+      (output, "sapling-output.params", 3592860, 0.07, 0.0),
+      (spend, "sapling-spend.params", 47958396, 0.93, 0.07),
     ]) {
       if (file.existsSync()) continue;
       Object? lastError;
@@ -530,10 +627,12 @@ extension _KerriganShield on KerriganWallet {
           await KerriganBridgeClient.downloadToFile(
             Uri.parse("$src/$name"),
             file,
-            proxy: proxy,
-            onProgress: (r, t) {
-              if (t != null) onProgress?.call(base + weight * r / t);
-            },
+            maxBytes: size,
+            // Per file: Tor may have been turned on meanwhile.
+            proxy: bridge.useTor
+                ? TorService.sharedInstance.getProxyInfo()
+                : null,
+            onProgress: (r, _) => onProgress(base + weight * r / size),
           );
           lastError = null;
           break;
@@ -573,6 +672,12 @@ extension _KerriganShield on KerriganWallet {
           "or tick \"Subtract fee from amount\".",
         );
       }
+      if (e.toString().contains("below the dust limit")) {
+        throw Exception(
+          "After the fee, the amount is too small to send to a transparent "
+          "address.",
+        );
+      }
       rethrow;
     }
   }
@@ -598,6 +703,8 @@ extension _KerriganShield on KerriganWallet {
     final Map<String, dynamic> result;
     List<StandardInput> usedInputs = const [];
     final String changeAddress;
+    // The automatic shield change address, which has no address row.
+    String? ownChange;
 
     // The native library takes raw scripts as `script:<hex>`.
     String libAddress(String address) => isKerriganOpReturn(address)
@@ -632,13 +739,8 @@ extension _KerriganShield on KerriganWallet {
         }
         changeAddress = custom;
       } else {
-        // The internal (change) key's address, as Kerrigan Core does: the
-        // scan tells change notes by their key, and a wallet restored in
-        // Kerrigan Core finds them too.
-        changeAddress = libKerriganShield.changeAddress(
-          extfvk: state.extfvk,
-          network: state.network,
-        );
+        changeAddress = _shieldChangeAddress(state);
+        ownChange = changeAddress;
       }
       final notes = await _notesToSpend(state, txData);
       final available = notes.fold<int>(
@@ -666,19 +768,36 @@ extension _KerriganShield on KerriganWallet {
           .whereType<StandardInput>()
           .map((e) => e.utxo)
           .toList();
-      final utxos = _spendable(
+      final candidates = _spendable(
         selected.isNotEmpty
             ? selected
             : await mainDB.getUTXOs(walletId).findAll(),
         await chainHeight,
+        collateral: selected.isNotEmpty,
       );
-      if (selected.isNotEmpty && utxos.length != selected.length) {
+      if (selected.isNotEmpty && candidates.length != selected.length) {
         throw Exception("Attempted to use an unavailable utxo");
       }
-      final inputs = await _withKeys(utxos);
       if (extra.isNotEmpty || isKerriganOpReturn(recipient.address)) {
         throw Exception("This payment can only be made from the shield");
       }
+      // Keys only for the coins the library will spend (all of a
+      // coin-control selection).
+      final needed = selected.isNotEmpty
+          ? candidates
+          : kerriganShieldingInputs(
+              candidates,
+              amount: recipient.amount.raw.toInt(),
+              subtractFee: _otherDataFlag(txData, kKerriganSubtractFee),
+            );
+      final seed = await _seed();
+      // Transparent inputs are signed with legacy signatures, which don't
+      // commit to the value spent: _withKeys checks each value against
+      // its previous transaction.
+      final inputs = await _withKeys(
+        needed,
+        root: coinlib.HDPrivateKey.fromSeed(seed),
+      );
       result = await libKerriganShield.createTransaction(
         utxos: [
           for (final i in inputs)
@@ -693,7 +812,7 @@ extension _KerriganShield on KerriganWallet {
               ).program.script.compiled.toHex,
             },
         ],
-        extsk: await _extsk(),
+        extsk: _extskFromSeed(seed),
         toAddress: recipient.address,
         changeAddress: changeAddress,
         amount: recipient.amount.raw.toInt(),
@@ -761,6 +880,8 @@ extension _KerriganShield on KerriganWallet {
     final recipientIsOurs =
         own.contains(recipient.address) ||
         recipient.address == state.currentAddress;
+    final changeIsOurs =
+        changeAddress == ownChange || own.contains(changeAddress);
     // Shield notes have no script; transparent outputs keep theirs.
     String script(String address) => isShieldAddress(address)
         ? ""
@@ -791,7 +912,7 @@ extension _KerriganShield on KerriganWallet {
           scriptPubKeyHex: script(changeAddress),
           valueStringSats: changeValue.toString(),
           addresses: [changeAddress],
-          walletOwns: true,
+          walletOwns: changeIsOurs,
         ),
     ];
     final tempClass = classifyKerriganTx(
@@ -801,11 +922,27 @@ extension _KerriganShield on KerriganWallet {
       fee: fee,
     )!;
 
+    // What comes back to this wallet's shield addresses.
+    var shieldIn = BigInt.zero;
+    if (changeIsOurs && isShieldAddress(changeAddress)) {
+      shieldIn += changeValue;
+    }
+    if (recipientIsOurs &&
+        isShieldAddress(recipient.address)) {
+      shieldIn += amount;
+    }
+
     final otherData = <String, dynamic>{
       if (txData.otherData != null)
         ...jsonDecode(txData.otherData!) as Map<String, dynamic>,
       _kOdShieldTx: true,
       _kOdShieldNullifiers: fromShield ? nullifiers : <String>[],
+      if (shieldIn > BigInt.zero) _kOdShieldPendingIn: shieldIn.toInt(),
+      if (!changeIsOurs && changeValue > BigInt.zero)
+        kKerriganForeignChange: {
+          "address": changeAddress,
+          "sats": changeValue.toString(),
+        },
     };
 
     return txData.copyWith(
@@ -842,6 +979,7 @@ extension _KerriganShield on KerriganWallet {
                 ? txData.memo?.trim()
                 : null,
             ownSend: true,
+            rawTx: result["txhex"] as String,
           ),
         ),
       ),
@@ -850,25 +988,64 @@ extension _KerriganShield on KerriganWallet {
 
   Future<TxData> _confirmShieldSend(TxData txData) async {
     final od = jsonDecode(txData.otherData!) as Map<String, dynamic>;
-    final txid = await bridge.sendTx(txData.raw!);
     final nullifiers = List<String>.from(
       od[_kOdShieldNullifiers] as List? ?? const [],
     );
-    if (nullifiers.isNotEmpty) {
-      final state = await _loadShield();
-      state.pendingSpent[txid] = nullifiers;
-      await state.save(walletId);
-      await _writeShieldNoteRows(state);
+    final pendingIn = (od[_kOdShieldPendingIn] as num?)?.toInt() ?? 0;
+    final state = nullifiers.isEmpty && pendingIn == 0
+        ? null
+        : await _loadShield();
+    final txid = await bridge.sendTx(txData.raw!);
+    // Sent: its notes are spent from now on, even if saving that fails
+    // (the state in memory is what the next send picks notes from).
+    if (nullifiers.isNotEmpty) state?.pendingSpent[txid] = nullifiers;
+    if (pendingIn > 0) state?.pendingIncoming[txid] = pendingIn;
+    final sent = txData.copyWith(txid: txid, txHash: txid);
+    // What follows only records the send. An error here must not read as
+    // a failed send, or the user would pay again.
+    try {
+      if (state != null) {
+        await state.save(walletId);
+        await _writeShieldNoteRows(state);
+      }
+      final used = (txData.usedUTXOs ?? const [])
+          .whereType<StandardInput>()
+          .map((e) => e.utxo.copyWith(used: true))
+          .toList();
+      if (used.isNotEmpty) {
+        await _utxoLock.protect(() => mainDB.putUTXOs(used));
+      }
+      final result = await updateSentCachedTxData(txData: sent);
+      await updateBalance();
+      return result;
+    } catch (e, s) {
+      Logging.instance.e(
+        "Kerrigan: $txid sent, but recording it failed",
+        error: e,
+        stackTrace: s,
+      );
+      return sent;
     }
-    final used = (txData.usedUTXOs ?? const [])
-        .whereType<StandardInput>()
-        .map((e) => e.utxo.copyWith(used: true))
-        .toList();
-    if (used.isNotEmpty) await mainDB.putUTXOs(used);
-    final result = await updateSentCachedTxData(
-      txData: txData.copyWith(txid: txid, txHash: txid),
-    );
-    await updateBalance();
-    return result;
   }
+}
+
+/// The transparent coins the shield library spends to pay [amount] from
+/// [candidates]: largest first, until they cover the amount and the fee
+/// (with transparent change and two shield outputs), as its coin
+/// selection does; all of them when they never do.
+List<UTXO> kerriganShieldingInputs(
+  List<UTXO> candidates, {
+  required int amount,
+  bool subtractFee = false,
+}) {
+  final sorted = [...candidates]..sort((a, b) => b.value.compareTo(a.value));
+  var total = 0;
+  for (var i = 0; i < sorted.length; i++) {
+    total += sorted[i].value;
+    final fee = KerriganWallet._shieldFee(tIn: i + 1, tOut: 1, spends: 0);
+    if (total >= amount + (subtractFee ? 0 : fee)) {
+      return sorted.sublist(0, i + 1);
+    }
+  }
+  return sorted;
 }

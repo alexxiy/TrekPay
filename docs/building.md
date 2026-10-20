@@ -51,7 +51,7 @@ cd ..
 
 Run the configure step again after you change a template, `configure_astronaut.sh` or the version. The generated platform files are not tracked in git.
 
-The app ID is `org.kerrigan.astronaut`. The app name, links and supported networks are in `scripts/app_config/configure_astronaut.sh`.
+The app ID is `org.kerrigan.astronaut`, on Linux too (Flatpak IDs need three parts, and every Linux package uses the same one so Wayland desktops find the app's icon). The app name, links, IDs and supported networks are in `scripts/app_config/configure_astronaut.sh`.
 
 ## Build the APK
 
@@ -133,22 +133,26 @@ The Linux app is built on a Linux host with the same Flutter and Rust setup, plu
 
 - Ubuntu or Debian:
   ```bash
-  sudo apt-get install clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsecret-1-dev libjsoncpp-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libopencv-dev
+  sudo apt-get install clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsecret-1-dev libjsoncpp-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
   ```
 - Fedora:
   ```bash
-  sudo dnf install clang cmake ninja-build gtk3-devel xz-devel libsecret-devel jsoncpp-devel gstreamer1-devel gstreamer1-plugins-base-devel opencv-devel libstdc++-devel libstdc++-static
+  sudo dnf install clang cmake ninja-build gtk3-devel xz-devel libsecret-devel jsoncpp-devel gstreamer1-devel gstreamer1-plugins-base-devel libstdc++-devel
   ```
 
-Then configure and build. `-s` links the system libsecret and jsoncpp, and `USE_SYSTEM_SECURE_STORAGE_DEPS=1` tells the Linux CMake files to bundle them:
+Then configure and build. `-s` links the system libsecret and jsoncpp, and `USE_SYSTEM_SECURE_STORAGE_DEPS=1` tells the Linux CMake files to bundle them. The QR scanner's camera support needs a small static OpenCV, built once from source by `scripts/linux/build_opencv.sh` (about two minutes; it stays in `scripts/linux/build/opencv`). `build_app.sh` runs it when called without `-i`:
 ```bash
 export USE_SYSTEM_SECURE_STORAGE_DEPS=1
 cd scripts
 ./build_app.sh -a astronaut -p linux -v 1.0.0 -b 1 -i -s
-cd ..
+cd linux
+./build_opencv.sh
+cd ../..
 flutter pub get
 flutter build linux --release
 ```
+
+The bundle doesn't need OpenCV installed: it's built into the camera plugin's library (`lib/libcamera_linux.so`). To link the system OpenCV instead, install `libopencv-dev` (Ubuntu) or `opencv-devel` (Fedora) and build with `USE_SYSTEM_OPENCV=1`; users then need OpenCV installed too.
 
 The app is in `build/linux/x64/release/bundle` (run `bundle/astronaut`). It keeps its data in `~/.astronaut`. The shield works on Linux: the Rust library is built by cargokit and bundled as `lib/libkerrigan_shield_ffi.so`.
 
@@ -158,7 +162,7 @@ mkdir -p build/linux/x64/release/secp256k1
 ln -s lib64 build/linux/x64/release/secp256k1/lib
 ```
 
-Packaging files are in `flatpak/` (`org.kerrigan.astronaut`) and `appimage/astronaut/`. Both start from the release bundle; `.github/workflows/build.yaml` shows the full steps.
+Packaging files are in `flatpak/` (`org.kerrigan.astronaut`, runtime `org.freedesktop.Platform` 26.08) and `appimage/astronaut/`. Both start from the release bundle; `.github/workflows/build.yaml` shows the full steps.
 
 `kerrigan:` payment links: the app runs as a single instance (unless started with `-d <dir>`), so starting it again with a link hands the link to the running window. The desktop entries of both packages register the `kerrigan` scheme. To open links with a plain bundle, install a desktop entry for it, e.g. `~/.local/share/applications/astronaut.desktop` with `Exec=/path/to/bundle/astronaut %u` and `MimeType=x-scheme-handler/kerrigan;`, then run `xdg-mime default astronaut.desktop x-scheme-handler/kerrigan`.
 

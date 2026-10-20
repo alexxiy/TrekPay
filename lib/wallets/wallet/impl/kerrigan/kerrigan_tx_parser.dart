@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:coinlib_flutter/coinlib_flutter.dart' as coinlib;
 
-import '../../../../models/isar/models/blockchain_data/transaction.dart';
+import '../../../../models/isar/models/blockchain_data/transaction_type.dart';
 import '../../../../models/isar/models/blockchain_data/utxo.dart';
 import '../../../../models/isar/models/blockchain_data/v2/input_v2.dart';
 import '../../../../models/isar/models/blockchain_data/v2/output_v2.dart';
@@ -146,6 +146,7 @@ Map<String, dynamic> kerriganTxOtherData({
   String? memo,
   bool ownSend = false,
   bool instantLocked = false,
+  String? rawTx,
 }) => {
   if (memo != null && memo.isNotEmpty) TxV2OdKeys.onChainNote: memo,
   if (c.kind != null) TxV2OdKeys.kerriganKind: c.kind,
@@ -157,6 +158,7 @@ Map<String, dynamic> kerriganTxOtherData({
   if (changeAddresses.isNotEmpty)
     TxV2OdKeys.kerriganChange: changeAddresses.toList(),
   if (ownSend) TxV2OdKeys.kerriganOwnSend: true,
+  TxV2OdKeys.kerriganRawTx: ?rawTx,
   // Rewards create coins: no fee. Always set otherwise, as the inputs
   // may not show the fee (shield spends, unknown inputs).
   TxV2OdKeys.overrideFee: Amount(
@@ -378,10 +380,6 @@ List<KerriganRawOutput> kerriganTxOutputs(Uint8List raw) {
   return outputs;
 }
 
-/// Output values of a raw Kerrigan transaction.
-List<BigInt> kerriganTxOutputValues(Uint8List raw) =>
-    kerriganTxOutputs(raw).map((e) => e.value).toList();
-
 /// Outputs of the raw transaction [rawHex], after checking that it
 /// hashes to [txid]. Throws when it does not.
 List<KerriganRawOutput> kerriganVerifiedOutputs(String txid, String rawHex) {
@@ -393,8 +391,3 @@ List<KerriganRawOutput> kerriganVerifiedOutputs(String txid, String rawHex) {
   }
   return kerriganTxOutputs(raw);
 }
-
-/// Output values of the raw transaction [rawHex], after checking that it
-/// hashes to [txid]. Throws when it does not.
-List<BigInt> kerriganVerifiedOutputValues(String txid, String rawHex) =>
-    kerriganVerifiedOutputs(txid, rawHex).map((e) => e.value).toList();

@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:isar_community/isar.dart';
 
 import '../../../../../utilities/amount/amount.dart';
-import '../transaction.dart';
+import '../transaction_type.dart';
 import 'input_v2.dart';
 import 'output_v2.dart';
 
@@ -203,6 +203,11 @@ class TransactionV2 {
   bool get isKerriganOwnSend =>
       _getFromOtherData(key: TxV2OdKeys.kerriganOwnSend) == true;
 
+  /// Raw hex of an unconfirmed transaction this wallet sent.
+  @ignore
+  String? get kerriganRawTx =>
+      _getFromOtherData(key: TxV2OdKeys.kerriganRawTx) as String?;
+
   Amount? _getKerriganAmount() {
     try {
       return Amount.fromSerializedJsonString(
@@ -349,6 +354,10 @@ abstract final class TxV2OdKeys {
 
   /// Kerrigan: unconfirmed but locked by InstantSend, so final.
   static const instantLock = "instantLock";
+
+  /// Kerrigan: raw hex of a transaction this wallet sent, kept while it
+  /// is unconfirmed to send it again if the network loses it.
+  static const kerriganRawTx = "kerriganRawTx";
 }
 
 /// Kinds of Kerrigan transactions shown with their own label.

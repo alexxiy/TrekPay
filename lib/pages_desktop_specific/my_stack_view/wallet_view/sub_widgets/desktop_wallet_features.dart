@@ -20,6 +20,7 @@ import '../../../../models/keys/view_only_wallet_data.dart';
 import '../../../../notifications/show_flush_bar.dart';
 import '../../../../pages/coin_control/coin_control_view.dart';
 import '../../../../providers/providers.dart';
+import '../../../../services/kerrigan_name/kerrigan_names_registrar.dart';
 import '../../../../themes/stack_colors.dart';
 import '../../../../utilities/amount/amount.dart';
 import '../../../../utilities/assets.dart';
@@ -34,16 +35,19 @@ import '../../../../widgets/desktop/primary_button.dart';
 import '../../../../widgets/desktop/secondary_button.dart';
 import '../../../../widgets/static_overflow_row/static_overflow_row.dart';
 import '../../../coin_control/desktop_coin_control_view.dart';
-import '../../../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../../../pages/kerrigan_governance/kerrigan_governance_view.dart';
 import '../../../../pages/kerrigan_masternodes/kerrigan_masternodes_view.dart';
+import '../../../../pages/kerrigan_names/kerrigan_names_common.dart';
+import '../../../../pages/kerrigan_names/kerrigan_names_view.dart';
+import '../../../../wallets/wallet/impl/kerrigan_wallet.dart';
 import 'more_features/more_features_dialog.dart';
 
 enum WalletFeature {
   coinControl(
     "Coin control",
-    "Control, freeze, and utilize outputs at your discretion",
+    "Choose which outputs to spend and freeze the ones to keep",
   ),
+  names("Names", "Register a name, and manage or sell your names"),
   privatize(
     "Privatize funds",
     "Move your whole transparent balance to your shield balance",
@@ -66,9 +70,12 @@ enum WalletFeature {
   const WalletFeature(this.label, this.description);
 }
 
-/// A feature's icon: an SVG asset path or a Material [IconData].
+/// A feature's icon: an SVG asset path, a Material [IconData] or a widget
+/// (drawn as it is).
 Widget walletFeatureIcon(Object icon, double size, Color color) =>
-    icon is IconData
+    icon is Widget
+    ? SizedBox(width: size, height: size, child: icon)
+    : icon is IconData
     ? Icon(icon, size: size, color: color)
     : SvgPicture.asset(icon as String, width: size, height: size, color: color);
 
@@ -232,6 +239,14 @@ class _DesktopWalletFeaturesState extends ConsumerState<DesktopWalletFeatures> {
     ];
 
     final moreOptions = <(WalletFeature, Object, FutureOr<void> Function())>[
+      if (wallet is KerriganWallet &&
+          !isViewOnly &&
+          KerriganNamesService.forCoin(wallet.cryptoCurrency) != null)
+        (
+          WalletFeature.names,
+          const KerriganNamesLogo(small: true),
+          () => _push(KerriganNamesView.routeName),
+        ),
       if (showCoinControl)
         (WalletFeature.coinControl, Icons.checklist_rtl, _onCoinControlPressed),
     ];

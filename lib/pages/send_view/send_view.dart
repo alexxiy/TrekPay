@@ -22,10 +22,12 @@ import 'package:tuple/tuple.dart';
 import '../../models/input.dart';
 import '../../models/isar/models/isar_models.dart';
 import '../../models/send_view_auto_fill_data.dart';
+import '../../providers/global/address_book_service_provider.dart';
 import '../../providers/providers.dart';
 import '../../providers/ui/preview_tx_button_state_provider.dart';
 import '../../providers/wallet/public_private_balance_state_provider.dart';
 import '../../route_generator.dart';
+import '../../services/kerrigan_name/kerrigan_name_resolver.dart';
 import '../../themes/coin_icon_provider.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/address_utils.dart';
@@ -65,6 +67,7 @@ import '../coin_control/coin_control_view.dart';
 import 'confirm_transaction_view.dart';
 import 'sub_widgets/building_transaction_dialog.dart';
 import 'sub_widgets/kerrigan_change_address_sheet.dart';
+import 'sub_widgets/kerrigan_name_lookup.dart';
 import 'sub_widgets/dual_balance_selection_sheet.dart';
 
 class SendView extends ConsumerStatefulWidget {
@@ -233,11 +236,6 @@ class _SendViewState extends ConsumerState<SendView> {
 
   Future<void> _scanQr() async {
     try {
-      // ref
-      //     .read(
-      //         shouldShowLockscreenOnResumeStateProvider
-      //             .state)
-      //     .state = false;
       if (FocusScope.of(context).hasFocus) {
         FocusScope.of(context).unfocus();
         await Future<void>.delayed(const Duration(milliseconds: 75));
@@ -245,15 +243,6 @@ class _SendViewState extends ConsumerState<SendView> {
       if (!mounted) return;
 
       final qrResult = await ref.read(pBarcodeScanner).scan(context: context);
-
-      // Future<void>.delayed(
-      //   const Duration(seconds: 2),
-      //   () => ref
-      //       .read(
-      //           shouldShowLockscreenOnResumeStateProvider
-      //               .state)
-      //       .state = true,
-      // );
 
       Logging.instance.d("qrResult content: ${qrResult.rawContent}");
       if (qrResult.rawContent == null) return;
@@ -276,12 +265,6 @@ class _SendViewState extends ConsumerState<SendView> {
         });
       }
     } on PlatformException catch (e, s) {
-      // ref
-      //     .read(
-      //         shouldShowLockscreenOnResumeStateProvider
-      //             .state)
-      //     .state = true;
-
       if (mounted) {
         try {
           await checkCamPermDeniedMobileAndOpenAppSettings(
@@ -344,11 +327,6 @@ class _SendViewState extends ConsumerState<SendView> {
       cryptoAmountController.text = "";
       _cryptoAmountChangeLock = false;
     }
-    // setState(() {
-    //   _calculateFeesFuture = calculateFees(
-    //       Format.decimalAmountToSatoshis(
-    //           _amountToSend!));
-    // });
     ref.read(pSendAmount.notifier).state = amount;
   }
 
@@ -417,45 +395,30 @@ class _SendViewState extends ConsumerState<SendView> {
     });
   }
 
+  /// The fee last shown, for coin control's "amount needed".
   late Amount _currentFee;
-
-  void _setCurrentFee(String fee, bool shouldSetState) {
-    fee = fee.trim();
-
-    if (fee.startsWith("~")) {
-      fee = fee.substring(1);
-    }
-    if (fee.contains(" ")) {
-      fee = fee.split(" ").first;
-    }
-
-    final value = fee.contains(",")
-        ? Decimal.parse(fee.replaceFirst(",", "."))
-              .toAmount(fractionDigits: coin.fractionDigits)
-        : Decimal.parse(fee).toAmount(fractionDigits: coin.fractionDigits);
-
-    if (shouldSetState) {
-      setState(() => _currentFee = value);
-    } else {
-      _currentFee = value;
-    }
-  }
 
   void _setValidAddressProviders(String? address) {
     final wallet = ref.read(pWallets).getWallet(walletId);
-    ref.read(pValidSendToAddress.notifier).state = wallet.cryptoCurrency
-        .validateAddress(address ?? "");
+    ref.read(pValidSendToAddress.notifier).state =
+        wallet.cryptoCurrency.validateAddress(address ?? "") ||
+        kerriganNameFor(coin, address) != null;
   }
+
+  /// Kerrigan.name names always point to shield addresses.
+  bool get _sendsToShield =>
+      (coin as Kerrigan).isShieldAddress(_address ?? "") ||
+      kerriganNameFor(coin, _address) != null;
 
   late Future<String> _calculateFeesFuture;
 
-  Map<Amount, String> cachedFees = {};
+  Map<Amount, Amount> cachedFees = {};
 
   Future<String> calculateFees(Amount amount) async {
     final wallet = ref.read(pWallets).getWallet(walletId) as KerriganWallet;
     final fromShield =
         ref.read(publicPrivateBalanceStateProvider) == BalanceType.private;
-    final toShield = wallet.isShieldAddress(_address ?? "");
+    final toShield = _sendsToShield;
 
     final Amount fee;
     if (fromShield || toShield) {
@@ -470,26 +433,35 @@ class _SendViewState extends ConsumerState<SendView> {
             : selectedUTXOs.map((e) => e.utxo).toSet(),
         subtractFee: _kerriganSubtractFee,
       );
-      return ref
-          .read(pAmountFormatter(coin))
-          .format(fee, withUnitName: true, indicatePrecisionLoss: false);
+    } else {
+      // Kerrigan has no fee market: every transparent send pays the relay
+      // minimum (fast = average = slow).
+      fee = cachedFees[amount] ??= await wallet.estimateFeeFor(
+        amount,
+        (await wallet.fees).medium,
+      );
     }
-
-    if (cachedFees[amount] != null) {
-      return cachedFees[amount]!;
-    }
-
-    // Kerrigan has no fee market: every transparent send pays the relay
-    // minimum (fast = average = slow).
-    final feeRate = (await wallet.fees).medium;
-    fee = await wallet.estimateFeeFor(amount, feeRate);
-    cachedFees[amount] = ref
+    _currentFee = fee;
+    return ref
         .read(pAmountFormatter(coin))
         .format(fee, withUnitName: true, indicatePrecisionLoss: false);
-    return cachedFees[amount]!;
   }
 
+  /// A Preview tap while one is running is ignored: two would build two
+  /// transactions.
+  bool _previewing = false;
+
   Future<void> _previewTransaction() async {
+    if (_previewing) return;
+    _previewing = true;
+    try {
+      await _preview();
+    } finally {
+      _previewing = false;
+    }
+  }
+
+  Future<void> _preview() async {
     // wait for keyboard to disappear
     FocusScope.of(context).unfocus();
     await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -560,9 +532,26 @@ class _SendViewState extends ConsumerState<SendView> {
       }
     }
 
-    try {
-      bool wasCancelled = false;
+    // A Kerrigan.name name: look it up and check it first. The transaction
+    // pays the address that was proven, never the name's text.
+    var recipient = _address!;
+    KerriganNameVerified? kerriganName;
+    final name = kerriganNameFor(coin, _address);
+    if (name != null) {
+      if (!mounted) return;
+      kerriganName = await lookUpKerriganNameForSend(
+        context: context,
+        coin: coin,
+        name: name,
+        contacts: ref.read(addressBookServiceProvider).contacts,
+      );
+      if (kerriganName == null || !mounted) return;
+      recipient = kerriganName.address;
+    }
 
+    // The dialog's Cancel button closes the dialog itself.
+    bool wasCancelled = false;
+    try {
       if (mounted) {
         unawaited(
           showDialog<void>(
@@ -572,11 +561,7 @@ class _SendViewState extends ConsumerState<SendView> {
             builder: (context) {
               return BuildingTransactionDialog(
                 coin: wallet.info.coin,
-                onCancel: () {
-                  wasCancelled = true;
-
-                  Navigator.of(context).pop();
-                },
+                onCancel: () => wasCancelled = true,
               );
             },
           ),
@@ -588,7 +573,7 @@ class _SendViewState extends ConsumerState<SendView> {
       final Future<TxData> txDataFuture;
 
       final memo =
-          (coin as Kerrigan).isShieldAddress(_address ?? "") &&
+          (coin as Kerrigan).isShieldAddress(recipient) &&
               memoController.text.isNotEmpty
           ? memoController.text
           : null;
@@ -607,10 +592,10 @@ class _SendViewState extends ConsumerState<SendView> {
         txData: TxData(
           recipients: [
             TxRecipient(
-              address: _address!,
+              address: recipient,
               amount: amount,
               isChange: false,
-              addressType: wallet.cryptoCurrency.getAddressType(_address!)!,
+              addressType: wallet.cryptoCurrency.getAddressType(recipient)!,
             ),
           ],
           memo: memo,
@@ -644,6 +629,7 @@ class _SendViewState extends ConsumerState<SendView> {
               builder: (_) => ConfirmTransactionView(
                 txData: txData,
                 walletId: walletId,
+                kerriganName: kerriganName,
                 onSuccess: () {
                   if (mounted) {
                     clearSendForm();
@@ -659,7 +645,8 @@ class _SendViewState extends ConsumerState<SendView> {
       }
     } catch (e, s) {
       Logging.instance.e("$e\n$s", error: e, stackTrace: s);
-      if (mounted) {
+      // Cancelled: the dialog is closed already, and the error is moot.
+      if (mounted && !wasCancelled) {
         // pop building dialog
         Navigator.of(context, rootNavigator: true).pop();
 
@@ -828,37 +815,6 @@ class _SendViewState extends ConsumerState<SendView> {
       });
     }
 
-    // if (coin is! Epiccash) {
-    // _cryptoFocus.addListener(() {
-    //   if (!_cryptoFocus.hasFocus && !_baseFocus.hasFocus) {
-    //     if (_amountToSend == null) {
-    //       setState(() {
-    //         _calculateFeesFuture = calculateFees(0);
-    //       });
-    //     } else {
-    //       setState(() {
-    //         _calculateFeesFuture = calculateFees(
-    //             Format.decimalAmountToSatoshis(_amountToSend!, coin));
-    //       });
-    //     }
-    //   }
-    // });
-
-    // _baseFocus.addListener(() {
-    //   if (!_cryptoFocus.hasFocus && !_baseFocus.hasFocus) {
-    //     if (_amountToSend == null) {
-    //       setState(() {
-    //         _calculateFeesFuture = calculateFees(0);
-    //       });
-    //     } else {
-    //       setState(() {
-    //         _calculateFeesFuture = calculateFees(
-    //             Format.decimalAmountToSatoshis(_amountToSend!, coin));
-    //       });
-    //     }
-    //   }
-    // });
-    // }
     super.initState();
   }
 
@@ -987,9 +943,6 @@ class _SendViewState extends ConsumerState<SendView> {
                                           overflow: TextOverflow.ellipsis,
                                           maxLines: 1,
                                         ),
-                                        // const SizedBox(
-                                        //   height: 2,
-                                        // ),
                                         Text(
                                           balType == BalanceType.private
                                               ? "Shielded balance"
@@ -1072,21 +1025,6 @@ class _SendViewState extends ConsumerState<SendView> {
                                   style: STextStyles.smallMed12(context),
                                   textAlign: TextAlign.left,
                                 ),
-                                // if (coin is Monero)
-                                //   CustomTextButton(
-                                //     text: "Use OpenAlias",
-                                //     onTap: () async {
-                                //       await showModalBottomSheet(
-                                //         context: context,
-                                //         builder: (context) =>
-                                //             OpenAliasBottomSheet(
-                                //           onSelected: (address) {
-                                //             sendToController.text = address;
-                                //           },
-                                //         ),
-                                //       );
-                                //     },
-                                //   ),
                               ],
                             ),
                             const SizedBox(height: 8),
@@ -1121,7 +1059,10 @@ class _SendViewState extends ConsumerState<SendView> {
                                       trimmed,
                                       logging: Logging.instance,
                                     );
-                                    if (parsed != null) {
+                                    // Only a payment link for this coin (as when scanned).
+                                    if (parsed != null &&
+                                        parsed.coin?.uriScheme ==
+                                            coin.uriScheme) {
                                       _applyUri(parsed);
                                     } else {
                                       _setAddress(newValue);
@@ -1140,7 +1081,7 @@ class _SendViewState extends ConsumerState<SendView> {
                                 style: STextStyles.field(context),
                                 decoration:
                                     standardInputDecoration(
-                                      "Enter ${coin.ticker} address",
+                                      recipientHint(coin),
                                       _addressFocusNode,
                                       context,
                                     ).copyWith(
@@ -1237,7 +1178,7 @@ class _SendViewState extends ConsumerState<SendView> {
                                     ref.watch(pValidSendToAddress)) {
                                   error = null;
                                 } else {
-                                  error = "Invalid address";
+                                  error = recipientInputError(coin, _address!);
                                 }
 
                                 if (error == null || error.isEmpty) {
@@ -1428,16 +1369,6 @@ class _SendViewState extends ConsumerState<SendView> {
                                   unit: ref.watch(pAmountUnit(coin)),
                                   locale: locale,
                                 ),
-
-                                // regex to validate a crypto amount with 8 decimal places
-                                // TextInputFormatter.withFunction((oldValue,
-                                //         newValue) =>
-                                //     // RegExp(r'^([0-9]*[,.]?[0-9]{0,8}|[,.][0-9]{0,8})$')
-                                //     // RegExp(r'^\d{1,3}([,\.]\d+)?|[,\.\d]+$')
-                                //     getAmountRegex(locale, coin.fractionDigits)
-                                //             .hasMatch(newValue.text)
-                                //         ? newValue
-                                //         : oldValue),
                               ],
                               decoration: InputDecoration(
                                 contentPadding: const EdgeInsets.only(
@@ -1496,14 +1427,6 @@ class _SendViewState extends ConsumerState<SendView> {
                                     decimals: 2,
                                     locale: locale,
                                   ),
-                                  // regex to validate a fiat amount with 2 decimal places
-                                  // TextInputFormatter.withFunction((oldValue,
-                                  //         newValue) =>
-                                  //     // RegExp(r'^([0-9]*[,.]?[0-9]{0,2}|[,.][0-9]{0,2})$')
-                                  //     getAmountRegex(locale, 2)
-                                  //             .hasMatch(newValue.text)
-                                  //         ? newValue
-                                  //         : oldValue),
                                 ],
                                 onChanged: _fiatFieldChanged,
                                 decoration: InputDecoration(
@@ -1718,11 +1641,7 @@ class _SendViewState extends ConsumerState<SendView> {
                                                             pSendAmount,
                                                           ),
                                                           toShield:
-                                                              (coin as Kerrigan)
-                                                                  .isShieldAddress(
-                                                                    _address ??
-                                                                        "",
-                                                                  ),
+                                                              _sendsToShield,
                                                           subtractFee:
                                                               _kerriganSubtractFee,
                                                         ),
@@ -1754,9 +1673,7 @@ class _SendViewState extends ConsumerState<SendView> {
                             // Kerrigan: the shielded memo travels encrypted
                             // with the payment; only shield recipients
                             // can receive one.
-                            if ((coin as Kerrigan).isShieldAddress(
-                              _address ?? "",
-                            )) ...[
+                            if (_sendsToShield) ...[
                               Text(
                                 "Shielded memo (optional)",
                                 style: STextStyles.smallMed12(context),
@@ -1846,7 +1763,6 @@ class _SendViewState extends ConsumerState<SendView> {
                                   if (snapshot.connectionState ==
                                           ConnectionState.done &&
                                       snapshot.hasData) {
-                                    _setCurrentFee(snapshot.data!, false);
                                     return Text(
                                       "~${snapshot.data!}",
                                       style: STextStyles.itemSubtitle12(

@@ -30,11 +30,11 @@ class QrCodeScannerDialog extends StatefulWidget {
 }
 
 class _QrCodeScannerDialogState extends State<QrCodeScannerDialog> {
-  final CameraLinux? _cameraLinuxPlugin =
-      Platform.isLinux ? CameraLinux() : null;
+  // Made when the camera starts: loading the plugin library can fail.
+  CameraLinux? _cameraLinuxPlugin;
   final CameraWindows? _cameraWindowsPlugin =
       Platform.isWindows ? CameraWindows() : null;
-  bool _isCameraOpen = false;
+  bool _noCamera = false;
   Image? _image;
   bool _isScanning = false;
   int _cameraId = -1;
@@ -48,19 +48,34 @@ class _QrCodeScannerDialogState extends State<QrCodeScannerDialog> {
     _initializeCamera().then((camOpen) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && camOpen) {
-          setState(() {
-            _isCameraOpen = true;
-          });
           unawaited(_captureAndScanImage());
+        } else if (mounted) {
+          setState(() => _noCamera = true);
         }
       });
     });
   }
 
+  /// The Linux plugin can't say there's no camera (it just never delivers
+  /// a frame), so look for a video device first.
+  static bool _linuxHasVideoDevice() {
+    try {
+      return Directory("/dev")
+          .listSync(followLinks: false)
+          .any((e) => RegExp(r"/video\d+$").hasMatch(e.path));
+    } catch (_) {
+      return true; // Can't tell; let the plugin try.
+    }
+  }
+
   Future<bool> _initializeCamera() async {
     try {
-      if (Platform.isLinux && _cameraLinuxPlugin != null) {
-        await _cameraLinuxPlugin.initializeCamera();
+      if (Platform.isLinux) {
+        if (!_linuxHasVideoDevice()) {
+          throw CameraException('No cameras available', 'No video device.');
+        }
+        final camera = _cameraLinuxPlugin = CameraLinux();
+        await camera.initializeCamera();
         Logging.instance.d("Linux Camera initialized");
       } else if (Platform.isWindows && _cameraWindowsPlugin != null) {
         final List<CameraDescription> cameras =
@@ -114,25 +129,18 @@ class _QrCodeScannerDialogState extends State<QrCodeScannerDialog> {
     _isScanning = false;
 
     try {
-      if (Platform.isLinux && _cameraLinuxPlugin != null) {
-        _cameraLinuxPlugin.stopCamera();
+      final linuxCamera = _cameraLinuxPlugin;
+      if (linuxCamera != null) {
+        linuxCamera.stopCamera();
         Logging.instance.d("Linux Camera stopped");
       } else if (Platform.isWindows && _cameraWindowsPlugin != null) {
         // if (_cameraId >= 0) {
         await _cameraWindowsPlugin.dispose(_cameraId);
         Logging.instance.d("Windows Camera stopped with ID: $_cameraId");
-        // } else {
-        //   Logging.instance.log("Windows Camera ID is null. Cannot dispose.",
-        //       level: LogLevel.Error);
-        // }
       } else if (Platform.isMacOS) {
         // if (_macOSDeviceId != null) {
         await CameraMacOS.instance.stopImageStream();
         Logging.instance.d("macOS Camera stopped with ID: $_macOSDeviceId");
-        // } else {
-        //   Logging.instance.log("macOS Camera ID is null. Cannot stop.",
-        //       level: LogLevel.Error);
-        // }
       }
     } catch (e, s) {
       Logging.instance.e(
@@ -148,8 +156,9 @@ class _QrCodeScannerDialogState extends State<QrCodeScannerDialog> {
     while (_isScanning) {
       try {
         String? base64Image;
-        if (Platform.isLinux && _cameraLinuxPlugin != null) {
-          base64Image = await _cameraLinuxPlugin.captureImage();
+        final linuxCamera = _cameraLinuxPlugin;
+        if (linuxCamera != null) {
+          base64Image = await linuxCamera.captureImage();
         } else if (Platform.isWindows) {
           final XFile xfile =
               await _cameraWindowsPlugin!.takePicture(_cameraId);
@@ -172,9 +181,6 @@ class _QrCodeScannerDialogState extends State<QrCodeScannerDialog> {
           base64Image = base64Encode(img.encodePng(image));
         }
         if (base64Image == null || base64Image.isEmpty) {
-          // Logging.instance
-          //     .log("Failed to capture image", level: LogLevel.Error);
-          // Spammy.
           await Future<void>.delayed(Duration(milliseconds: _imageDelayInMs));
           continue;
         }
@@ -205,23 +211,11 @@ class _QrCodeScannerDialogState extends State<QrCodeScannerDialog> {
             Navigator.of(context).pop(scanResult);
           }
           break;
-        } else {
-          // Logging.instance.log("No QR code found in the image");
-          // if (mounted) {
-          //   widget.onSnackbar("No QR code found in the image.");
-          // }
-          // Spammy.
         }
 
         await Future<void>.delayed(Duration(milliseconds: _imageDelayInMs));
-      } catch (e) {
-        // Logging.instance.log("Failed to capture and scan image", error: e, stackTrace: s,);
-        // Spammy.
-
-        // if (mounted) {
-        //   widget.onSnackbar(
-        //       "Error capturing or scanning the image. Please try again.");
-        // }
+      } catch (_) {
+        // Not logged: it would fill the log, frame after frame.
       }
     }
   }
@@ -232,7 +226,9 @@ class _QrCodeScannerDialogState extends State<QrCodeScannerDialog> {
         image.width,
         image.height,
         image
-            .convert(numChannels: 4)
+            // 8 bits per channel whatever the source (1-bit palette PNGs
+            // from QR generators, 16-bit PNGs): one int per pixel.
+            .convert(format: img.Format.uint8, numChannels: 4)
             .getBytes(order: img.ChannelOrder.abgr)
             .buffer
             .asInt32List(),
@@ -246,9 +242,8 @@ class _QrCodeScannerDialogState extends State<QrCodeScannerDialog> {
         return null;
       }
       return qrDecode.text;
-    } catch (e) {
-      // Logging.instance.log("Failed to decode QR code", error: e, stackTrace: s,);
-      // Spammy.
+    } catch (_) {
+      // No QR code in this frame (not logged: there are many).
       return null;
     }
   }
@@ -279,109 +274,121 @@ class _QrCodeScannerDialogState extends State<QrCodeScannerDialog> {
               ],
             ),
             Expanded(
-              child: _isCameraOpen
-                  ? _image != null
-                      ? _image!
-                      : const Center(
-                          child: CircularProgressIndicator(),
-                        )
-                  : const Center(
-                      child:
-                          CircularProgressIndicator(), // Show progress indicator immediately
-                    ),
+              child: _noCamera
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Text(
+                          "No camera found. Use Select file to scan a QR "
+                          "code from an image.",
+                          textAlign: TextAlign.center,
+                          style: STextStyles.desktopTextMedium(context),
+                        ),
+                      ),
+                    )
+                  : _image ??
+                      const Center(
+                        child: CircularProgressIndicator(),
+                      ),
             ),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Expanded(child: Container()),
                   // "Select file" button.
-                  SecondaryButton(
-                    buttonHeight: ButtonHeight.l,
-                    label: "Select file",
-                    width: 200,
-                    onPressed: () async {
-                      final result = await FilePicker.pickFile(
-                        type: FileType.custom,
-                        allowedExtensions: ["png", "jpg", "jpeg"],
-                      );
+                  Flexible(
+                    flex: 200,
+                    child: SecondaryButton(
+                      buttonHeight: ButtonHeight.l,
+                      label: "Select file",
+                      width: 200,
+                      onPressed: () async {
+                        final result = await FilePicker.pickFile(
+                          type: FileType.custom,
+                          allowedExtensions: ["png", "jpg", "jpeg"],
+                        );
 
-                      if (context.mounted) {
-                        if (result == null || result.path == null) {
-                          await showFloatingFlushBar(
-                            type: FlushBarType.info,
-                            message: "No file selected",
-                            iconAsset: Assets.svg.file,
-                            context: context,
-                          );
-                          return;
-                        }
-
-                        final filePath = result.path;
-                        if (filePath == null) {
-                          await showFloatingFlushBar(
-                            type: FlushBarType.info,
-                            message: "Error selecting file.",
-                            iconAsset: Assets.svg.file,
-                            context: context,
-                          );
-                          return;
-                        }
-
-                        try {
-                          final img.Image? image =
-                              img.decodeImage(File(filePath).readAsBytesSync());
-                          if (image == null) {
+                        if (context.mounted) {
+                          if (result == null || result.path == null) {
                             await showFloatingFlushBar(
                               type: FlushBarType.info,
-                              message: "Failed to decode image.",
+                              message: "No file selected",
                               iconAsset: Assets.svg.file,
                               context: context,
                             );
                             return;
                           }
 
-                          final String? scanResult = await _scanImage(image);
-                          if (context.mounted) {
-                            if (scanResult != null && scanResult.isNotEmpty) {
-                              Navigator.of(context).pop(scanResult);
-                            } else {
+                          final filePath = result.path;
+                          if (filePath == null) {
+                            await showFloatingFlushBar(
+                              type: FlushBarType.info,
+                              message: "Error selecting file.",
+                              iconAsset: Assets.svg.file,
+                              context: context,
+                            );
+                            return;
+                          }
+
+                          try {
+                            final img.Image? image =
+                                img.decodeImage(File(filePath).readAsBytesSync());
+                            if (image == null) {
                               await showFloatingFlushBar(
                                 type: FlushBarType.info,
-                                message: "No QR code found in the image.",
+                                message: "Failed to decode image.",
+                                iconAsset: Assets.svg.file,
+                                context: context,
+                              );
+                              return;
+                            }
+
+                            final String? scanResult = await _scanImage(image);
+                            if (context.mounted) {
+                              if (scanResult != null && scanResult.isNotEmpty) {
+                                Navigator.of(context).pop(scanResult);
+                              } else {
+                                await showFloatingFlushBar(
+                                  type: FlushBarType.info,
+                                  message: "No QR code found in the image.",
+                                  iconAsset: Assets.svg.file,
+                                  context: context,
+                                );
+                              }
+                            }
+                          } catch (e, s) {
+                            Logging.instance.e(
+                              "Failed to decode image: ",
+                              error: e,
+                              stackTrace: s,
+                            );
+                            if (context.mounted) {
+                              await showFloatingFlushBar(
+                                type: FlushBarType.info,
+                                message:
+                                    "Error processing the image. Please try again.",
                                 iconAsset: Assets.svg.file,
                                 context: context,
                               );
                             }
                           }
-                        } catch (e, s) {
-                          Logging.instance.e(
-                            "Failed to decode image: ",
-                            error: e,
-                            stackTrace: s,
-                          );
-                          if (context.mounted) {
-                            await showFloatingFlushBar(
-                              type: FlushBarType.info,
-                              message:
-                                  "Error processing the image. Please try again.",
-                              iconAsset: Assets.svg.file,
-                              context: context,
-                            );
-                          }
                         }
-                      }
-                    },
+                      },
+                    ),
                   ),
                   const SizedBox(width: 16),
                   // Close button.
-                  PrimaryButton(
-                    buttonHeight: ButtonHeight.l,
-                    label: "Close",
-                    width: 272.5,
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
+                  Flexible(
+                    flex: 272,
+                    child: PrimaryButton(
+                      buttonHeight: ButtonHeight.l,
+                      label: "Close",
+                      width: 272.5,
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
                   ),
                 ],
               ),

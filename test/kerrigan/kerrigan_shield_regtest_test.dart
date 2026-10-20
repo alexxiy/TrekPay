@@ -5,11 +5,11 @@
 // The regtest suites share one regtest chain (they mine blocks), so run
 // them with --concurrency=1.
 //
-// Run on the build VM:
+// Run on the DevBox:
 //   KERRIGAN_BRIDGE=http://127.0.0.1:3001 \
 //   KERRIGAN_RPC=http://rpc:rpc@127.0.0.1:19898 \
-//   KERRIGAN_SHIELD_LIB=/root/work/kshield/target/release/libkerrigan_shield_ffi.so \
-//   KERRIGAN_PARAMS_DIR=/root/.pivx-params \
+//   KERRIGAN_SHIELD_LIB=.../libkerrigan_shield_ffi.so \
+//   KERRIGAN_PARAMS_DIR=~/.sapling-params \
 //   flutter test --concurrency=1 test/kerrigan/kerrigan_shield_regtest_test.dart
 import 'dart:io';
 import 'dart:typed_data';
@@ -18,7 +18,7 @@ import 'package:bip39/bip39.dart' as bip39;
 import 'package:coinlib_flutter/coinlib_flutter.dart' as coinlib;
 import 'package:flutter_libkerriganshield/flutter_libkerriganshield.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paymint/models/isar/models/blockchain_data/transaction.dart';
+import 'package:paymint/models/isar/models/blockchain_data/transaction_type.dart';
 import 'package:paymint/models/isar/models/blockchain_data/v2/transaction_v2.dart';
 import 'package:paymint/utilities/enums/derive_path_type_enum.dart';
 import 'package:paymint/utilities/extensions/extensions.dart';

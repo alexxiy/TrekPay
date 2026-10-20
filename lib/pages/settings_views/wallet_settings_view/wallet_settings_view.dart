@@ -27,12 +27,14 @@ import '../../../utilities/assets.dart';
 import '../../../utilities/if_not_already.dart';
 import '../../../utilities/text_styles.dart';
 import '../../../wallets/crypto_currency/crypto_currency.dart';
+import '../../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../../wallets/wallet/wallet_mixin_interfaces/mnemonic_interface.dart';
 import '../../../wallets/wallet/wallet_mixin_interfaces/view_only_option_interface.dart';
 import '../../../widgets/background.dart';
 import '../../../widgets/custom_buttons/app_bar_icon_button.dart';
 import '../../../widgets/rounded_white_container.dart';
 import '../../pinpad_views/lock_screen_view.dart';
+import '../../kerrigan_accounts/kerrigan_accounts.dart';
 import '../sub_widgets/settings_list_button.dart';
 import 'sign_message_view.dart';
 import 'wallet_backup_views/wallet_backup_view.dart';
@@ -69,10 +71,8 @@ class _WalletSettingsViewState extends ConsumerState<WalletSettingsView> {
   late final EventBus eventBus;
 
   late WalletSyncStatus _currentSyncStatus;
-  // late NodeConnectionStatus _currentNodeStatus;
 
   late StreamSubscription<dynamic> _syncStatusSubscription;
-  // late StreamSubscription _nodeStatusSubscription;
 
   late final VoidCallback _walletBackupPressed;
 
@@ -141,7 +141,6 @@ class _WalletSettingsViewState extends ConsumerState<WalletSettingsView> {
     coin = widget.coin;
 
     _currentSyncStatus = widget.initialSyncStatus;
-    // _currentNodeStatus = widget.initialNodeStatus;
 
     eventBus = widget.eventBus != null
         ? widget.eventBus!
@@ -197,7 +196,6 @@ class _WalletSettingsViewState extends ConsumerState<WalletSettingsView> {
 
   @override
   void dispose() {
-    // _nodeStatusSubscription.cancel();
     _syncStatusSubscription.cancel();
     super.dispose();
   }
@@ -254,6 +252,24 @@ class _WalletSettingsViewState extends ConsumerState<WalletSettingsView> {
                   );
                 },
               ),
+            if (wallet is KerriganWallet && !wallet.isViewOnly) ...[
+              const SizedBox(height: 8),
+              SettingsListButton(
+                iconAssetName: Assets.svg.plus,
+                iconSize: 16,
+                title: "Add account",
+                onPressed: () =>
+                    showKerriganAddAccountDialog(context, ref, walletId),
+              ),
+            ],
+            const SizedBox(height: 8),
+            SettingsListButton(
+              iconAssetName: Assets.svg.pencil,
+              iconSize: 16,
+              title: "Sign / verify message",
+              onPressed: () => Navigator.of(context)
+                  .pushNamed(SignMessageView.routeName, arguments: walletId),
+            ),
             const SizedBox(height: 8),
             SettingsListButton(
               iconAssetName: Assets.svg.pencil,
@@ -274,17 +290,6 @@ class _WalletSettingsViewState extends ConsumerState<WalletSettingsView> {
                 );
               },
             ),
-            // const SizedBox(
-            //   height: 8,
-            // ),
-            // SettingsListButton(
-            //   iconAssetName: Assets.svg.ellipsis,
-            //   title: "Debug Info",
-            //   onPressed: () {
-            //     Navigator.of(context)
-            //         .pushNamed(DebugView.routeName);
-            //   },
-            // ),
           ],
         ),
       ),
@@ -293,7 +298,7 @@ class _WalletSettingsViewState extends ConsumerState<WalletSettingsView> {
 }
 
 class _WalletSettingsViewBody extends StatelessWidget {
-  const _WalletSettingsViewBody({super.key, required this.children});
+  const _WalletSettingsViewBody({required this.children});
 
   final List<Widget> children;
 

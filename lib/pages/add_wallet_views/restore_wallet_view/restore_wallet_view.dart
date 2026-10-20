@@ -9,6 +9,7 @@
  */
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:collection';
 import 'dart:io';
 import 'dart:math';
@@ -39,7 +40,7 @@ import '../../../utilities/text_styles.dart';
 import '../../../utilities/util.dart';
 import '../../../wallets/crypto_currency/crypto_currency.dart';
 import '../../../wallets/isar/models/wallet_info.dart';
-import '../../../wallets/wallet/intermediate/external_wallet.dart';
+import '../../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../../wallets/wallet/wallet.dart';
 import '../../../widgets/custom_buttons/app_bar_icon_button.dart';
 import '../../../widgets/desktop/desktop_app_bar.dart';
@@ -47,10 +48,12 @@ import '../../../widgets/desktop/desktop_scaffold.dart';
 import '../../../widgets/desktop/primary_button.dart';
 import '../../../widgets/icon_widgets/clipboard_icon.dart';
 import '../../../widgets/icon_widgets/qrcode_icon.dart';
+import '../../../widgets/secret_screen.dart';
 import '../../../widgets/table_view/table_view.dart';
 import '../../../widgets/table_view/table_view_cell.dart';
 import '../../../widgets/table_view/table_view_row.dart';
 import '../../home_view/home_view.dart';
+import '../../kerrigan_accounts/kerrigan_accounts.dart';
 import 'confirm_recovery_dialog.dart';
 import 'sub_widgets/restore_failed_dialog.dart';
 import 'sub_widgets/restore_succeeded_dialog.dart';
@@ -286,9 +289,17 @@ class _RestoreWalletViewState extends ConsumerState<RestoreWalletView> {
           coin: widget.coin,
           name: widget.walletName,
           restoreHeight: widget.restoreBlockHeight,
+          // Like a new wallet: one hidden right after restoring would give
+          // duress mode away.
+          otherDataJsonString: ref.read(pDuress)
+              ? jsonEncode({WalletInfoKeys.duressMarkedVisibleWalletKey: true})
+              : null,
         );
 
         bool isRestoring = true;
+        Wallet? wallet;
+        final wallets = ref.read(pWallets);
+        final secureStore = ref.read(secureStoreProvider);
         // show restoring in progress
 
         if (mounted) {
@@ -302,12 +313,12 @@ class _RestoreWalletViewState extends ConsumerState<RestoreWalletView> {
                   walletId: info.walletId,
                   onCancel: () async {
                     isRestoring = false;
+                    final restoring = wallet;
+                    if (restoring is KerriganWallet) restoring.cancelRecover();
 
                     if (mounted) setState(() => _hideSeedWords = false);
 
-                    await ref
-                        .read(pWallets)
-                        .deleteWallet(info, ref.read(secureStoreProvider));
+                    await wallets.deleteWallet(info, secureStore);
                   },
                 );
               },
@@ -321,13 +332,11 @@ class _RestoreWalletViewState extends ConsumerState<RestoreWalletView> {
 
         if (node == null) {
           node = widget.coin.defaultNode(isPrimary: true);
-          await ref
-              .read(nodeServiceChangeNotifierProvider)
-              .save(node, null, false);
+          await ref.read(nodeServiceChangeNotifierProvider).save(node, false);
         }
 
         try {
-          final wallet = await Wallet.create(
+          wallet = await Wallet.create(
             walletInfo: info,
             mainDB: ref.read(mainDBProvider),
             secureStorageInterface: ref.read(secureStoreProvider),
@@ -339,10 +348,12 @@ class _RestoreWalletViewState extends ConsumerState<RestoreWalletView> {
 
           await wallet.init();
           await wallet.recover(isRescan: false);
-
-          if (wallet is ExternalWallet) {
-            await wallet.exit();
-          }
+          // The phrase's other used accounts ("Add account") come back as
+          // wallets of their own.
+          final otherAccounts = wallet is KerriganWallet
+              ? await kerriganFindUsedAccounts(wallet)
+              : const <int>[];
+          if (!isRestoring) throw Exception("Restore cancelled");
 
           // check if state is still active before continuing
           if (mounted) {
@@ -358,6 +369,9 @@ class _RestoreWalletViewState extends ConsumerState<RestoreWalletView> {
             }
 
             ref.read(pWallets).addWallet(wallet);
+            final addedAccounts = wallet is KerriganWallet
+                ? await kerriganAddAccounts(ref, wallet, otherAccounts)
+                : const <String>[];
 
             if (mounted) {
               if (isDesktop) {
@@ -377,25 +391,29 @@ class _RestoreWalletViewState extends ConsumerState<RestoreWalletView> {
                 useSafeArea: false,
                 barrierDismissible: true,
                 builder: (context) {
-                  return const RestoreSucceededDialog();
+                  return RestoreSucceededDialog(
+                    message: kerriganAddedAccountsMessage(addedAccounts),
+                  );
                 },
               );
             }
 
-            if (!Platform.isLinux && !isDesktop) {
+            if (!Platform.isLinux) {
               await WakelockPlus.disable();
             }
           }
         } catch (e) {
-          if (!Platform.isLinux && !isDesktop) {
+          if (!Platform.isLinux) {
             await WakelockPlus.disable();
           }
 
-          // if (e is HiveError &&
-          //     e.message == "Box has already been closed.") {
-          //   // restore was cancelled
-          //   return;
-          // }
+          if (!isRestoring) {
+            // Cancelled: the scan may have saved data after the wallet was
+            // deleted.
+            await wallet?.exit();
+            await wallets.deleteWallet(info, secureStore);
+            return;
+          }
 
           // check if state is still active and restore wasn't cancelled
           // before continuing
@@ -421,7 +439,7 @@ class _RestoreWalletViewState extends ConsumerState<RestoreWalletView> {
           }
         }
 
-        if (!Platform.isLinux && !isDesktop) {
+        if (!Platform.isLinux) {
           await WakelockPlus.disable();
         }
       }
@@ -635,8 +653,6 @@ class _RestoreWalletViewState extends ConsumerState<RestoreWalletView> {
   }
 
   Future<void> pasteMnemonic() async {
-    //todo: check if print needed
-    // debugPrint("restoreWalletPasteButton tapped");
     final ClipboardData? data = await widget.clipboard.getData(
       Clipboard.kTextPlain,
     );
@@ -664,7 +680,10 @@ class _RestoreWalletViewState extends ConsumerState<RestoreWalletView> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecretScreen(child: Builder(builder: _buildScreen));
+
+  Widget _buildScreen(BuildContext context) {
     final isDesktop = Util.isDesktop;
     return MasterScaffold(
       isDesktop: isDesktop,
@@ -902,18 +921,6 @@ class _RestoreWalletViewState extends ConsumerState<RestoreWalletView> {
                                                               .invalid;
                                                     }
 
-                                                    // if (formInputStatus ==
-                                                    //     FormInputStatus.valid) {
-                                                    //   if (i * 4 + j <
-                                                    //       _focusNodes.length) {
-                                                    //     _focusNodes[i * 4 + j]
-                                                    //         .requestFocus();
-                                                    //   } else if (i * 4 + j ==
-                                                    //       _focusNodes.length) {
-                                                    //     _focusNodes[i * 4 + j - 1]
-                                                    //         .unfocus();
-                                                    //   }
-                                                    // }
                                                     setState(() {
                                                       _inputStatuses[i * 4 +
                                                               j -
@@ -1217,14 +1224,6 @@ class _RestoreWalletViewState extends ConsumerState<RestoreWalletView> {
                                             FormInputStatus.invalid;
                                       }
 
-                                      // if (formInputStatus ==
-                                      //     FormInputStatus.valid) {
-                                      //   if (i < _focusNodes.length) {
-                                      //     _focusNodes[i].requestFocus();
-                                      //   } else if (i == _focusNodes.length) {
-                                      //     _focusNodes[i - 1].unfocus();
-                                      //   }
-                                      // }
                                       setState(() {
                                         _inputStatuses[i - 1] = formInputStatus;
                                       });

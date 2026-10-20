@@ -81,21 +81,27 @@ Future<String> sendLarge(String address, num amount) async {
     return await rpc("sendtoaddress", [address, amount]) as String;
   }
   final gather = await rpc("getnewaddress") as String;
+  // Each chunk is locked as it lands: unconfirmed, it is still a coin the
+  // wallet may pick for the next chunk's send.
+  final coins = <Map<String, Object?>>[];
   for (var sent = 0; sent < amount + 1; sent += chunk) {
-    await rpc("sendtoaddress", [gather, chunk]);
+    final txid = await rpc("sendtoaddress", [gather, chunk]) as String;
+    final tx = await rpc("gettransaction", [txid]) as Map;
+    final vout = (tx["details"] as List).cast<Map<String, dynamic>>().firstWhere(
+      (d) => d["address"] == gather && d["category"] == "receive",
+    )["vout"];
+    final coin = {"txid": txid, "vout": vout};
+    await rpc("lockunspent", [
+      false,
+      [coin],
+    ]);
+    coins.add(coin);
   }
-  // Unconfirmed too: a block may not hold all the gathering txs.
-  final coins = (await rpc("listunspent", [
-    0,
-    9999999,
-    [gather],
-  ]) as List).cast<Map<String, dynamic>>();
-  final total = coins.fold<num>(0, (p, c) => p + (c["amount"] as num));
+  await rpc("lockunspent", [true, coins]);
+  final total = coins.length * chunk;
   const fee = 0.001;
   final raw = await rpc("createrawtransaction", [
-    [
-      for (final c in coins) {"txid": c["txid"], "vout": c["vout"]},
-    ],
+    coins,
     {
       address: amount,
       gather: double.parse((total - amount - fee).toStringAsFixed(8)),

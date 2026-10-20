@@ -9,7 +9,6 @@
  */
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -107,7 +106,6 @@ class _CreatePinViewState extends ConsumerState<CreatePinView> {
 
   @override
   Widget build(BuildContext context) {
-    // int pinCount = 1;
     return Background(
       child: Scaffold(
         backgroundColor: Theme.of(context).extension<StackColors>()!.background,
@@ -255,32 +253,19 @@ class _CreatePinViewState extends ConsumerState<CreatePinView> {
                             .read(prefsChangeNotifierProvider)
                             .randomizePIN,
                         onSubmit: (String pin) async {
-                          // _onSubmitCount++;
-                          // if (_onSubmitCount - _onSubmitFailCount > 1) return;
-
                           if (_saving) return;
                           if (_pinPutController1.text ==
                               _pinPutController2.text) {
                             setState(() => _saving = true);
                             try {
                               // ask if want to use biometrics
-                              final bool useBiometrics = (Platform.isLinux)
-                                  ? false
-                                  : await biometrics.authenticate(
-                                      cancelButtonText: "SKIP",
-                                      localizedReason: "You can use your fingerprint to unlock the wallet and confirm transactions.",
-                                      title:
-                                          "Enable fingerprint authentication",
-                                    );
+                              final bool useBiometrics = await biometrics
+                                  .authenticate(
+                                    cancelButtonText: "SKIP",
+                                    localizedReason: "You can use your fingerprint to unlock the wallet and confirm transactions.",
+                                    title: "Enable fingerprint authentication",
+                                  );
 
-                              //TODO investigate why this crashes IOS, maybe ios persists securestorage even after an uninstall?
-                              // This should never fail as we are writing a new pin
-                              // assert(
-                              //     (await _secureStore.read(key: "stack_pin")) == null);
-                              // possible alternative to the above but it does not guarantee we aren't overwriting a pin
-                              // if (!Platform.isLinux)
-                              //   assert((await _secureStore.read(key: "stack_pin")) ==
-                              //       null);
                               assert(
                                 ref.read(prefsChangeNotifierProvider).hasPin ==
                                     false,
@@ -336,7 +321,6 @@ class _CreatePinViewState extends ConsumerState<CreatePinView> {
                               }
                             }
                           } else {
-                            // _onSubmitFailCount++;
                             unawaited(
                               _pageController.animateTo(
                                 0,

@@ -24,6 +24,6 @@ body:
   - type: textarea
     attributes:
       label: 'Anything else'
-      description: 'Screenshots, mockups, or how other Kerrigan wallets (such as MyPIVXWallet) handle it.'
+      description: 'Screenshots, mockups, or how other wallets (such as Kerrigan Core) handle it.'
     validations:
       required: false

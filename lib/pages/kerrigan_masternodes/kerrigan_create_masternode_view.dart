@@ -16,10 +16,11 @@ import '../../utilities/text_styles.dart';
 import '../../wallets/models/tx_data.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../widgets/background.dart';
-import '../../widgets/custom_buttons/app_bar_icon_button.dart';
 import '../../widgets/desktop/desktop_page_column.dart';
 import '../../widgets/desktop/primary_button.dart';
+import '../../widgets/page_app_bar.dart';
 import '../../widgets/rounded_white_container.dart';
+import '../../widgets/secret_screen.dart';
 import '../../widgets/stack_text_field.dart';
 import '../send_view/confirm_transaction_view.dart';
 import '../send_view/sub_widgets/building_transaction_dialog.dart';
@@ -401,7 +402,10 @@ class _KerriganCreateMasternodeViewState
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecretScreen(child: Builder(builder: _buildScreen));
+
+  Widget _buildScreen(BuildContext context) {
     final colors = Theme.of(context).extension<StackColors>()!;
     final wallet = _wallet;
     final fmt = ref.watch(pAmountFormatter(wallet.cryptoCurrency));
@@ -411,10 +415,7 @@ class _KerriganCreateMasternodeViewState
     return Background(
       child: Scaffold(
         backgroundColor: colors.background,
-        appBar: AppBar(
-          leading: AppBarBackButton(
-            onPressed: () => Navigator.of(context).pop(),
-          ),
+        appBar: PageAppBar(
           title: Text(
             widget.existing ? "Add existing masternode" : "Create masternode",
             style: STextStyles.navBarTitle(context),

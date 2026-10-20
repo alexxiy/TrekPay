@@ -9,6 +9,10 @@ export NEW_NAME="Astronaut"
 export NEW_APP_ID="org.kerrigan.astronaut"
 export NEW_APP_ID_CAMEL="org.kerrigan.astronaut"
 export NEW_APP_ID_SNAKE="org.kerrigan.astronaut"
+# Linux: Flatpak IDs need three parts, and on Wayland a window finds its
+# icon through a .desktop file named after its ID, so every Linux package
+# (tarball, AppImage, Flatpak) uses this one.
+export NEW_LINUX_APP_ID="org.kerrigan.astronaut"
 export NEW_BASIC_NAME="astronaut"
 
 NEW_PUBSPEC_NAME="paymint" # package name used across lib/ imports

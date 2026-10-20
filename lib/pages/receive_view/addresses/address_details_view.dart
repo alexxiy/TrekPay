@@ -8,7 +8,6 @@
  *
  */
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar_community/isar.dart';
@@ -340,16 +339,15 @@ class _AddressDetailsViewState extends ConsumerState<AddressDetailsView> {
                   detail: address.subType.prettyName,
                   button: Container(),
                 ),
-                if (kDebugMode) const _Div(height: 12),
-                if (kDebugMode)
-                  DetailItem(
-                    title: "frost secure (kDebugMode)",
-                    detail: address.zSafeFrost.toString(),
-                    button: Container(),
-                  ),
-                if (wallet is Bip39HDWallet && !wallet.isViewOnly)
+                // Shield addresses have a spending key for the whole
+                // shield balance, not one per address.
+                if (wallet is Bip39HDWallet &&
+                    !wallet.isViewOnly &&
+                    address.type != AddressType.kerriganShield)
                   const _Div(height: 12),
-                if (wallet is Bip39HDWallet && !wallet.isViewOnly)
+                if (wallet is Bip39HDWallet &&
+                    !wallet.isViewOnly &&
+                    address.type != AddressType.kerriganShield)
                   AddressPrivateKey(
                     walletId: widget.walletId,
                     address: address,
@@ -382,7 +380,6 @@ class _AddressDetailsViewState extends ConsumerState<AddressDetailsView> {
 
 class _AddressDetailsTxV2List extends ConsumerWidget {
   const _AddressDetailsTxV2List({
-    super.key,
     required this.walletId,
     required this.address,
   });
@@ -462,7 +459,7 @@ class _AddressDetailsTxV2List extends ConsumerWidget {
 }
 
 class _Div extends StatelessWidget {
-  const _Div({super.key, required this.height});
+  const _Div({required this.height});
 
   final double height;
 
@@ -481,7 +478,7 @@ class _Div extends StatelessWidget {
 }
 
 class _Tags extends StatelessWidget {
-  const _Tags({super.key, required this.tags});
+  const _Tags({required this.tags});
 
   final List<String>? tags;
 

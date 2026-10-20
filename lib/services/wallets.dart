@@ -21,6 +21,7 @@ import '../utilities/logger.dart';
 import '../utilities/prefs.dart';
 import '../wallets/crypto_currency/crypto_currency.dart';
 import '../wallets/isar/models/wallet_info.dart';
+import '../wallets/isar/models/wallet_info_meta.dart';
 import '../wallets/wallet/impl/kerrigan/kerrigan_shield_state.dart';
 import '../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../wallets/wallet/wallet.dart';
@@ -74,6 +75,13 @@ class Wallets {
 
     await _deleteSecrets(info, secureStorage);
 
+    final syncIds = Prefs.instance.walletIdsSyncOnStartup;
+    if (syncIds.contains(walletId)) {
+      Prefs.instance.walletIdsSyncOnStartup = [
+        ...syncIds.where((id) => id != walletId),
+      ];
+    }
+
     // delete wallet data in main db
     await MainDB.instance.deleteWalletBlockchainData(walletId);
     await MainDB.instance.deleteAddressLabels(walletId);
@@ -89,6 +97,7 @@ class Wallets {
 
     await mainDB.isar.writeTxn(() async {
       await mainDB.isar.walletInfo.deleteByWalletId(walletId);
+      await mainDB.isar.walletInfoMeta.deleteByWalletId(walletId);
     });
 
     GlobalEventBus.instance.fire(WalletsChangedEvent());
@@ -109,13 +118,14 @@ class Wallets {
     for (final walletId in DB.instance.values<String>(
       boxName: DB.boxNameWalletsToDeleteOnStart,
     )) {
-      await mainDB.isar.writeTxn(
-        () async => await mainDB.isar.walletInfo
-            .where()
-            .walletIdEqualTo(walletId)
-            .deleteAll(),
-      );
-      // A sync still running at deletion may have saved it again.
+      // A sync still running at deletion may have saved some of it again.
+      await mainDB.deleteWalletBlockchainData(walletId);
+      await mainDB.deleteAddressLabels(walletId);
+      await mainDB.deleteTransactionNotes(walletId);
+      await mainDB.isar.writeTxn(() async {
+        await mainDB.isar.walletInfo.deleteByWalletId(walletId);
+        await mainDB.isar.walletInfoMeta.deleteByWalletId(walletId);
+      });
       await KerriganShieldState.delete(walletId);
     }
     // clear list
@@ -258,22 +268,6 @@ class Wallets {
     bool isDesktop,
   ) async {
     final List<Future<void>> walletInitFutures = [];
-    final List<({Wallet wallet, bool shouldAutoSync})> walletsToInitLinearly =
-        [];
-
-    final List<String> walletIdsToEnableAutoSync = [];
-    bool shouldAutoSyncAll = false;
-    switch (prefs.syncType) {
-      case SyncingType.currentWalletOnly:
-        // do nothing as this will be set when going into a wallet from the main screen
-        break;
-      case SyncingType.selectedWalletsAtStartup:
-        walletIdsToEnableAutoSync.addAll(prefs.walletIdsSyncOnStartup);
-        break;
-      case SyncingType.allWalletsOnStartup:
-        shouldAutoSyncAll = true;
-        break;
-    }
 
     for (final wallet in wallets) {
       final isVerified = await wallet.info.isMnemonicVerified(mainDB.isar);
@@ -282,43 +276,18 @@ class Wallets {
       );
 
       if (isVerified) {
-        final shouldSetAutoSync =
-            shouldAutoSyncAll ||
-            walletIdsToEnableAutoSync.contains(wallet.walletId);
-
-        if (isDesktop) {
-          walletInitFutures.add(
-            wallet.init().then((_) {
-              // if (shouldSetAutoSync) {
-              //   wallet.shouldAutoSync = true;
-              // }
-            }),
-          );
-        }
-
+        if (isDesktop) walletInitFutures.add(wallet.init());
         _wallets[wallet.walletId] = wallet;
       } else {
         // wallet creation was not completed by user so we remove it completely
         await _deleteWallet(wallet.info);
-        // await walletsService.deleteWallet(walletInfo.name, false);
       }
     }
 
     // Wallet lists show the restored wallets.
     GlobalEventBus.instance.fire(WalletsChangedEvent());
 
-    if (isDesktop) {
-      if (walletInitFutures.isNotEmpty && walletsToInitLinearly.isNotEmpty) {
-        await Future.wait([
-          _initLinearly(walletsToInitLinearly),
-          ...walletInitFutures,
-        ]);
-      } else if (walletInitFutures.isNotEmpty) {
-        await Future.wait(walletInitFutures);
-      } else if (walletsToInitLinearly.isNotEmpty) {
-        await _initLinearly(walletsToInitLinearly);
-      }
-    }
+    await Future.wait(walletInitFutures);
   }
 
   Future<void> _initLinearly(
@@ -336,9 +305,10 @@ class Wallets {
   Future<void> _deleteWallet(WalletInfo info) async {
     await _deleteSecrets(info, nodeService.secureStorageInterface);
     await mainDB.deleteWalletBlockchainData(info.walletId);
-    await mainDB.isar.writeTxn(
-      () async => await mainDB.isar.walletInfo.deleteByWalletId(info.walletId),
-    );
+    await mainDB.isar.writeTxn(() async {
+      await mainDB.isar.walletInfo.deleteByWalletId(info.walletId);
+      await mainDB.isar.walletInfoMeta.deleteByWalletId(info.walletId);
+    });
   }
 
   /// Keys in secure storage and the Kerrigan data kept outside the database.
@@ -351,7 +321,6 @@ class Wallets {
     await secureStorage.delete(
       key: Wallet.mnemonicPassphraseKey(walletId: walletId),
     );
-    await secureStorage.delete(key: Wallet.privateKeyKey(walletId: walletId));
     await secureStorage.delete(
       key: Wallet.getViewOnlyWalletDataSecStoreKey(walletId: walletId),
     );

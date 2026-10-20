@@ -61,6 +61,12 @@ import 'pages/settings_views/global_settings_view/advanced_views/logging_setting
 import 'pages/settings_views/global_settings_view/advanced_views/manage_coin_units/edit_coin_units_view.dart';
 import 'pages/settings_views/global_settings_view/advanced_views/manage_coin_units/manage_coin_units_view.dart';
 import 'pages/settings_views/global_settings_view/advanced_views/manage_explorer_view.dart';
+import 'pages/kerrigan_names/kerrigan_names_balance_view.dart';
+import 'pages/kerrigan_names/kerrigan_names_marketplace_view.dart';
+import 'pages/kerrigan_names/kerrigan_names_my_names_view.dart';
+import 'pages/kerrigan_names/kerrigan_names_status_view.dart';
+import 'pages/kerrigan_names/kerrigan_names_transactions_view.dart';
+import 'pages/kerrigan_names/kerrigan_names_view.dart';
 import 'pages/settings_views/global_settings_view/appearance_settings/appearance_view.dart';
 import 'pages/settings_views/global_settings_view/appearance_settings/theme_mode_view.dart';
 import 'pages/settings_views/global_settings_view/currency_view.dart';
@@ -112,7 +118,6 @@ import 'pages/wallets_view/wallets_view.dart';
 import 'pages_desktop_specific/address_book_view/desktop_address_book.dart';
 import 'pages_desktop_specific/addresses/desktop_wallet_addresses_view.dart';
 import 'pages_desktop_specific/coin_control/desktop_coin_control_view.dart';
-// import 'package:stackwallet/pages_desktop_specific/desktop_exchange/desktop_all_buys_view.dart';
 import 'pages_desktop_specific/desktop_home_view.dart';
 import 'pages_desktop_specific/my_stack_view/my_stack_view.dart';
 import 'pages_desktop_specific/my_stack_view/wallet_view/desktop_wallet_view.dart';
@@ -1048,7 +1053,73 @@ class RouteGenerator {
         }
         return _routeError("${settings.name} invalid args: ${args.toString()}");
 
-      // exchange steps
+      case KerriganNamesView.routeName:
+        if (args is String) {
+          return getRoute(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) =>
+                DesktopPageColumn(child: KerriganNamesView(walletId: args)),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        return _routeError("${settings.name} invalid args: ${args.toString()}");
+
+      case KerriganNamesMyNamesView.routeName:
+        if (args is String) {
+          return getRoute(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) =>
+                DesktopPageColumn(child: KerriganNamesMyNamesView(walletId: args)),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        return _routeError("${settings.name} invalid args: ${args.toString()}");
+
+      case KerriganNamesBalanceView.routeName:
+        if (args is String) {
+          return getRoute(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) =>
+                DesktopPageColumn(child: KerriganNamesBalanceView(walletId: args)),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        return _routeError("${settings.name} invalid args: ${args.toString()}");
+
+      case KerriganNamesTransactionsView.routeName:
+        if (args is String) {
+          return getRoute(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) => DesktopPageColumn(
+              child: KerriganNamesTransactionsView(walletId: args),
+            ),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        return _routeError("${settings.name} invalid args: ${args.toString()}");
+
+      case KerriganNamesMarketplaceView.routeName:
+        if (args is String) {
+          return getRoute(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) => DesktopPageColumn(
+              child: KerriganNamesMarketplaceView(walletId: args),
+            ),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        return _routeError("${settings.name} invalid args: ${args.toString()}");
+
+      case KerriganNamesStatusView.routeName:
+        if (args is KerriganNamesTracked) {
+          return getRoute(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) =>
+                DesktopPageColumn(child: KerriganNamesStatusView(tracked: args)),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        return _routeError("${settings.name} invalid args: ${args.toString()}");
 
       case KerriganGovernanceView.routeName:
         if (args is String) {
@@ -1363,15 +1434,6 @@ class RouteGenerator {
             UnlockWalletKeysDesktop(walletId: args),
             RouteSettings(name: settings.name),
           );
-          // return getRoute(
-          //   shouldUseMaterialRoute: useMaterialPageRoute,
-          //   builder: (_) => WalletKeysDesktopPopup(
-          //     words: args,
-          //   ),
-          //   settings: RouteSettings(
-          //     name: settings.name,
-          //   ),
-          // );
         }
         return _routeError("${settings.name} invalid args: ${args.toString()}");
 
@@ -1381,15 +1443,6 @@ class RouteGenerator {
             DesktopDeleteWalletDialog(walletId: args),
             RouteSettings(name: settings.name),
           );
-          // return getRoute(
-          //   shouldUseMaterialRoute: useMaterialPageRoute,
-          //   builder: (_) => WalletKeysDesktopPopup(
-          //     words: args,
-          //   ),
-          //   settings: RouteSettings(
-          //     name: settings.name,
-          //   ),
-          // );
         }
         return _routeError("${settings.name} invalid args: ${args.toString()}");
 
@@ -1399,15 +1452,6 @@ class RouteGenerator {
             DesktopAttentionDeleteWallet(walletId: args),
             RouteSettings(name: settings.name),
           );
-          // return getRoute(
-          //   shouldUseMaterialRoute: useMaterialPageRoute,
-          //   builder: (_) => WalletKeysDesktopPopup(
-          //     words: args,
-          //   ),
-          //   settings: RouteSettings(
-          //     name: settings.name,
-          //   ),
-          // );
         }
         return _routeError("${settings.name} invalid args: ${args.toString()}");
 
@@ -1417,15 +1461,6 @@ class RouteGenerator {
             DeleteWalletKeysPopup(walletId: args.item1, words: args.item2),
             RouteSettings(name: settings.name),
           );
-          // return getRoute(
-          //   shouldUseMaterialRoute: useMaterialPageRoute,
-          //   builder: (_) => WalletKeysDesktopPopup(
-          //     words: args,
-          //   ),
-          //   settings: RouteSettings(
-          //     name: settings.name,
-          //   ),
-          // );
         }
         return _routeError("${settings.name} invalid args: ${args.toString()}");
 
@@ -1435,15 +1470,6 @@ class RouteGenerator {
             QRCodeDesktopPopupContent(value: args),
             RouteSettings(name: settings.name),
           );
-          // return getRoute(
-          //   shouldUseMaterialRoute: useMaterialPageRoute,
-          //   builder: (_) => QRCodeDesktopPopupContent(
-          //     value: args,
-          //   ),
-          //   settings: RouteSettings(
-          //     name: settings.name,
-          //   ),
-          // );
         }
         return _routeError("${settings.name} invalid args: ${args.toString()}");
 

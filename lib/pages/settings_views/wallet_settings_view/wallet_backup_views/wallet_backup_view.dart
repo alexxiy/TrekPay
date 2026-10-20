@@ -25,11 +25,13 @@ import '../../../../utilities/clipboard_interface.dart';
 import '../../../../utilities/constants.dart';
 import '../../../../utilities/text_styles.dart';
 import '../../../../wallets/isar/providers/wallet_info_provider.dart';
+import '../../../../widgets/mnemonic_passphrase_note.dart';
 import '../../../../widgets/background.dart';
 import '../../../../widgets/custom_buttons/app_bar_icon_button.dart';
 import '../../../../widgets/desktop/primary_button.dart';
 import '../../../../widgets/desktop/secondary_button.dart';
 import '../../../../widgets/qr.dart';
+import '../../../../widgets/secret_screen.dart';
 import '../../../../widgets/stack_dialog.dart';
 import '../../../add_wallet_views/new_wallet_recovery_phrase_view/sub_widgets/mnemonic_table.dart';
 import '../../sub_widgets/view_only_wallet_data_widget.dart';
@@ -46,7 +48,11 @@ class WalletBackupView extends ConsumerWidget {
   final String walletId;
   final List<String> mnemonic;
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) => SecretScreen(
+    child: Builder(builder: (context) => _buildScreen(context, ref)),
+  );
+
+  Widget _buildScreen(BuildContext context, WidgetRef ref) {
     debugPrint("BUILD: $runtimeType");
 
     return Background(
@@ -72,16 +78,10 @@ class WalletBackupView extends ConsumerWidget {
 }
 
 class _Mnemonic extends ConsumerWidget {
-  const _Mnemonic({
-    super.key,
-    required this.walletId,
-    required this.mnemonic,
-    this.clipboardInterface = const ClipboardWrapper(),
-  });
+  const _Mnemonic({required this.walletId, required this.mnemonic});
 
   final String walletId;
   final List<String> mnemonic;
-  final ClipboardInterface clipboardInterface;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -122,16 +122,19 @@ class _Mnemonic extends ConsumerWidget {
         const SizedBox(height: 8),
         Expanded(
           child: SingleChildScrollView(
-            child: MnemonicTable(words: mnemonic, isDesktop: false),
+            child: Column(
+              children: [
+                MnemonicTable(words: mnemonic, isDesktop: false),
+                MnemonicPassphraseNote(walletId: walletId),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 12),
         SecondaryButton(
           label: "Copy",
           onPressed: () async {
-            await clipboardInterface.setData(
-              ClipboardData(text: mnemonic.join(" ")),
-            );
+            await const ClipboardWrapper().setSecret(mnemonic.join(" "));
             if (context.mounted) {
               unawaited(
                 showFloatingFlushBar(
@@ -183,14 +186,13 @@ class _Mnemonic extends ConsumerWidget {
                           width: width,
                           child: TextButton(
                             onPressed: () async {
-                              // await _capturePng(true);
                               Navigator.of(context).pop();
                             },
                             style: Theme.of(context)
                                 .extension<StackColors>()!
                                 .getSecondaryEnabledButtonStyle(context),
                             child: Text(
-                              "Cancel",
+                              "Close",
                               style: STextStyles.button(context).copyWith(
                                 color: Theme.of(context)
                                     .extension<StackColors>()!
@@ -227,7 +229,11 @@ class MobileKeyDataView extends ConsumerWidget {
   final KeyDataInterface keyData;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context, WidgetRef ref) => SecretScreen(
+    child: Builder(builder: (context) => _buildScreen(context, ref)),
+  );
+
+  Widget _buildScreen(BuildContext context, WidgetRef ref) {
     return Background(
       child: Scaffold(
         backgroundColor: Theme.of(context).extension<StackColors>()!.background,

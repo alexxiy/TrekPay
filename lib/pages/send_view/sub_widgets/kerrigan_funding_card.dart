@@ -231,8 +231,8 @@ class KerriganFundingCard extends ConsumerWidget {
   }
 }
 
-/// One of the wallet's transparent addresses, picked from a sheet that
-/// can also create a new one.
+/// One of the wallet's transparent (or, with [shield], shield)
+/// addresses, picked from a sheet that can also create a new one.
 class KerriganOwnAddressField extends ConsumerWidget {
   const KerriganOwnAddressField({
     super.key,
@@ -240,6 +240,8 @@ class KerriganOwnAddressField extends ConsumerWidget {
     required this.value,
     required this.onChanged,
     this.tags = const {},
+    this.shield = false,
+    this.placeholder = "…",
   });
 
   final String walletId;
@@ -248,9 +250,15 @@ class KerriganOwnAddressField extends ConsumerWidget {
 
   /// A short note per address, e.g. "owns your delegations".
   final Map<String, String> tags;
+  final bool shield;
+
+  /// Shown while no address is picked.
+  final String placeholder;
 
   Future<void> _pick(BuildContext context, KerriganWallet wallet) async {
-    final addresses = await wallet.ownTransparentAddresses();
+    final addresses = shield
+        ? await wallet.ownShieldAddresses()
+        : await wallet.ownTransparentAddresses();
     if (!context.mounted) return;
     final picked = await showModalBottomSheet<String>(
       backgroundColor: Colors.transparent,
@@ -262,7 +270,9 @@ class KerriganOwnAddressField extends ConsumerWidget {
         addresses: addresses,
         current: value,
         tags: tags,
-        onNew: wallet.newReceivingAddress,
+        onNew: shield
+            ? wallet.generateNewShieldAddress
+            : wallet.newReceivingAddress,
       ),
     );
     if (picked != null) onChanged(picked);
@@ -288,7 +298,7 @@ class KerriganOwnAddressField extends ConsumerWidget {
             children: [
               Expanded(
                 child: address == null
-                    ? Text("…", style: STextStyles.w600_14(context))
+                    ? Text(placeholder, style: STextStyles.w600_14(context))
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -330,6 +340,7 @@ String kerriganAddressTitle(String walletId, String address) {
     walletId,
   );
   if (a == null) return "Address";
+  if (a.type == AddressType.kerriganShield) return "Shield #${a.derivationIndex}";
   return a.subType == AddressSubType.change
       ? "Change #${a.derivationIndex}"
       : "Receiving #${a.derivationIndex}";
@@ -416,125 +427,127 @@ class _OwnAddressSheetState extends State<_OwnAddressSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text("Choose an address", style: STextStyles.pageTitleH2(context)),
-          const SizedBox(height: 12),
-          RoundedWhiteContainer(
-            padding: EdgeInsets.zero,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(8),
-              onTap: _creating ? null : _new,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Icon(Icons.add_rounded, color: colors.accentColorBlue),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        "Create a new address",
-                        style: STextStyles.w600_14(context)
-                            .copyWith(color: colors.accentColorBlue),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text("Choose an address", style: STextStyles.pageTitleH2(context)),
+            const SizedBox(height: 12),
+            RoundedWhiteContainer(
+              padding: EdgeInsets.zero,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: _creating ? null : _new,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.add_rounded, color: colors.accentColorBlue),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Create a new address",
+                          style: STextStyles.w600_14(context)
+                              .copyWith(color: colors.accentColorBlue),
+                        ),
                       ),
-                    ),
-                    if (_creating)
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                  ],
+                      if (_creating)
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(
-              Constants.size.circularBorderRadius,
-            ),
-            child: TextField(
-              controller: _search,
-              focusNode: _searchFocus,
-              autocorrect: false,
-              enableSuggestions: false,
-              onChanged: (_) => setState(() {}),
-              style: STextStyles.field(context),
-              decoration:
-                  standardInputDecoration(
-                    "Search by address or label",
-                    _searchFocus,
-                    context,
-                  ).copyWith(
-                    prefixIcon: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 16,
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(
+                Constants.size.circularBorderRadius,
+              ),
+              child: TextField(
+                controller: _search,
+                focusNode: _searchFocus,
+                autocorrect: false,
+                enableSuggestions: false,
+                onChanged: (_) => setState(() {}),
+                style: STextStyles.field(context),
+                decoration:
+                    standardInputDecoration(
+                      "Search by address or label",
+                      _searchFocus,
+                      context,
+                    ).copyWith(
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 16,
+                        ),
+                        child: SvgPicture.asset(
+                          Assets.svg.search,
+                          width: 16,
+                          height: 16,
+                        ),
                       ),
-                      child: SvgPicture.asset(
-                        Assets.svg.search,
-                        width: 16,
-                        height: 16,
-                      ),
-                    ),
-                    suffixIcon: _search.text.isEmpty
-                        ? null
-                        : UnconstrainedBox(
-                            child: TextFieldIconButton(
-                              child: const XIcon(),
-                              onTap: () => setState(_search.clear),
+                      suffixIcon: _search.text.isEmpty
+                          ? null
+                          : UnconstrainedBox(
+                              child: TextFieldIconButton(
+                                child: const XIcon(),
+                                onTap: () => setState(_search.clear),
+                              ),
                             ),
-                          ),
-                  ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (shown.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Text(
-                "No addresses match",
-                textAlign: TextAlign.center,
-                style: secondary,
+                    ),
               ),
             ),
-          Flexible(
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                for (final a in shown)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: GestureDetector(
-                      onTap: () => Navigator.of(context).pop(a.value),
-                      child: RoundedWhiteContainer(
-                        borderColor: a.value == widget.current
-                            ? colors.accentColorBlue
-                            : null,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              [
-                                _titles[a.value]!,
-                                ?widget.tags[a.value],
-                              ].join(" · "),
-                              style: STextStyles.w600_14(context),
-                            ),
-                            const SizedBox(height: 2),
-                            MiddleEllipsisText(a.value, style: secondary),
-                          ],
+            const SizedBox(height: 8),
+            if (shown.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  "No addresses match",
+                  textAlign: TextAlign.center,
+                  style: secondary,
+                ),
+              ),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final a in shown)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).pop(a.value),
+                        child: RoundedWhiteContainer(
+                          borderColor: a.value == widget.current
+                              ? colors.accentColorBlue
+                              : null,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                [
+                                  _titles[a.value]!,
+                                  ?widget.tags[a.value],
+                                ].join(" · "),
+                                style: STextStyles.w600_14(context),
+                              ),
+                              const SizedBox(height: 2),
+                              MiddleEllipsisText(a.value, style: secondary),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

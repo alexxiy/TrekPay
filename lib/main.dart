@@ -27,11 +27,10 @@ import 'package:path_provider/path_provider.dart';
 import 'package:window_size/window_size.dart';
 
 import 'app_config.dart';
-import 'db/db_version_migration.dart';
 import 'db/hive/db.dart';
 import 'db/isar/main_db.dart';
-import 'models/models.dart';
 import 'models/node_model.dart';
+import 'networking/trusted_roots.dart';
 import 'pages/already_running_view.dart';
 import 'pages/home_view/home_view.dart';
 import 'pages/home_view/payment_links.dart';
@@ -44,7 +43,6 @@ import 'pages_desktop_specific/password/desktop_login_view.dart';
 import 'providers/desktop/storage_crypto_handler_provider.dart';
 import 'providers/global/auto_swb_service_provider.dart';
 import 'providers/global/base_currencies_provider.dart';
-// import 'package:stackwallet/providers/global/has_authenticated_start_state_provider.dart';
 import 'providers/providers.dart';
 import 'route_generator.dart';
 import 'services/locale_service.dart';
@@ -54,11 +52,11 @@ import 'themes/theme_providers.dart';
 import 'themes/theme_service.dart';
 import 'utilities/constants.dart';
 import 'utilities/enums/backup_frequency_type.dart';
-import 'utilities/flutter_secure_storage_interface.dart';
 import 'utilities/logger.dart';
 import 'utilities/ui_stall_watch.dart';
 import 'utilities/prefs.dart';
 import 'utilities/stack_file_system.dart';
+import 'utilities/text_styles.dart';
 import 'utilities/util.dart';
 import 'wallets/isar/providers/all_wallets_info_provider.dart';
 
@@ -71,6 +69,7 @@ final openedFromSWBFileStringStateProvider = StateProvider<String?>(
 // miscellaneous box for later use
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  trustBundledRootCertificates();
 
   if (Util.isDesktop && args.length == 2 && args.first == "-d") {
     StackFileSystem.setDesktopOverrideDir(args.last);
@@ -86,18 +85,12 @@ void main(List<String> args) async {
     // The mobile layouts are designed for portrait only.
     await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   }
-  Screen? screen;
-  if (Platform.isLinux || (Util.isDesktop && !Platform.isIOS)) {
-    screen = await getCurrentScreen();
-    Util.screenWidth = screen?.frame.width;
-  }
-
   if (Util.isDesktop && !Platform.isIOS) {
     setWindowTitle(AppConfig.appName);
     setWindowMinSize(const Size(1220, 100));
     setWindowMaxSize(Size.infinite);
 
-    final screenHeight = screen?.frame.height;
+    final screenHeight = (await getCurrentScreen())?.frame.height;
     if (screenHeight != null) {
       // starting to height be 3/4 screen height or 900, whichever is smaller
       final height = min<double>(screenHeight * 0.75, 900);
@@ -105,29 +98,23 @@ void main(List<String> args) async {
     }
   }
 
-  // FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
-
-  // Registering Transaction Model Adapters
-  DB.instance.hive.registerAdapter(TransactionDataAdapter());
-  DB.instance.hive.registerAdapter(TransactionChunkAdapter());
-  DB.instance.hive.registerAdapter(TransactionAdapter());
-  DB.instance.hive.registerAdapter(InputAdapter());
-  DB.instance.hive.registerAdapter(OutputAdapter());
-
-  // Registering Utxo Model Adapters
-  DB.instance.hive.registerAdapter(UtxoDataAdapter());
-  DB.instance.hive.registerAdapter(UtxoObjectAdapter());
-  DB.instance.hive.registerAdapter(StatusAdapter());
-
-  // node model adapter
   DB.instance.hive.registerAdapter(NodeModelAdapter());
+
+  if (Platform.isLinux || Platform.isMacOS) {
+    // History, addresses and shield notes: for this user's eyes only.
+    try {
+      await Process.run("chmod", [
+        "700",
+        (await StackFileSystem.applicationRootDirectory()).path,
+      ]);
+    } catch (_) {}
+  }
 
   DB.instance.hive.init(
     (await StackFileSystem.applicationHiveDirectory()).path,
   );
 
   try {
-    await DB.instance.hive.openBox<dynamic>(DB.boxNameDBInfo);
     await DB.instance.hive.openBox<dynamic>(DB.boxNamePrefs);
   } on FileSystemException catch (e) {
     if (e.osError?.errorCode == 11 || e.message.contains('lock failed')) {
@@ -184,52 +171,22 @@ void main(List<String> args) async {
     level: Prefs.instance.logLevel,
     debugConsoleLevel: kDebugMode ? Level.trace : null,
   );
-  UiStallWatch.start();
+  // A 100 ms timer: only when looking for UI stalls (debug and profile
+  // builds, or verbose logs), not draining phones otherwise.
+  if (!kReleaseMode || Prefs.instance.logLevel.value <= Level.debug.value) {
+    UiStallWatch.start();
+  }
 
-  if (AppConfig.hasFeature(AppFeature.tor)) {
-    // TODO:
-    // This should be moved to happen during the loading animation instead of
-    // showing a blank screen for 4-10 seconds.
-    // Some refactoring will need to be done here to make sure we don't make any
-    // network calls before starting up tor
-    if (Prefs.instance.useTor) {
-      TorService.sharedInstance.init(
-        torDataDirPath: (await StackFileSystem.applicationTorDirectory()).path,
-      );
-      await TorService.sharedInstance.start();
-    }
+  if (AppConfig.hasFeature(AppFeature.tor) && Prefs.instance.useTor) {
+    TorService.sharedInstance.init(
+      torDataDirPath: (await StackFileSystem.applicationTorDirectory()).path,
+    );
+    // In the background: where Tor can't be reached the app must still
+    // open (to turn Tor off, or to read the recovery phrase). Until Tor is
+    // connected, network calls fail instead of going around it.
+    unawaited(TorService.sharedInstance.start().catchError((_) {})); // logged
   }
   await StackFileSystem.initThemesDir();
-
-  // Desktop migrate handled elsewhere (currently desktop_login_view.dart)
-  if (!Util.isDesktop) {
-    final int dbVersion =
-        DB.instance.get<dynamic>(
-          boxName: DB.boxNameDBInfo,
-          key: "hive_data_version",
-        ) as int? ??
-        0;
-    if (dbVersion < Constants.currentDataVersion) {
-      try {
-        await DbVersionMigrator().migrate(
-          dbVersion,
-          secureStore: const SecureStorageWrapper(
-            store: kMobileSecureStorage,
-            isDesktop: false,
-          ),
-        );
-      } catch (e, s) {
-        Logging.instance.w(
-          "Cannot migrate mobile database",
-          error: e,
-          stackTrace: s,
-        );
-      }
-    }
-  }
-
-  // SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-  //     overlays: [SystemUiOverlay.bottom]);
 
   await loadCoinlibFuture;
 
@@ -299,8 +256,6 @@ class _MaterialAppWithThemeState extends ConsumerState<MaterialAppWithTheme>
       ? MobileAppPrivacy()
       : null;
 
-  // late final Wallets _wallets;
-  // late final Prefs _prefs;
   late final NodeService _nodeService;
 
   late final Completer<void> loadingCompleter;
@@ -318,9 +273,6 @@ class _MaterialAppWithThemeState extends ConsumerState<MaterialAppWithTheme>
 
     await DB.instance.init();
     await ref.read(prefsChangeNotifierProvider).init();
-
-    final familiarity = ref.read(prefsChangeNotifierProvider).familiarity + 1;
-    ref.read(prefsChangeNotifierProvider).familiarity = familiarity;
 
     if (Util.isDesktop) {
       _desktopHasPassword = await ref
@@ -452,7 +404,6 @@ class _MaterialAppWithThemeState extends ConsumerState<MaterialAppWithTheme>
           await goToRestoreSWB(ref.read(openedFromSWBFileStringStateProvider)!);
           ref.read(openedFromSWBFileStringStateProvider.notifier).state = null;
         }
-        // ref.read(shouldShowLockscreenOnResumeStateProvider.notifier).state = false;
       }
     });
 
@@ -543,32 +494,6 @@ class _MaterialAppWithThemeState extends ConsumerState<MaterialAppWithTheme>
                 null;
           }
         }
-        // if (ref.read(hasAuthenticatedOnStartStateProvider) &&
-        //     ref.read(shouldShowLockscreenOnResumeStateProvider)) {
-        //   final now = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
-        //
-        //   if (now - _prefs.lastUnlocked > _prefs.lastUnlockedTimeout) {
-        //     ref.read(shouldShowLockscreenOnResumeStateProvider.notifier).state =
-        //         false;
-        //     Navigator.of(navigatorKey.currentContext!).push(
-        //       MaterialPageRoute<dynamic>(
-        //         builder: (_) => LockscreenView(
-        //           routeOnSuccess: "",
-        //           popOnSuccess: true,
-        //           biometricsAuthenticationTitle: "Unlock Stack",
-        //           biometricsLocalizedReason:
-        //               "Unlock your stack wallet using biometrics",
-        //           biometricsCancelButtonString: "Cancel",
-        //           onSuccess: () {
-        //             ref
-        //                 .read(shouldShowLockscreenOnResumeStateProvider.state)
-        //                 .state = true;
-        //           },
-        //         ),
-        //       ),
-        //     );
-        //   }
-        // }
         break;
       case AppLifecycleState.detached:
         break;
@@ -581,15 +506,8 @@ class _MaterialAppWithThemeState extends ConsumerState<MaterialAppWithTheme>
   Future<AppExitResponse> didRequestAppExit() async {
     debugPrint("didRequestAppExit called");
     if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-      // Monero will cause app to stop responding if in the middle of doing
-      // things like a scan on the c++ side of things.
-
-      // On macOS, mwebd fails to shut down, hanging the app on close.
-      //
-      // Exiting is a hack fix for this issue.
-
-      // await ref.read(pMwebService).shutdown();
-      // Something like the above would probably be prudent to make.
+      // Close at once: running syncs and native work (a shield scan, Tor)
+      // would otherwise keep the app open after its window is gone.
       exit(0);
     }
     return AppExitResponse.exit;
@@ -603,10 +521,6 @@ class _MaterialAppWithThemeState extends ConsumerState<MaterialAppWithTheme>
 
     // call reset to clear cached value
     await resetOpenPath();
-
-    Logging.instance.d(
-      "This is the .swb content from intent: ${ref.read(openedFromSWBFileStringStateProvider)}",
-    );
   }
 
   /// should only be called on android currently
@@ -659,10 +573,6 @@ class _MaterialAppWithThemeState extends ConsumerState<MaterialAppWithTheme>
   @override
   Widget build(BuildContext context) {
     debugPrint("BUILD: $runtimeType");
-    // ref.listen(shouldShowLockscreenOnResumeStateProvider, (previous, next) {
-    //   Logging.instance.log("shouldShowLockscreenOnResumeStateProvider set to: $next",
-    //       addToDebugMessagesDB: false);
-    // });
 
     if (Platform.isAndroid) {
       ref.listen(
@@ -683,13 +593,9 @@ class _MaterialAppWithThemeState extends ConsumerState<MaterialAppWithTheme>
         highlightColor: colorScheme.highlight,
         brightness: colorScheme.brightness,
         fontFamily: GoogleFonts.inter().fontFamily,
+        textTheme: kTextThemeFontFeatures,
+        primaryTextTheme: kTextThemeFontFeatures,
         unselectedWidgetColor: colorScheme.radioButtonBorderDisabled,
-        // textTheme: GoogleFonts.interTextTheme().copyWith(
-        //   button: STextStyles.button(context),
-        //   subtitle1: STextStyles.field(context).copyWith(
-        //     color: colorScheme.textDark,
-        //   ),
-        // ),
         radioTheme: const RadioThemeData(
           splashRadius: 0,
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -702,8 +608,6 @@ class _MaterialAppWithThemeState extends ConsumerState<MaterialAppWithTheme>
             // splashFactory: NoSplash.splashFactory,
             overlayColor: MaterialStateProperty.all(colorScheme.splash),
             minimumSize: MaterialStateProperty.all<Size>(const Size(46, 46)),
-            // textStyle: MaterialStateProperty.all<TextStyle>(
-            //     STextStyles.button(context)),
             foregroundColor: MaterialStateProperty.all(
               colorScheme.buttonTextSecondary,
             ),
@@ -754,8 +658,6 @@ class _MaterialAppWithThemeState extends ConsumerState<MaterialAppWithTheme>
             vertical: 6,
             horizontal: 12,
           ),
-          // labelStyle: STextStyles.fieldLabel(context),
-          // hintStyle: STextStyles.fieldLabel(context),
           enabledBorder: _buildOutlineInputBorder(
             colorScheme.textFieldDefaultBG,
           ),
@@ -802,11 +704,8 @@ class _MaterialAppWithThemeState extends ConsumerState<MaterialAppWithTheme>
               future: load(false),
               builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
                 if (snapshot.connectionState == ConnectionState.done) {
-                  // FlutterNativeSplash.remove();
                   if (ref.read(pAllWalletsInfo).isNotEmpty ||
                       ref.read(prefsChangeNotifierProvider).hasPin) {
-                    // return HomeView();
-
                     String? startupWalletId;
                     if (ref
                         .read(prefsChangeNotifierProvider)

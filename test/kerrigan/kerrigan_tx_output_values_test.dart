@@ -33,7 +33,7 @@ Uint8List tx({
 void main() {
   test("output values of a legacy transaction", () {
     final raw = tx(version: le(1, 4), values: [1000000000000, 12345]);
-    expect(kerriganTxOutputValues(raw), [
+    expect(kerriganTxOutputs(raw).map((e) => e.value), [
       BigInt.from(1000000000000),
       BigInt.from(12345),
     ]);
@@ -47,16 +47,14 @@ void main() {
         values: [5000],
         tail: [200, ...List.filled(200, 0x42)], // vExtraPayload
       );
-      expect(kerriganTxOutputValues(raw), [BigInt.from(5000)]);
+      expect(kerriganTxOutputs(raw).map((e) => e.value), [BigInt.from(5000)]);
     },
   );
 
   test("a truncated transaction is rejected", () {
     final raw = tx(version: le(1, 4), values: [1, 2, 3]);
     expect(
-      () => kerriganTxOutputValues(
-        Uint8List.sublistView(raw, 0, raw.length - 40),
-      ),
+      () => kerriganTxOutputs(Uint8List.sublistView(raw, 0, raw.length - 40)),
       throwsA(anything),
     );
   });

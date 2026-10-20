@@ -14,9 +14,9 @@
       keys stay on your device.
     </p>
     <ul>
-      <li>Cold staking: delegate PIV to a staker while the coins stay yours</li>
-      <li>Masternodes: set up, start and follow your masternodes</li>
-      <li>Governance: vote on budget proposals and submit your own</li>
+      <li>Shielded (Sapling) and transparent KRGN, with InstantSend</li>
+      <li>Masternodes and BroodNodes: register and follow them</li>
+      <li>Governance: vote on proposals and submit your own</li>
       <li>Encrypted backups, PIN lock and optional Tor</li>
     </ul>
   </description>

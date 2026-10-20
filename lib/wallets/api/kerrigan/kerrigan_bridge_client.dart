@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:socks5_proxy/socks_client.dart';
 
@@ -21,6 +22,11 @@ typedef KerriganBridgeWatch = ({
   bool reset,
   bool changed,
 });
+
+/// [text] decoded on a short-lived isolate. Top level, so the closure
+/// carries nothing but the text.
+Future<dynamic> _decodeApart(String text) =>
+    Isolate.run(() => jsonDecode(text));
 
 class KerriganBridgeException implements Exception {
   KerriganBridgeException(this.message, {this.statusCode});
@@ -110,12 +116,26 @@ class KerriganBridgeClient {
 
   static const _timeout = Duration(seconds: 60);
 
-  ({InternetAddress host, int port})? get _proxy =>
-      useTor ? TorService.sharedInstance.getProxyInfo() : null;
+  /// Tor's proxy for this client, read for every request: it throws while
+  /// Tor is on but not connected, so nothing goes out without it.
+  ({InternetAddress host, int port})? get _proxy {
+    if (useTor) return TorService.sharedInstance.getProxyInfo();
+    _refuseDirectUnderTor();
+    return null;
+  }
+
+  /// A client made before Tor was turned on (still held by a running sync)
+  /// must not go on without it.
+  static void _refuseDirectUnderTor() {
+    if (AppConfig.hasFeature(AppFeature.tor) && Prefs.instance.useTor) {
+      throw KerriganBridgeException("Tor was turned on");
+    }
+  }
 
   /// One client for all requests, so connections (TLS sessions, Tor
   /// streams) are kept alive and reused instead of set up per call.
   HttpClient? _httpClient;
+  ({InternetAddress host, int port})? _httpProxy;
 
   /// Last request start or end (wall clock, so it also covers time the
   /// app was frozen in the background).
@@ -123,22 +143,29 @@ class KerriganBridgeClient {
 
   /// After a pause, pooled connections may be dead (sleep, network
   /// change) and a request on one hangs until the timeout, so start a
-  /// fresh client. Running requests still finish on the old one.
+  /// fresh client; likewise when Tor restarted on another port. Running
+  /// requests still finish on the old one.
   HttpClient get _http {
     final now = DateTime.now();
+    final proxy = _proxy;
     if (_httpClient != null &&
-        now.difference(_lastActivity) > const Duration(seconds: 20)) {
+        (proxy != _httpProxy ||
+            now.difference(_lastActivity) > const Duration(seconds: 20))) {
       _httpClient!.close();
       _httpClient = null;
     }
     _lastActivity = now;
-    return _httpClient ??= _newHttpClient(_proxy);
+    _httpProxy = proxy;
+    return _httpClient ??= _newHttpClient(proxy);
   }
 
   static HttpClient _newHttpClient(({InternetAddress host, int port})? proxy) {
+    // Idle connections are dropped well before servers close them
+    // (kerrigan-bridge: after 30 s), so a request never goes out on one the
+    // server is just closing.
     final client = HttpClient()
       ..connectionTimeout = _timeout
-      ..idleTimeout = const Duration(seconds: 30);
+      ..idleTimeout = const Duration(seconds: 15);
     if (proxy != null) {
       SocksTCPClient.assignToHttpClient(client, [
         ProxySettings(proxy.host, proxy.port),
@@ -154,9 +181,11 @@ class KerriganBridgeClient {
   }
 
   /// Android 17 needs the user's permission to reach a bridge on the
-  /// local network (over Tor the proxy connects, not the app).
-  Future<void> _localNetworkReady() =>
-      useTor ? Future.value() : LocalNetworkAccess.ensure(baseUri.host);
+  /// local network (over Tor the proxy connects, not the app, and the
+  /// host isn't looked up).
+  Future<void> _localNetworkReady() async {
+    if (_proxy == null) await LocalNetworkAccess.ensure(baseUri.host);
+  }
 
   Future<({int code, String body})> _send(
     String method,
@@ -171,7 +200,13 @@ class KerriganBridgeClient {
       return await () async {
         request = await _http.openUrl(method, url);
         headers?.forEach(request!.headers.set);
-        if (body != null) request!.add(utf8.encode(body));
+        if (body != null) {
+          final bytes = utf8.encode(body);
+          // A length rather than chunked encoding, which some servers and
+          // proxies refuse.
+          request!.contentLength = bytes.length;
+          request!.add(bytes);
+        }
         final response = await request!.close();
         final text = await response.transform(utf8.decoder).join();
         _lastActivity = DateTime.now();
@@ -180,16 +215,34 @@ class KerriganBridgeClient {
     } on TimeoutException {
       request?.abort();
       rethrow;
+    } on HttpException catch (e) {
+      // Its text names the URL, which may hold the wallet's xpub.
+      throw HttpException(redactXpubs(e.message));
     }
   }
+
+  /// [text] without extended public keys: error messages end up in the
+  /// logs, and an xpub reveals every address of a wallet.
+  static String redactXpubs(String text) =>
+      text.replaceAll(RegExp(r"[xt]pub[1-9A-HJ-NP-Za-km-z]{100,}"), "<xpub>");
 
   Uri _uri(String path, [Map<String, String>? query]) => baseUri.replace(
     path: "${baseUri.path}$path",
     queryParameters: (query == null || query.isEmpty) ? null : query,
   );
 
+  /// Pauses before asking again after a 503: the bridge's node is busy
+  /// ("try again"), its address index is still opening, or a reverse
+  /// proxy limits the rate.
+  static const _busyPauses = [Duration(seconds: 1), Duration(seconds: 3)];
+
   Future<String> _getText(String path, [Map<String, String>? query]) async {
-    final response = await _send("GET", _uri(path, query));
+    var response = await _send("GET", _uri(path, query));
+    for (final pause in _busyPauses) {
+      if (response.code != 503) break;
+      await Future<void>.delayed(pause);
+      response = await _send("GET", _uri(path, query));
+    }
     if (response.code == 404 && response.body.trim().isEmpty) {
       // No such route: the bridge runs without the address index.
       final route = path.split("/").firstWhere((e) => e.isNotEmpty);
@@ -209,15 +262,19 @@ class KerriganBridgeClient {
   }
 
   Future<dynamic> _getJson(String path, [Map<String, String>? query]) async {
-    return jsonDecode(await _getText(path, query));
+    final text = await _getText(path, query);
+    // A large answer (a page of history) is decoded off the UI isolate.
+    return text.length < 256 * 1024 ? jsonDecode(text) : _decodeApart(text);
   }
 
   String _errorMessage(String body) {
     try {
       final json = jsonDecode(body);
-      if (json is Map && json["error"] != null) return json["error"].toString();
+      if (json is Map && json["error"] != null) {
+        return redactXpubs(json["error"].toString());
+      }
     } catch (_) {}
-    return body;
+    return redactXpubs(body);
   }
 
   // ---------------------------------------------------------------------------
@@ -380,20 +437,25 @@ class KerriganBridgeClient {
       ),
     ];
     final totalPages = first["totalPages"] as int? ?? 1;
-    for (int page = 2; page <= totalPages; page++) {
-      final next = await this.xpub(
-        xpub,
-        page: page,
-        from: from,
-        gap: gap,
-        tokens: "used",
-      );
-      txs.addAll(
-        ((next["transactions"] as List?) ?? const []).map(
-          (e) => Map<String, dynamic>.from(e as Map),
-        ),
-      );
+    // The other pages, a few at a time, kept in page order.
+    const parallel = 4;
+    for (int page = 2; page <= totalPages; page += parallel) {
+      final pages = await Future.wait([
+        for (int p = page; p < page + parallel && p <= totalPages; p++)
+          this.xpub(xpub, page: p, from: from, gap: gap, tokens: "used"),
+      ]);
+      for (final next in pages) {
+        txs.addAll(
+          ((next["transactions"] as List?) ?? const []).map(
+            (e) => Map<String, dynamic>.from(e as Map),
+          ),
+        );
+      }
     }
+    // A tx arriving between two page requests shifts the pages: the same
+    // tx may come twice.
+    final seen = <String>{};
+    txs.retainWhere((t) => seen.add(t["txid"] as String));
     return (txs: txs, info: first);
   }
 
@@ -507,13 +569,19 @@ class KerriganBridgeClient {
   }
 
   /// Download [url] into [file], reporting `(received, total)`.
+  /// Download [url] to [file]; more than [maxBytes] is refused (a server
+  /// that never stops sending would fill the disk).
   static Future<void> downloadToFile(
     Uri url,
     File file, {
+    required int maxBytes,
     ({InternetAddress host, int port})? proxy,
     void Function(int received, int? total)? onProgress,
   }) async {
-    if (proxy == null) await LocalNetworkAccess.ensure(url.host);
+    if (proxy == null) {
+      _refuseDirectUnderTor();
+      await LocalNetworkAccess.ensure(url.host);
+    }
     final client = _newHttpClient(proxy);
     final tmp = File("${file.path}.part");
     try {
@@ -525,14 +593,23 @@ class KerriganBridgeClient {
         );
       }
       final total = response.contentLength > 0 ? response.contentLength : null;
+      if (total != null && total > maxBytes) {
+        throw KerriganBridgeException("download too large: $url");
+      }
       final sink = tmp.openWrite();
       int received = 0;
-      await for (final chunk in response.timeout(_timeout)) {
-        sink.add(chunk);
-        received += chunk.length;
-        onProgress?.call(received, total);
+      try {
+        await for (final chunk in response.timeout(_timeout)) {
+          received += chunk.length;
+          if (received > maxBytes) {
+            throw KerriganBridgeException("download too large: $url");
+          }
+          sink.add(chunk);
+          onProgress?.call(received, total);
+        }
+      } finally {
+        await sink.close();
       }
-      await sink.close();
       await tmp.rename(file.path);
     } finally {
       client.close(force: true);

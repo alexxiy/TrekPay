@@ -206,7 +206,10 @@ void main() {
         final block = await rpc("getblock", [hash, 1]) as Map;
         for (final txid in (block["tx"] as List).cast<String>()) {
           final raw = await bridge.rawTx(txid);
-          final values = kerriganVerifiedOutputValues(txid, raw);
+          final values = kerriganVerifiedOutputs(
+            txid,
+            raw,
+          ).map((e) => e.value).toList();
           final node = await rpc("getrawtransaction", [txid, true]) as Map;
           expect(values, [
             for (final o in node["vout"] as List)
@@ -226,10 +229,7 @@ void main() {
               as String;
       final raw = await bridge.rawTx(txid);
       final tampered = "${raw.substring(0, raw.length - 2)}ff";
-      expect(
-        () => kerriganVerifiedOutputValues(txid, tampered),
-        throwsException,
-      );
+      expect(() => kerriganVerifiedOutputs(txid, tampered), throwsException);
     },
     skip: skip,
     timeout: const Timeout(Duration(minutes: 3)),
@@ -239,23 +239,31 @@ void main() {
     "watch long-poll wakes on our mempool tx and on blocks only",
     () async {
       final ours = addressAt(0, 5);
-      final height = await bridge.getBlockCount();
-      // Establish the mempool sequence.
-      final base = await bridge.watch(height: height, timeoutSeconds: 1);
-      expect(base.changed, isFalse);
+      late int height;
+      late KerriganBridgeWatch r;
+      late Object? paid;
+      // A miner on the regtest node may wake the watch first: then the
+      // round is tried again.
+      for (var round = 1; ; round++) {
+        height = await bridge.getBlockCount();
+        // Establish the mempool sequence.
+        final base = await bridge.watch(height: height, timeoutSeconds: 1);
+        expect(base.changed, isFalse);
 
-      // An unrelated tx does not wake us; a payment to our address does.
-      final watched = bridge.watch(
-        height: height,
-        mempoolSeq: base.mempoolSeq,
-        addresses: [ours],
-        timeoutSeconds: 30,
-      );
-      await Future<void>.delayed(const Duration(seconds: 1));
-      await rpc("sendtoaddress", [await rpc("getnewaddress"), 1]);
-      await Future<void>.delayed(const Duration(seconds: 3));
-      final paid = await rpc("sendtoaddress", [ours, 1]);
-      final r = await watched;
+        // An unrelated tx does not wake us; a payment to our address does.
+        final watched = bridge.watch(
+          height: height,
+          mempoolSeq: base.mempoolSeq,
+          addresses: [ours],
+          timeoutSeconds: 30,
+        );
+        await Future<void>.delayed(const Duration(seconds: 1));
+        await rpc("sendtoaddress", [await rpc("getnewaddress"), 1]);
+        await Future<void>.delayed(const Duration(seconds: 3));
+        paid = await rpc("sendtoaddress", [ours, 1]);
+        r = await watched;
+        if (!r.newBlock || round == 3) break;
+      }
       expect(r.changed, isTrue);
       expect(r.newBlock, isFalse);
       expect(r.txids, [paid]);
@@ -271,7 +279,7 @@ void main() {
       await mine();
       final b = await next;
       expect(b.newBlock, isTrue);
-      expect(b.height, height + 1);
+      expect(b.height, greaterThan(height));
 
       // A sequence the bridge never issued asks for a full resync.
       final reset = await bridge.watch(

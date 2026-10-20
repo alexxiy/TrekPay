@@ -25,7 +25,6 @@ import '../../utilities/show_loading.dart';
 import '../../utilities/show_node_tor_settings_mismatch.dart';
 import '../../utilities/text_styles.dart';
 import '../../utilities/util.dart';
-import '../../wallets/crypto_currency/coins/kerrigan.dart';
 import '../../wallets/crypto_currency/crypto_currency.dart';
 import '../../wallets/wallet/wallet.dart';
 import '../../wallets/wallet/wallet_mixin_interfaces/view_only_option_interface.dart';

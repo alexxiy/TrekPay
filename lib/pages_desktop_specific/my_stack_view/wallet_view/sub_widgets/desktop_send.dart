@@ -26,11 +26,14 @@ import '../../../../pages/home_view/payment_links.dart';
 import '../../../../pages/send_view/confirm_transaction_view.dart';
 import '../../../../pages/send_view/sub_widgets/building_transaction_dialog.dart';
 import '../../../../pages/send_view/sub_widgets/kerrigan_change_address_sheet.dart';
+import '../../../../pages/send_view/sub_widgets/kerrigan_name_lookup.dart';
 import '../../../../pages/send_view/sub_widgets/transaction_fee_selection_sheet.dart';
+import '../../../../providers/global/address_book_service_provider.dart';
 import '../../../../providers/providers.dart';
 import '../../../../providers/ui/preview_tx_button_state_provider.dart';
 import '../../../../providers/wallet/public_private_balance_state_provider.dart';
 import '../../../../providers/wallet/desktop_fee_providers.dart';
+import '../../../../services/kerrigan_name/kerrigan_name_resolver.dart';
 import '../../../../themes/stack_colors.dart';
 import '../../../../utilities/address_utils.dart';
 import '../../../../utilities/amount/amount.dart';
@@ -44,7 +47,6 @@ import '../../../../utilities/prefs.dart';
 import '../../../../utilities/text_styles.dart';
 import '../../../../utilities/util.dart';
 import '../../../../utilities/enums/fee_rate_type_enum.dart';
-import '../../../../wallets/crypto_currency/coins/kerrigan.dart';
 import '../../../../wallets/crypto_currency/crypto_currency.dart';
 import '../../../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../../../wallets/models/tx_data.dart';
@@ -170,7 +172,21 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
     }
   }
 
+  /// A Preview click while one is running is ignored: two would build two
+  /// transactions.
+  bool _previewing = false;
+
   Future<void> previewSend() async {
+    if (_previewing) return;
+    _previewing = true;
+    try {
+      await _preview();
+    } finally {
+      _previewing = false;
+    }
+  }
+
+  Future<void> _preview() async {
     final wallet = ref.read(pWallets).getWallet(walletId);
 
     final Amount amount = ref.read(pSendAmount)!;
@@ -257,9 +273,25 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
       }
     }
 
-    try {
-      bool wasCancelled = false;
+    // A Kerrigan.name name: look it up and check it first. The transaction
+    // pays the address that was proven, never the name's text.
+    var recipient = _address!;
+    KerriganNameVerified? kerriganName;
+    final name = kerriganNameFor(coin, _address);
+    if (name != null) {
+      if (!mounted) return;
+      kerriganName = await lookUpKerriganNameForSend(
+        context: context,
+        coin: coin,
+        name: name,
+        contacts: ref.read(addressBookServiceProvider).contacts,
+      );
+      if (kerriganName == null || !mounted) return;
+      recipient = kerriganName.address;
+    }
 
+    bool wasCancelled = false;
+    try {
       if (mounted) {
         unawaited(
           showDialog<dynamic>(
@@ -308,10 +340,10 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
         txData: TxData(
           recipients: [
             TxRecipient(
-              address: _address!,
+              address: recipient,
               amount: amount,
               isChange: false,
-              addressType: wallet.cryptoCurrency.getAddressType(_address!)!,
+              addressType: wallet.cryptoCurrency.getAddressType(recipient)!,
             ),
           ],
           // Kerrigan: only a shield recipient gets the (encrypted) memo.
@@ -346,6 +378,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
               child: ConfirmTransactionView(
                 txData: txData,
                 walletId: walletId,
+                kerriganName: kerriganName,
                 onSuccess: clearSendForm,
                 routeOnSuccessName: DesktopHomeView.routeName,
               ),
@@ -355,7 +388,8 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
       }
     } catch (e, s) {
       Logging.instance.e("Desktop send: ", error: e, stackTrace: s);
-      if (mounted) {
+      // Cancelled: the dialog is closed already, and the error is moot.
+      if (mounted && !wasCancelled) {
         // pop building dialog
         Navigator.of(context, rootNavigator: true).pop();
 
@@ -473,21 +507,6 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
     }
   }
 
-  // String? _updateInvalidAddressText(String address) {
-  //   if (_data != null && _data!.contactLabel == address) {
-  //     return null;
-  //   }
-  //   if (address.isNotEmpty &&
-  //       !ref
-  //           .read(pWallets)
-  //           .getWallet(walletId)
-  //           .cryptoCurrency
-  //           .validateAddress(address)) {
-  //     return "Invalid address";
-  //   }
-  //   return null;
-  // }
-
   void _processQrCodeData(String qrCodeData) {
     try {
       final paymentData = AddressUtils.parsePaymentUri(
@@ -518,12 +537,16 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
 
   void _setValidAddressProviders(String? address) {
     final wallet = ref.read(pWallets).getWallet(walletId);
-    ref.read(pValidSendToAddress.notifier).state = wallet.cryptoCurrency
-        .validateAddress(address ?? "");
+    ref.read(pValidSendToAddress.notifier).state =
+        wallet.cryptoCurrency.validateAddress(address ?? "") ||
+        kerriganNameFor(coin, address) != null;
   }
 
+  /// Kerrigan.name names always point to shield addresses.
   bool get _sendsToShield =>
-      coin is Kerrigan && (coin as Kerrigan).isShieldAddress(_address ?? "");
+      coin is Kerrigan &&
+      ((coin as Kerrigan).isShieldAddress(_address ?? "") ||
+          kerriganNameFor(coin, _address) != null);
 
   void _applyUri(PaymentUriData paymentData) {
     try {
@@ -609,23 +632,6 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
     }
   }
 
-  Future<void> pasteMemo() async {
-    if (memoController.text.isNotEmpty) {
-      setState(() {
-        memoController.text = "";
-      });
-    } else {
-      final ClipboardData? data = await clipboard.getData(Clipboard.kTextPlain);
-      if (data?.text != null && data!.text!.isNotEmpty) {
-        final String content = data.text!.trim();
-
-        setState(() {
-          memoController.text = content;
-        });
-      }
-    }
-  }
-
   void fiatTextFieldOnChanged(String baseAmountString) {
     final baseAmount = Amount.tryParseFiatString(
       baseAmountString,
@@ -665,11 +671,6 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
       cryptoAmountController.text = "";
       _cryptoAmountChangeLock = false;
     }
-    // setState(() {
-    //   _calculateFeesFuture = calculateFees(
-    //       Format.decimalAmountToSatoshis(
-    //           _amountToSend!));
-    // });
     ref.read(pSendAmount.notifier).state = amount;
   }
 
@@ -788,7 +789,6 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
       ref.read(pValidSendToAddress.notifier).state = false;
     });
 
-    // _calculateFeesFuture = calculateFees(0);
     _data = widget.autoFillData;
     walletId = widget.walletId;
     coin = ref.read(pWalletInfo(walletId)).coin;
@@ -1027,12 +1027,6 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
               unit: ref.watch(pAmountUnit(coin)),
               locale: locale,
             ),
-            // // regex to validate a crypto amount with 8 decimal places
-            // TextInputFormatter.withFunction((oldValue, newValue) =>
-            //     RegExp(r'^([0-9]*[,.]?[0-9]{0,8}|[,.][0-9]{0,8})$')
-            //             .hasMatch(newValue.text)
-            //         ? newValue
-            //         : oldValue),
           ],
           onChanged: (newValue) {},
           decoration: InputDecoration(
@@ -1083,12 +1077,6 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
             textAlign: TextAlign.right,
             inputFormatters: [
               AmountInputFormatter(decimals: 2, locale: locale),
-              // // regex to validate a fiat amount with 2 decimal places
-              // TextInputFormatter.withFunction((oldValue, newValue) =>
-              //     RegExp(r'^([0-9]*[,.]?[0-9]{0,2}|[,.][0-9]{0,2})$')
-              //             .hasMatch(newValue.text)
-              //         ? newValue
-              //         : oldValue),
             ],
             onChanged: fiatTextFieldOnChanged,
             decoration: InputDecoration(
@@ -1240,7 +1228,9 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
                   trimmed,
                   logging: Logging.instance,
                 );
-                if (parsed != null) {
+                // Only a payment link for this coin (as when scanned).
+                if (parsed != null &&
+                    parsed.coin?.uriScheme == coin.uriScheme) {
                   _applyUri(parsed);
                 } else {
                   _setAddress(newValue);
@@ -1264,7 +1254,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
             ),
             decoration:
                 standardInputDecoration(
-                  "Enter ${coin.ticker} address",
+                  recipientHint(coin),
                   _addressFocusNode,
                   context,
                   desktopMed: true,
@@ -1389,7 +1379,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
                 ref.watch(pValidSendToAddress)) {
               error = null;
             } else {
-              error = "Invalid address";
+              error = recipientInputError(coin, _address!);
             }
 
             if (error == null || error.isEmpty) {
@@ -1485,49 +1475,4 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
       ],
     );
   }
-}
-
-String formatAddress(String epicAddress) {
-  // strip http:// or https:// prefixes if the address contains an @ symbol (and is thus an epicbox address)
-  if ((epicAddress.startsWith("http://") ||
-          epicAddress.startsWith("https://")) &&
-      epicAddress.contains("@")) {
-    epicAddress = epicAddress.replaceAll("http://", "");
-    epicAddress = epicAddress.replaceAll("https://", "");
-  }
-  // strip mailto: prefix
-  if (epicAddress.startsWith("mailto:")) {
-    epicAddress = epicAddress.replaceAll("mailto:", "");
-  }
-  // strip / suffix if the address contains an @ symbol (and is thus an epicbox address)
-  if (epicAddress.endsWith("/") && epicAddress.contains("@")) {
-    epicAddress = epicAddress.substring(0, epicAddress.length - 1);
-  }
-  return epicAddress;
-}
-
-String formatAddressMwc(String mimblewimblecoinAddress) {
-  // strip http:// or https:// prefixes if the address contains an @ symbol (and is thus an mwcmqs address)
-  if ((mimblewimblecoinAddress.startsWith("http://") ||
-          mimblewimblecoinAddress.startsWith("https://")) &&
-      mimblewimblecoinAddress.contains("@")) {
-    mimblewimblecoinAddress = mimblewimblecoinAddress.replaceAll("http://", "");
-    mimblewimblecoinAddress = mimblewimblecoinAddress.replaceAll(
-      "https://",
-      "",
-    );
-  }
-  // strip mailto: prefix
-  if (mimblewimblecoinAddress.startsWith("mailto:")) {
-    mimblewimblecoinAddress = mimblewimblecoinAddress.replaceAll("mailto:", "");
-  }
-  // strip / suffix if the address contains an @ symbol (and is thus an mwcmqs address)
-  if (mimblewimblecoinAddress.endsWith("/") &&
-      mimblewimblecoinAddress.contains("@")) {
-    mimblewimblecoinAddress = mimblewimblecoinAddress.substring(
-      0,
-      mimblewimblecoinAddress.length - 1,
-    );
-  }
-  return mimblewimblecoinAddress;
 }

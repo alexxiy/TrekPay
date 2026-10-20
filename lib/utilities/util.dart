@@ -8,8 +8,6 @@
  *
  */
 
-import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
@@ -18,11 +16,9 @@ import 'package:intl/number_symbols.dart';
 import 'package:intl/number_symbols_data.dart';
 
 abstract class Util {
-  static const isArmLinux = bool.fromEnvironment("IS_ARM");
   static final isTestEnv = Platform.environment["FLUTTER_TEST"] == "true";
 
   static Directory? libraryPath;
-  static double? screenWidth;
 
   static NumberSymbols? getSymbolsFor({required String locale}) {
     return numberFormatSymbols[locale] ??
@@ -31,12 +27,9 @@ abstract class Util {
         numberFormatSymbols[locale.substring(0, 2)];
   }
 
+  /// Linux is always desktop, whatever the screen size: one data folder
+  /// and the password, not a second set of wallets behind a PIN.
   static bool get isDesktop {
-    // special check for running on linux based phones
-    if (Platform.isLinux && screenWidth != null && screenWidth! < 800) {
-      return false;
-    }
-
     // special check for running under ipad mode in macos
     if (Platform.isIOS &&
         libraryPath != null &&
@@ -73,23 +66,5 @@ abstract class Util {
       );
     }
     return MaterialColor(color.value, swatch);
-  }
-
-  static void printJson(dynamic json, [String? debugTitle]) {
-    final String result;
-    if (json is Map || json is List) {
-      final spaces = ' ' * 4;
-      final encoder = JsonEncoder.withIndent(spaces);
-      final pretty = encoder.convert(json);
-      result = pretty;
-    } else {
-      result = json.toString();
-    }
-
-    if (debugTitle != null) {
-      log("$debugTitle\n$result");
-    } else {
-      log(result);
-    }
   }
 }

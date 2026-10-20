@@ -14,10 +14,10 @@ import '../../utilities/text_styles.dart';
 import '../../wallets/models/tx_data.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../widgets/background.dart';
-import '../../widgets/custom_buttons/app_bar_icon_button.dart';
 import '../../widgets/custom_buttons/blue_text_button.dart';
 import '../../widgets/desktop/desktop_page_column.dart';
 import '../../widgets/desktop/primary_button.dart';
+import '../../widgets/page_app_bar.dart';
 import '../../widgets/rounded_white_container.dart';
 import '../../widgets/stack_text_field.dart';
 import '../send_view/confirm_transaction_view.dart';
@@ -150,7 +150,6 @@ class _KerriganCreateProposalViewState
         );
     if (!mounted || prepared == null) return;
     final (txData, proposal) = prepared;
-    Future<void>? saving;
     await Navigator.of(context).push(
       RouteGenerator.getRoute<void>(
         shouldUseMaterialRoute: RouteGenerator.useMaterialPageRoute,
@@ -159,11 +158,14 @@ class _KerriganCreateProposalViewState
           child: ConfirmTransactionView(
             txData: txData,
             walletId: widget.walletId,
-            onSuccess: () {
-              saving = wallet.addPendingProposal(proposal, txData.txid!);
-            },
-            onSuccessInsteadOfRouteOnSuccess: () async {
-              await saving;
+            // Remembered before the fee goes out: were the app to stop
+            // right after sending, the fee would be burnt with nothing
+            // left to submit the proposal.
+            beforeBroadcast: () =>
+                wallet.addPendingProposal(proposal, txData.txid!),
+            afterFailedBroadcast: () => wallet.forgetUnsentProposal(proposal),
+            onSuccess: () {},
+            onSuccessInsteadOfRouteOnSuccess: () {
               if (mounted) {
                 Navigator.of(context).popUntil(
                   ModalRoute.withName(KerriganGovernanceView.routeName),
@@ -297,10 +299,7 @@ class _KerriganCreateProposalViewState
     return Background(
       child: Scaffold(
         backgroundColor: colors.background,
-        appBar: AppBar(
-          leading: AppBarBackButton(
-            onPressed: () => Navigator.of(context).pop(),
-          ),
+        appBar: PageAppBar(
           title: Text(
             "Create proposal",
             style: STextStyles.navBarTitle(context),

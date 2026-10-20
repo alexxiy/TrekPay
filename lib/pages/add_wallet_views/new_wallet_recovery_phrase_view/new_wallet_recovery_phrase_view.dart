@@ -34,6 +34,7 @@ import '../../../widgets/conditional_parent.dart';
 import '../../../widgets/custom_buttons/app_bar_icon_button.dart';
 import '../../../widgets/desktop/desktop_app_bar.dart';
 import '../../../widgets/desktop/desktop_scaffold.dart';
+import '../../../widgets/secret_screen.dart';
 import '../new_wallet_recovery_phrase_warning_view/new_wallet_recovery_phrase_warning_view.dart';
 import '../verify_recovery_phrase_view/verify_recovery_phrase_view.dart';
 import 'sub_widgets/mnemonic_table.dart';
@@ -90,7 +91,7 @@ class _NewWalletRecoveryPhraseViewState
 
   Future<void> _copy() async {
     final words = _mnemonic;
-    await _clipboardInterface.setData(ClipboardData(text: words.join(" ")));
+    await _clipboardInterface.setSecret(words.join(" "));
     unawaited(
       showFloatingFlushBar(
         type: FlushBarType.info,
@@ -102,7 +103,10 @@ class _NewWalletRecoveryPhraseViewState
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecretScreen(child: Builder(builder: _buildScreen));
+
+  Widget _buildScreen(BuildContext context) {
     debugPrint("BUILD: $runtimeType");
     return WillPopScope(
       onWillPop: onWillPop,
@@ -122,7 +126,6 @@ class _NewWalletRecoveryPhraseViewState
                         ),
                       );
                     }
-                    // Navigator.of(context).pop();
                   },
                 ),
                 trailing: ExitToMyStackButton(

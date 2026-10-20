@@ -1,1 +1,1 @@
-Kerrigan mobile wallet with SHIELD privacy, cold staking and masternodes.
+Private Kerrigan wallet with shielded transactions, InstantSend and masternodes.

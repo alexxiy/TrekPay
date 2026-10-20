@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -9,19 +8,22 @@ import '../../notifications/show_flush_bar.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/amount/amount_formatter.dart';
+import '../../utilities/clipboard_interface.dart';
 import '../../utilities/show_loading.dart';
 import '../../utilities/text_styles.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../widgets/background.dart';
-import '../../widgets/custom_buttons/app_bar_icon_button.dart';
 import '../../widgets/custom_buttons/blue_text_button.dart';
 import '../../widgets/desktop/primary_button.dart';
 import '../../widgets/desktop/secondary_button.dart';
 import '../../widgets/icon_buttons.dart';
+import '../../widgets/page_app_bar.dart';
 import '../../widgets/rounded_white_container.dart';
+import '../../widgets/secret_screen.dart';
 import '../../widgets/stack_dialog.dart';
 import '../../widgets/stack_text_field.dart';
+import '../pinpad_views/authenticate_user.dart';
 import '../send_view/sub_widgets/authorize_spend.dart';
 import 'kerrigan_masternodes_view.dart';
 
@@ -287,8 +289,9 @@ class _KerriganMasternodeDetailsViewState
     );
   }
 
+  /// Copies [text], which holds the operator secret key.
   Future<void> _copy(String text, [String what = "Copied to clipboard"]) async {
-    await Clipboard.setData(ClipboardData(text: text));
+    await const ClipboardWrapper().setSecret(text);
     if (mounted) {
       unawaited(
         showFloatingFlushBar(
@@ -299,6 +302,22 @@ class _KerriganMasternodeDetailsViewState
       );
     }
   }
+
+  /// Shows the operator secret key once the user proved it's them (PIN
+  /// or password): it runs the masternode, anywhere.
+  Future<bool> _revealSecret() async {
+    if (_showSecret) return true;
+    final ok = await authenticateUser(
+      context,
+      coin: _wallet.cryptoCurrency,
+      title: "Show operator key",
+      reason: "Unlock to show the masternode's operator secret key",
+    );
+    if (ok && mounted) setState(() => _showSecret = true);
+    return ok;
+  }
+
+  static const _hiddenSecret = "••••••••••••••••••••";
 
   Widget _row(String label, String value, {bool secret = false}) {
     final colors = Theme.of(context).extension<StackColors>()!;
@@ -318,7 +337,7 @@ class _KerriganMasternodeDetailsViewState
                   ),
                   const SizedBox(height: 4),
                   SelectableText(
-                    secret && !_showSecret ? "••••••••••••••••••••" : value,
+                    secret && !_showSecret ? _hiddenSecret : value,
                     style: STextStyles.w600_14(context),
                   ),
                 ],
@@ -327,17 +346,23 @@ class _KerriganMasternodeDetailsViewState
             if (secret)
               CustomTextButton(
                 text: _showSecret ? "Hide" : "Show",
-                onTap: () => setState(() => _showSecret = !_showSecret),
+                onTap: _showSecret
+                    ? () => setState(() => _showSecret = false)
+                    : _revealSecret,
               ),
-            const SizedBox(width: 8),
-            IconCopyButton(data: value),
+            if (!secret || _showSecret) ...[
+              const SizedBox(width: 8),
+              IconCopyButton(data: value, secret: secret),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _codeBlock(String code) {
+  /// [code] holds the operator secret key: hidden, and not copied, until
+  /// [_revealSecret].
+  Widget _codeBlock(String Function(String secret) code, String secret) {
     final colors = Theme.of(context).extension<StackColors>()!;
     return RoundedWhiteContainer(
       child: Row(
@@ -345,13 +370,16 @@ class _KerriganMasternodeDetailsViewState
         children: [
           Expanded(
             child: SelectableText(
-              code,
+              code(_showSecret ? secret : _hiddenSecret),
               style: STextStyles.w500_12(context)
                   .copyWith(fontFamily: "monospace", color: colors.textDark),
             ),
           ),
           const SizedBox(width: 8),
-          IconCopyButton(data: code),
+          if (_showSecret)
+            IconCopyButton(data: code(secret), secret: true)
+          else
+            CustomTextButton(text: "Show", onTap: _revealSecret),
         ],
       ),
     );
@@ -434,8 +462,9 @@ class _KerriganMasternodeDetailsViewState
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-        child: SingleChildScrollView(
-          child: Column(
+        child: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -478,6 +507,7 @@ class _KerriganMasternodeDetailsViewState
               ),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -664,7 +694,10 @@ class _KerriganMasternodeDetailsViewState
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      SecretScreen(child: Builder(builder: _buildScreen));
+
+  Widget _buildScreen(BuildContext context) {
     final colors = Theme.of(context).extension<StackColors>()!;
     final wallet = _wallet;
     final mn = _masternode;
@@ -674,10 +707,7 @@ class _KerriganMasternodeDetailsViewState
     return Background(
       child: Scaffold(
         backgroundColor: colors.background,
-        appBar: AppBar(
-          leading: AppBarBackButton(
-            onPressed: () => Navigator.of(context).pop(),
-          ),
+        appBar: PageAppBar(
           title: Text(
             mn == null || mn.label.isEmpty ? "Masternode" : mn.label,
             style: STextStyles.navBarTitle(context),
@@ -770,7 +800,13 @@ class _KerriganMasternodeDetailsViewState
                         const SizedBox(height: 12),
                         PrimaryButton(
                           label: "Show what masternode.space needs",
-                          onPressed: () => _showHostingDetails(mn),
+                          onPressed: () async {
+                            if ((_keys?.operator?.secret == null ||
+                                    await _revealSecret()) &&
+                                mounted) {
+                              await _showHostingDetails(mn);
+                            }
+                          },
                         ),
                         const SizedBox(height: 24),
                         Text(
@@ -801,10 +837,11 @@ class _KerriganMasternodeDetailsViewState
                           ),
                           const SizedBox(height: 8),
                           _codeBlock(
-                            wallet.masternodeKerriganConf(
+                            (secret) => wallet.masternodeKerriganConf(
                               mn.copyWith(service: mn.service ?? state?.service),
-                              operatorSecret,
+                              secret,
                             ),
+                            operatorSecret,
                           ),
                         ] else
                           Text(

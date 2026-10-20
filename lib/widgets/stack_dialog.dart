@@ -46,7 +46,8 @@ class StackDialogBase extends StatelessWidget {
           children: [
             Flexible(
               child: SizedBox(
-                width: width,
+                // Phone dialogs shown on desktop: not across the window.
+                width: width ?? (Util.isDesktop ? 580 : null),
                 child: SingleChildScrollView(
                   child: Material(
                     borderRadius: BorderRadius.circular(20),
@@ -236,7 +237,6 @@ class StackOkDialog extends StatelessWidget {
                               int count = 0;
                               Navigator.of(context)
                                   .popUntil((_) => count++ >= 2);
-                              // onOkPressed?.call("OK");
                             }
                           },
                     style: Theme.of(context)
