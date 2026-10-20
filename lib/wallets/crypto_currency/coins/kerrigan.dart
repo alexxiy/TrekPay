@@ -228,8 +228,8 @@ class Kerrigan extends Bip39HDCurrency {
         // TODO: a public testnet bridge.
         host = "https://bridge.kerrigan.network/testnet";
       case CryptoCurrencyNetwork.regtest:
-        // Development bridge (regtest node on the test VM).
-        host = "http://192.168.1.27:3001";
+        // Development bridge (regtest node on the DevBox).
+        host = "http://192.168.1.101:3001";
       default:
         throw Exception("Unsupported network: $network");
     }
