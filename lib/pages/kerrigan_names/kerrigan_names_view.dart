@@ -22,7 +22,7 @@ import 'kerrigan_names_common.dart';
 import 'kerrigan_names_flow.dart';
 import 'kerrigan_names_in_flight.dart';
 
-/// Kerrigan Names (Kerrigan.name): look a name up and register it, or buy it when
+/// Kerrigan Name (Kerrigan.name): look a name up and register it, or buy it when
 /// it's for sale. The menu leads to the user's names, balance and
 /// transactions, and to the marketplace.
 class KerriganNamesView extends ConsumerStatefulWidget {

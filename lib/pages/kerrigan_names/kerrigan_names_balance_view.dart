@@ -181,7 +181,14 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
     final colors = Theme.of(context).extension<StackColors>()!;
     final wallet = _wallet;
     final balance = _balance;
-    final canWithdraw = balance != null && balance.balance > BigInt.zero;
+    // A balance under the minimum stays until more comes in: Kerrigan.name
+    // refuses to pay it out.
+    final belowMinimum =
+        balance != null &&
+        balance.balance > BigInt.zero &&
+        balance.balance < balance.minWithdrawal;
+    final canWithdraw =
+        balance != null && balance.balance > BigInt.zero && !belowMinimum;
     final net = balance == null
         ? null
         : kerriganNamesAmount(
@@ -189,6 +196,9 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
             ref,
             wallet,
           );
+    final minimum = belowMinimum
+        ? kerriganNamesAmount(balance.minWithdrawal, ref, wallet, exact: true)
+        : null;
     final secondary = STextStyles.w500_12(context)
         .copyWith(color: colors.textSubtitle1);
     return Background(
@@ -301,6 +311,14 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
                           ),
                         ),
                       ),
+                      if (belowMinimum) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          "The minimum withdrawal is $minimum. Your balance "
+                          "stays here until it reaches that.",
+                          style: secondary,
+                        ),
+                      ],
                     ],
                   ),
                 ),

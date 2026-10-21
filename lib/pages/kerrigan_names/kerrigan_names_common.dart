@@ -329,7 +329,7 @@ class KerriganNamesAppBar extends StatelessWidget implements PreferredSizeWidget
       actions: [
         action(
           AppBarIconButton(
-            semanticsLabel: "About Kerrigan Names",
+            semanticsLabel: "About Kerrigan Name",
             size: 36,
             shadows: const [],
             color: colors.background,
@@ -552,7 +552,7 @@ class _InfoDialogState extends State<_InfoDialog> {
                 children: [
                   const KerriganNamesLogo(size: 28),
                   const SizedBox(width: 10),
-                  Text("Kerrigan Names", style: STextStyles.w600_16(context)),
+                  Text("Kerrigan Name", style: STextStyles.w600_16(context)),
                   const Spacer(),
                   Text(
                     "${_slide + 1} / ${_slides.length}",
