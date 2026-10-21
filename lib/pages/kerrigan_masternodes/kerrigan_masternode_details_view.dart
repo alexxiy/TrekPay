@@ -104,14 +104,9 @@ class _KerriganMasternodeDetailsViewState
     final index = mn.keyIndex;
     final operatorIndex = mn.operatorIndex ?? (mn.isRegistered ? null : index);
     try {
-      final keys = (
-        owner: index == null ? "" : await wallet.masternodeOwnerAddress(index),
-        voting: index == null
-            ? ""
-            : await wallet.masternodeVotingAddress(index),
-        operator: operatorIndex == null
-            ? null
-            : await wallet.masternodeOperatorKey(operatorIndex),
+      final keys = await wallet.masternodeKeys(
+        index: index,
+        operatorIndex: operatorIndex,
       );
       if (mounted) setState(() => _keys = keys);
     } catch (_) {

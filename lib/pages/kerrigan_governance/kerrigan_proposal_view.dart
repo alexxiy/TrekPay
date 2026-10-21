@@ -479,26 +479,35 @@ class _VoteSheetState extends State<_VoteSheet> {
         _results[id] = (_Result.pending, null);
       }
     });
-    for (final m in _masternodes.where((m) => _selected.contains(m.id))) {
-      if (!mounted) return;
-      setState(() => _results[m.id] = (_Result.running, null));
-      try {
-        await widget.wallet.voteOnProposal(
-          proposal: widget.proposal,
-          mn: m,
-          vote: widget.vote,
-        );
-        if (mounted) setState(() => _results[m.id] = (_Result.done, null));
-      } catch (e) {
-        if (mounted) {
-          setState(
-            () => _results[m.id] = (
-              _Result.failed,
-              e.toString().replaceFirst("Exception: ", ""),
-            ),
-          );
-        }
+    final picked = [
+      for (final m in _masternodes)
+        if (_selected.contains(m.id)) m,
+    ];
+    var next = 0;
+    void markNextRunning() {
+      if (next < picked.length) {
+        _results[picked[next].id] = (_Result.running, null);
       }
+    }
+
+    setState(markNextRunning);
+    await for (final r in widget.wallet.voteOnProposalWith(
+      proposal: widget.proposal,
+      masternodes: picked,
+      vote: widget.vote,
+    )) {
+      // Leaving the stream stops the remaining votes.
+      if (!mounted) return;
+      setState(() {
+        _results[r.mn.id] = r.error == null
+            ? (_Result.done, null)
+            : (
+                _Result.failed,
+                r.error.toString().replaceFirst("Exception: ", ""),
+              );
+        next++;
+        markNextRunning();
+      });
     }
     if (mounted) setState(() => _running = false);
   }

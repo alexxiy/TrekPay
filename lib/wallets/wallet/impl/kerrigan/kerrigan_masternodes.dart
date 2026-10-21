@@ -372,10 +372,18 @@ extension KerriganMasternodes on KerriganWallet {
 
   // ---------------------------------------------------------------------------
   // Keys (DIP 9: m/9'/coin'/3'/feature'/index)
+  //
+  // Each getRootHDNode() reads the recovery phrase and runs its PBKDF2
+  // (~0.3 s on a desktop, more on a phone): anything deriving several keys
+  // reads [root] once and passes it along.
 
-  Future<coinlib.HDPrivateKey> _dip9Key(int feature, int index) async {
+  Future<coinlib.HDPrivateKey> _dip9Key(
+    int feature,
+    int index, {
+    coinlib.HDPrivateKey? root,
+  }) async {
     if (isViewOnly) throw Exception("View only wallets have no keys");
-    return (await getRootHDNode()).derivePath(
+    return (root ?? await getRootHDNode()).derivePath(
       "m/9'/${cryptoCurrency.coinType}'/3'/$feature'/$index",
     );
   }
@@ -386,20 +394,50 @@ extension KerriganMasternodes on KerriganWallet {
   ).toString();
 
   /// Owner address of key [index]: controls the registration.
-  Future<String> masternodeOwnerAddress(int index) async =>
-      _p2pkh((await _dip9Key(_kDip9Owner, index)).publicKey);
+  Future<String> masternodeOwnerAddress(
+    int index, {
+    coinlib.HDPrivateKey? root,
+  }) async =>
+      _p2pkh((await _dip9Key(_kDip9Owner, index, root: root)).publicKey);
 
   /// Voting address of key [index]: votes on proposals.
-  Future<String> masternodeVotingAddress(int index) async =>
-      _p2pkh((await _dip9Key(_kDip9Voting, index)).publicKey);
+  Future<String> masternodeVotingAddress(
+    int index, {
+    coinlib.HDPrivateKey? root,
+  }) async =>
+      _p2pkh((await _dip9Key(_kDip9Voting, index, root: root)).publicKey);
 
   /// Operator key pair (BLS) of key [index]: the server runs with its
   /// secret.
   Future<({String secret, String public})> masternodeOperatorKey(
-    int index,
-  ) async => libKerriganShield.blsKeygen(
-    ikm: (await _dip9Key(_kDip9Operator, index)).privateKey.data,
+    int index, {
+    coinlib.HDPrivateKey? root,
+  }) async => libKerriganShield.blsKeygen(
+    ikm: (await _dip9Key(_kDip9Operator, index, root: root)).privateKey.data,
   );
+
+  /// The owner and voting addresses of key [index] and the operator key
+  /// pair of [operatorIndex] ("" and null for those not given), reading
+  /// the recovery phrase once.
+  Future<
+    ({String owner, String voting, ({String secret, String public})? operator})
+  >
+  masternodeKeys({int? index, int? operatorIndex}) async {
+    final root = index == null && operatorIndex == null
+        ? null
+        : await getRootHDNode();
+    return (
+      owner: index == null
+          ? ""
+          : await masternodeOwnerAddress(index, root: root),
+      voting: index == null
+          ? ""
+          : await masternodeVotingAddress(index, root: root),
+      operator: operatorIndex == null
+          ? null
+          : await masternodeOperatorKey(operatorIndex, root: root),
+    );
+  }
 
   /// The operator public key [mn] is (or will be) registered with.
   Future<String?> operatorPublicKeyOf(KerriganMasternode mn) async =>
@@ -409,10 +447,12 @@ extension KerriganMasternodes on KerriganWallet {
           : (await masternodeOperatorKey(mn.operatorIndex!)).public);
 
   /// The operator secret key, when the wallet made the operator key.
-  Future<String?> operatorSecretOf(KerriganMasternode mn) async =>
-      mn.operatorIndex == null
+  Future<String?> operatorSecretOf(
+    KerriganMasternode mn, {
+    coinlib.HDPrivateKey? root,
+  }) async => mn.operatorIndex == null
       ? null
-      : (await masternodeOperatorKey(mn.operatorIndex!)).secret;
+      : (await masternodeOperatorKey(mn.operatorIndex!, root: root)).secret;
 
   bool isValidOperatorPublicKey(String key) =>
       RegExp(r"^[0-9a-fA-F]{96}$").hasMatch(key.trim()) &&
@@ -421,7 +461,10 @@ extension KerriganMasternodes on KerriganWallet {
   /// A DIP 9 index not used by this wallet's masternodes nor, as owner
   /// key, by a registration on the network (a restored wallet may have
   /// used it before).
-  Future<int> _freeKeyIndex(List<Map<String, dynamic>> registered) async {
+  Future<int> _freeKeyIndex(
+    List<Map<String, dynamic>> registered, {
+    coinlib.HDPrivateKey? root,
+  }) async {
     final usedOwners = {
       for (final e in registered)
         (e["state"] as Map?)?["ownerAddress"] as String?,
@@ -436,8 +479,13 @@ extension KerriganMasternodes on KerriganWallet {
         if (i != null && i >= index) index = i + 1;
       }
     }
-    while (usedOwners.contains(await masternodeOwnerAddress(index)) ||
-        usedOperators.contains((await masternodeOperatorKey(index)).public)) {
+    root ??= await getRootHDNode();
+    while (usedOwners.contains(
+          await masternodeOwnerAddress(index, root: root),
+        ) ||
+        usedOperators.contains(
+          (await masternodeOperatorKey(index, root: root)).public,
+        )) {
       index++;
     }
     return index;
@@ -793,11 +841,12 @@ extension KerriganMasternodes on KerriganWallet {
     ];
     if (candidates.isEmpty) return found;
 
+    final root = await getRootHDNode();
     final owners = <String, int>{};
     final operators = <String, int>{};
     for (int i = 0; i < _kMasternodeKeySearch; i++) {
-      owners[await masternodeOwnerAddress(i)] = i;
-      operators[(await masternodeOperatorKey(i)).public] = i;
+      owners[await masternodeOwnerAddress(i, root: root)] = i;
+      operators[(await masternodeOperatorKey(i, root: root)).public] = i;
     }
     for (final e in candidates) {
       final state = _stateOf(e);
@@ -842,7 +891,9 @@ extension KerriganMasternodes on KerriganWallet {
   // Provider transactions
 
   /// Transparent coins to pay a provider transaction's fee, with keys.
-  Future<List<Map<String, dynamic>>> _providerFeeUtxos() async {
+  Future<List<Map<String, dynamic>>> _providerFeeUtxos(
+    coinlib.HDPrivateKey root,
+  ) async {
     final coins = _spendable(
       await mainDB.getUTXOs(walletId).findAll(),
       await chainHeight,
@@ -862,7 +913,7 @@ extension KerriganMasternodes on KerriganWallet {
         "(0.001 is plenty) to a transparent address of this wallet.",
       );
     }
-    final inputs = await _withKeys(picked);
+    final inputs = await _withKeys(picked, root: root);
     return [
       for (final i in inputs)
         {
@@ -881,8 +932,9 @@ extension KerriganMasternodes on KerriganWallet {
   Future<KerriganProviderTx> _buildProviderTx(
     Map<String, dynamic> kind,
     KerriganMasternode updated,
+    coinlib.HDPrivateKey root,
   ) async {
-    final utxos = await _providerFeeUtxos();
+    final utxos = await _providerFeeUtxos(root);
     final change =
         (await getCurrentChangeAddress() ??
                 await _deriveAddress(chain: 1, index: 0))
@@ -952,19 +1004,20 @@ extension KerriganMasternodes on KerriganWallet {
         "(kerrigan-cli gethmpidentity)",
       );
     }
+    final root = await getRootHDNode();
     final registered = await bridge.protxList();
-    final index = mn.keyIndex ?? await _freeKeyIndex(registered);
+    final index = mn.keyIndex ?? await _freeKeyIndex(registered, root: root);
     final useHost = host != null && host.isNotEmpty;
     final operatorIndex = useHost ? null : (mn.operatorIndex ?? index);
     final operatorKey = useHost
         ? host
-        : (await masternodeOperatorKey(operatorIndex!)).public;
+        : (await masternodeOperatorKey(operatorIndex!, root: root)).public;
 
     final address = await mainDB.getAddress(walletId, mn.address);
     if (address?.derivationPath == null) {
       throw Exception("The collateral address is not a wallet address");
     }
-    final collateralKey = (await getRootHDNode())
+    final collateralKey = root
         .derivePath(address!.derivationPath!.value)
         .privateKey;
 
@@ -976,8 +1029,8 @@ extension KerriganMasternodes on KerriganWallet {
         "collateral_vout": mn.vout,
         "collateral_key": collateralKey.data.toHex,
         "service": normalized,
-        "owner_address": await masternodeOwnerAddress(index),
-        "voting_address": await masternodeVotingAddress(index),
+        "owner_address": await masternodeOwnerAddress(index, root: root),
+        "voting_address": await masternodeVotingAddress(index, root: root),
         "operator_public_key": operatorKey,
         "payout_address": mn.payoutAddress,
         "operator_reward": 0,
@@ -988,6 +1041,7 @@ extension KerriganMasternodes on KerriganWallet {
         hostOperatorKey: useHost ? host : null,
         service: normalized.isEmpty ? null : normalized,
       ),
+      root,
     ).then(
       (tx) => (
         txid: tx.txid,
@@ -1006,7 +1060,8 @@ extension KerriganMasternodes on KerriganWallet {
     required String service,
   }) async {
     if (!mn.isRegistered) throw Exception("Register the masternode first");
-    final secret = await operatorSecretOf(mn);
+    final root = await getRootHDNode();
+    final secret = await operatorSecretOf(mn, root: root);
     if (secret == null) {
       throw Exception(
         "Your host holds this masternode's operator key; they set its "
@@ -1014,13 +1069,17 @@ extension KerriganMasternodes on KerriganWallet {
       );
     }
     final normalized = normalizeMasternodeService(service);
-    return _buildProviderTx({
-      "kind": "update_service",
-      "evo": mn.type == KerriganMasternodeType.broodNode,
-      "pro_tx_hash": mn.proTxHash,
-      "service": normalized,
-      "operator_secret": secret,
-    }, mn.copyWith(service: normalized));
+    return _buildProviderTx(
+      {
+        "kind": "update_service",
+        "evo": mn.type == KerriganMasternodeType.broodNode,
+        "pro_tx_hash": mn.proTxHash,
+        "service": normalized,
+        "operator_secret": secret,
+      },
+      mn.copyWith(service: normalized),
+      root,
+    );
   }
 
   /// Give [mn] a new operator key (ProUpRegTx, signed by the owner key):
@@ -1040,13 +1099,17 @@ extension KerriganMasternodes on KerriganWallet {
     if (useHost && !isValidOperatorPublicKey(host)) {
       throw Exception("That is not a valid operator public key");
     }
+    final root = await getRootHDNode();
     int? operatorIndex;
     String operatorKey;
     if (useHost) {
       operatorKey = host;
     } else {
-      operatorIndex = await _freeKeyIndex(await bridge.protxList());
-      operatorKey = (await masternodeOperatorKey(operatorIndex)).public;
+      operatorIndex = await _freeKeyIndex(await bridge.protxList(), root: root);
+      operatorKey = (await masternodeOperatorKey(
+        operatorIndex,
+        root: root,
+      )).public;
     }
     final state = await masternodeState(mn);
     return _buildProviderTx(
@@ -1055,11 +1118,13 @@ extension KerriganMasternodes on KerriganWallet {
         "pro_tx_hash": mn.proTxHash,
         "operator_public_key": operatorKey,
         "voting_address":
-            state.votingAddress ?? await masternodeVotingAddress(keyIndex),
+            state.votingAddress ??
+            await masternodeVotingAddress(keyIndex, root: root),
         "payout_address": state.payoutAddress ?? mn.payoutAddress,
         "owner_key": (await _dip9Key(
           _kDip9Owner,
           keyIndex,
+          root: root,
         )).privateKey.data.toHex,
       },
       mn.copyWith(
@@ -1067,6 +1132,7 @@ extension KerriganMasternodes on KerriganWallet {
         hostOperatorKey: useHost ? host : null,
         service: null,
       ),
+      root,
     );
   }
 

@@ -517,10 +517,15 @@ extension KerriganGovernanceWallet on KerriganWallet {
     required KerriganProposal proposal,
     required KerriganMasternode mn,
     required KerriganVote vote,
+    coinlib.HDPrivateKey? root,
   }) async {
     final problem = votingProblem(mn);
     if (problem != null) throw Exception(problem);
-    final key = (await _dip9Key(_kDip9Voting, mn.keyIndex!)).privateKey.data;
+    final key = (await _dip9Key(
+      _kDip9Voting,
+      mn.keyIndex!,
+      root: root,
+    )).privateKey.data;
     final time = DateTime.timestamp().millisecondsSinceEpoch ~/ 1000;
     // Kerrigan Core checks vote signatures as signed messages, except on
     // testnet, where it checks a signature of the vote's hash.
@@ -560,6 +565,32 @@ extension KerriganGovernanceWallet on KerriganWallet {
       }
     } catch (e) {
       throw Exception(_voteError(e.toString()));
+    }
+  }
+
+  /// [voteOnProposal] with each of [masternodes] in turn, reading the
+  /// recovery phrase once for all of them: yields each one's error, or
+  /// null when its vote was taken. Stops when the listener cancels.
+  Stream<({KerriganMasternode mn, Object? error})> voteOnProposalWith({
+    required KerriganProposal proposal,
+    required List<KerriganMasternode> masternodes,
+    required KerriganVote vote,
+  }) async* {
+    coinlib.HDPrivateKey? root;
+    for (final mn in masternodes) {
+      Object? error;
+      try {
+        if (votingProblem(mn) == null) root ??= await getRootHDNode();
+        await voteOnProposal(
+          proposal: proposal,
+          mn: mn,
+          vote: vote,
+          root: root,
+        );
+      } catch (e) {
+        error = e;
+      }
+      yield (mn: mn, error: error);
     }
   }
 
