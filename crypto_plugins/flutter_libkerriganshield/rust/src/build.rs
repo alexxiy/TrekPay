@@ -38,9 +38,12 @@ const TRANSPARENT_OUTPUT_SIZE: usize = 34;
 const SAPLING_TX_OVERHEAD: usize = 120;
 /// Minimum relay fee: 1 sat per byte.
 const MIN_RELAY_FEE_PER_BYTE: u64 = 1;
-/// Transparent change below this is dust (Kerrigan Core `IsDust` for
-/// P2PKH at the 3000 sat/kB dust relay fee) and goes to the fee instead.
+/// Transparent outputs below this are dust (Kerrigan Core `IsDust` for
+/// P2PKH at the 3000 sat/kB dust relay fee): change that small goes to the
+/// fee instead, and a payment that small is refused.
 const DUST: u64 = 546;
+/// The node won't relay a transparent payment below [DUST].
+const BELOW_DUST: &str = "Amount after the fee is below the dust limit";
 /// Shield outputs are padded to at least two.
 const MIN_SHIELD_OUTPUTS: usize = 2;
 
@@ -241,6 +244,9 @@ fn spend_notes(
         return Err("Not enough balance".into());
     }
     let change = selection.settle(total - extra_total, &mut amount, fee)?;
+    if matches!(to, Destination::Transparent(_)) && amount < DUST {
+        return Err(BELOW_DUST.into());
+    }
 
     let ovk = dfvk.to_ovk(Scope::External);
     let mut vout = Vec::new();

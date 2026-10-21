@@ -205,6 +205,29 @@ fn transaction_checks_run_before_proving() {
     memo_to_t["to_address"] = json!("yeiahYKSYceWZji4SMJ6sQSTYsyELJxf1T");
     memo_to_t["memo"] = json!("hi");
     assert!(call_err("create_transaction", memo_to_t).contains("memo"));
+
+    // A transparent payment below the dust limit, as asked or once the
+    // fee (25000: one spend, two shield outputs) is taken from it.
+    let mut to_t = base.clone();
+    to_t["to_address"] = json!("yeiahYKSYceWZji4SMJ6sQSTYsyELJxf1T");
+    to_t["amount"] = json!(545);
+    assert!(call_err("create_transaction", to_t.clone()).contains("below the dust limit"));
+    let mut after_fee = to_t.clone();
+    after_fee["amount"] = json!(25_300);
+    after_fee["subtract_fee"] = json!(true);
+    assert!(call_err("create_transaction", after_fee).contains("below the dust limit"));
+    // At the limit it goes on to proving (whatever that answers here).
+    let mut at_limit = to_t;
+    at_limit["amount"] = json!(546);
+    if let Err(e) = dispatch("create_transaction", &at_limit.to_string()) {
+        assert!(!e.contains("dust"), "{e}");
+    }
+    // A shield address takes any amount.
+    let mut small_to_shield = base;
+    small_to_shield["amount"] = json!(545);
+    if let Err(e) = dispatch("create_transaction", &small_to_shield.to_string()) {
+        assert!(!e.contains("dust"), "{e}");
+    }
 }
 
 #[test]
