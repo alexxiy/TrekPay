@@ -15,7 +15,7 @@ namespace {
 bool IsPaymentLink(const wchar_t* command_line) {
   if (command_line == nullptr) return false;
   while (*command_line == L' ' || *command_line == L'"') command_line++;
-  return _wcsnicmp(command_line, L"kerrigan:", 5) == 0;
+  return _wcsnicmp(command_line, L"kerrigan:", 9) == 0;
 }
 
 // Open kerrigan: links with this app, unless another installed app (e.g. Kerrigan
