@@ -7,6 +7,7 @@ import '../../themes/stack_colors.dart';
 import '../../utilities/amount/amount_formatter.dart';
 import '../../utilities/block_explorers.dart';
 import '../../utilities/text_styles.dart';
+import '../../utilities/util.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../widgets/background.dart';
 import '../../widgets/block_explorer_link.dart';
@@ -385,6 +386,7 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                 if (canVote)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    // Three buttons fit a phone only with the short labels.
                     child: Row(
                       children: [
                         Expanded(
@@ -396,14 +398,16 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: SecondaryButton(
-                            label: l10n.govVoteNo,
+                            label: Util.isDesktop ? l10n.govVoteNo : l10n.govNo,
                             onPressed: () => _vote(KerriganVote.no),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: PrimaryButton(
-                            label: l10n.govVoteYes,
+                            label: Util.isDesktop
+                                ? l10n.govVoteYes
+                                : l10n.govYes,
                             onPressed: () => _vote(KerriganVote.yes),
                           ),
                         ),
