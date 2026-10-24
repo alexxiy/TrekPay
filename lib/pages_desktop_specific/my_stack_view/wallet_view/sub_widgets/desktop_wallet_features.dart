@@ -35,7 +35,6 @@ import '../../../../widgets/desktop/desktop_dialog_close_button.dart';
 import '../../../../widgets/desktop/primary_button.dart';
 import '../../../../widgets/desktop/secondary_button.dart';
 import '../../../../widgets/static_overflow_row/static_overflow_row.dart';
-import '../../../../widgets/wallet_navigation_bar/components/wallet_navigation_bar_item.dart';
 import '../../../coin_control/desktop_coin_control_view.dart';
 import '../../../../pages/kerrigan_governance/kerrigan_governance_view.dart';
 import '../../../../pages/kerrigan_masternodes/kerrigan_masternodes_view.dart';
