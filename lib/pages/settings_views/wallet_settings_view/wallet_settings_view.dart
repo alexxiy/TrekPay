@@ -276,14 +276,6 @@ class _WalletSettingsViewState extends ConsumerState<WalletSettingsView> {
             ),
             const SizedBox(height: 8),
             SettingsListButton(
-              iconAssetName: Assets.svg.pencil,
-              iconSize: 16,
-              title: l10n.signTitle,
-              onPressed: () => Navigator.of(context)
-                  .pushNamed(SignMessageView.routeName, arguments: walletId),
-            ),
-            const SizedBox(height: 8),
-            SettingsListButton(
               iconAssetName: Assets.svg.downloadFolder,
               title: l10n.walletSettings,
               iconSize: 16,
