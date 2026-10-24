@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/l10n.dart';
 import '../../notifications/show_flush_bar.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../themes/stack_colors.dart';
@@ -153,7 +154,7 @@ class _KerriganMasternodeDetailsViewState
     );
     if (!mounted) return;
     if (tx == null) {
-      await _warn(error ?? "Couldn't build the transaction");
+      await _warn(error ?? l10n.mnBuildFailed);
       return;
     }
     final fee = ref.read(pAmountFormatter(wallet.cryptoCurrency)).format(
@@ -163,13 +164,13 @@ class _KerriganMasternodeDetailsViewState
       context: context,
       builder: (context) => StackDialog(
         title: title,
-        message: "$message\n\nNetwork fee: $fee",
+        message: "$message\n\n${l10n.mnNetworkFee(fee)}",
         leftButton: SecondaryButton(
-          label: "Cancel",
+          label: l10n.commonCancel,
           onPressed: () => Navigator.of(context).pop(false),
         ),
         rightButton: PrimaryButton(
-          label: "Send",
+          label: l10n.commonSend,
           onPressed: () => Navigator.of(context).pop(true),
         ),
       ),
@@ -179,21 +180,21 @@ class _KerriganMasternodeDetailsViewState
     if (!await authorizeSpend(
       context,
       coin: wallet.cryptoCurrency,
-      reason: "Authenticate to send the masternode transaction",
+      reason: l10n.mnAuthReason,
     )) {
-      if (mounted) await _warn("Not authorised");
+      if (mounted) await _warn(l10n.mnNotAuthorised);
       return;
     }
     if (!mounted) return;
     final sent = await showLoading<KerriganMasternode>(
       whileFuture: wallet.sendProviderTx(tx),
       context: context,
-      message: "Sending",
+      message: l10n.txSending,
       onException: (e) => error = e,
     );
     if (!mounted) return;
     if (sent == null) {
-      await _warn(error ?? "Couldn't send the transaction");
+      await _warn(error ?? l10n.mnSendFailed);
       return;
     }
     _serviceController.text = sent.service ?? "";
@@ -222,42 +223,39 @@ class _KerriganMasternodeDetailsViewState
     if (service == null) return;
     final host = _useHostKey ? _hostKeyController.text.trim() : null;
     if (_useHostKey && !_wallet.isValidOperatorPublicKey(host ?? "")) {
-      await _warn("Paste a valid operator public key (96 hex characters)");
+      await _warn(l10n.mnPasteOperatorKey);
       return;
     }
     _serviceFocus.unfocus();
     await _providerTx(
-      building: "Preparing the registration",
+      building: l10n.mnPreparingRegistration,
       build: () => _wallet.prepareMasternodeRegistration(
         mn,
         service: service,
         hostOperatorKey: host,
       ),
-      title: "Register ${mn.label}?",
+      title: l10n.mnRegisterTitle(mn.label),
       message: service.isEmpty
-          ? "The masternode goes on the network without a server; it "
-                "earns nothing until its server is set."
-          : "The masternode goes on the network with server $service.",
-      done:
-          "Registration sent. The masternode is listed once the "
-          "transaction is in a block.",
+          ? l10n.mnRegisterNoServer
+          : l10n.mnRegisterWithServer(service),
+      done: l10n.mnRegistrationSent,
     );
   }
 
   Future<void> _updateService(KerriganMasternode mn) async {
     final service = _service();
     if (service == null || service.isEmpty) {
-      if (service != null) await _warn("Enter the server's IP address");
+      if (service != null) await _warn(l10n.mnEnterIp);
       return;
     }
     _serviceFocus.unfocus();
     await _providerTx(
-      building: "Preparing the update",
+      building: l10n.mnPreparingUpdate,
       build: () =>
           _wallet.prepareMasternodeServiceUpdate(mn, service: service),
-      title: "Set the server",
-      message: "${mn.label} will be served by $service.",
-      done: "Update sent. It takes effect once in a block.",
+      title: l10n.mnSetServerTitle,
+      message: l10n.mnServedBy(mn.label, service),
+      done: l10n.mnUpdateSent,
     );
   }
 
@@ -271,27 +269,27 @@ class _KerriganMasternodeDetailsViewState
     );
     if (hostKey == null || !mounted) return;
     await _providerTx(
-      building: "Preparing the change",
+      building: l10n.mnPreparingChange,
       build: () => _wallet.prepareMasternodeOperatorChange(
         mn,
         hostOperatorKey: hostKey.isEmpty ? null : hostKey,
       ),
-      title: "Change the operator key",
-      message:
-          "The masternode stops until its server is set again with the new "
-          "key${hostKey.isEmpty ? " (do it here once this change is in a block)" : " (your host does that)"}.",
-      done: "Change sent. Set the server once it is in a block.",
+      title: l10n.mnChangeOperatorTitle,
+      message: hostKey.isEmpty
+          ? l10n.mnChangeOperatorOwn
+          : l10n.mnChangeOperatorHost,
+      done: l10n.mnChangeSent,
     );
   }
 
   /// Copies [text], which holds the operator secret key.
-  Future<void> _copy(String text, [String what = "Copied to clipboard"]) async {
+  Future<void> _copy(String text, [String? what]) async {
     await const ClipboardWrapper().setSecret(text);
     if (mounted) {
       unawaited(
         showFloatingFlushBar(
           type: FlushBarType.info,
-          message: what,
+          message: what ?? l10n.commonCopiedToClipboard,
           context: context,
         ),
       );
@@ -305,14 +303,17 @@ class _KerriganMasternodeDetailsViewState
     final ok = await authenticateUser(
       context,
       coin: _wallet.cryptoCurrency,
-      title: "Show operator key",
-      reason: "Unlock to show the masternode's operator secret key",
+      title: l10n.mnShowOperatorKey,
+      reason: l10n.mnShowOperatorKeyReason,
     );
     if (ok && mounted) setState(() => _showSecret = true);
     return ok;
   }
 
   static const _hiddenSecret = "••••••••••••••••••••";
+
+  /// Shorter in config lines, which then fit a phone's width.
+  static const _hiddenSecretInCode = "••••••••••••";
 
   Widget _row(String label, String value, {bool secret = false}) {
     final colors = Theme.of(context).extension<StackColors>()!;
@@ -340,7 +341,7 @@ class _KerriganMasternodeDetailsViewState
             ),
             if (secret)
               CustomTextButton(
-                text: _showSecret ? "Hide" : "Show",
+                text: _showSecret ? l10n.commonHide : l10n.commonShow,
                 onTap: _showSecret
                     ? () => setState(() => _showSecret = false)
                     : _revealSecret,
@@ -365,7 +366,7 @@ class _KerriganMasternodeDetailsViewState
         children: [
           Expanded(
             child: SelectableText(
-              code(_showSecret ? secret : _hiddenSecret),
+              code(_showSecret ? secret : _hiddenSecretInCode),
               style: STextStyles.w500_12(context)
                   .copyWith(fontFamily: "monospace", color: colors.textDark),
             ),
@@ -374,7 +375,7 @@ class _KerriganMasternodeDetailsViewState
           if (_showSecret)
             IconCopyButton(data: code(secret), secret: true)
           else
-            CustomTextButton(text: "Show", onTap: _revealSecret),
+            CustomTextButton(text: l10n.commonShow, onTap: _revealSecret),
         ],
       ),
     );
@@ -435,16 +436,16 @@ class _KerriganMasternodeDetailsViewState
     final key = _hostKeyController.text.trim();
     return key.isEmpty || _wallet.isValidOperatorPublicKey(key)
         ? null
-        : "Not an operator public key (96 hex characters)";
+        : l10n.mnNotOperatorKey;
   }
 
   Future<void> _showHostingDetails(KerriganMasternode mn) async {
     final colors = Theme.of(context).extension<StackColors>()!;
     final secret = _keys?.operator?.secret;
     final all = [
-      "Collateral transaction: ${mn.txid}",
-      "Output index: ${mn.vout}",
-      if (secret != null) "Masternode key (operator secret): $secret",
+      "${l10n.mnCollateralTx}: ${mn.txid}",
+      "${l10n.mnOutputIndex}: ${mn.vout}",
+      if (secret != null) "${l10n.mnOperatorSecretForHost}: $secret",
     ].join("\n");
     await showModalBottomSheet<void>(
       context: context,
@@ -464,37 +465,29 @@ class _KerriganMasternodeDetailsViewState
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                "Host on masternode.space",
+                l10n.mnHostTitle,
                 style: STextStyles.pageTitleH2(context),
               ),
               const SizedBox(height: 8),
               Text(
                 secret != null
-                    ? "Give masternode.space these values when you add the "
-                          "masternode there. Your collateral never leaves "
-                          "this wallet. They tell you the server's IP "
-                          "address: enter it on this page to register the "
-                          "masternode (or to update its server)."
-                    : "Give masternode.space the collateral transaction "
-                          "and output index. Ask them for the server's IP "
-                          "address and its operator public key, then "
-                          "register the masternode on this page with "
-                          "\"My host gave me an operator key\".",
+                    ? l10n.mnHostTextKerrigan
+                    : l10n.mnHostTextHostKey(l10n.mnHostGaveKey),
                 style: STextStyles.itemSubtitle(context),
               ),
               const SizedBox(height: 16),
-              _row("Collateral transaction", mn.txid),
-              _row("Output index", "${mn.vout}"),
+              _row(l10n.mnCollateralTx, mn.txid),
+              _row(l10n.mnOutputIndex, "${mn.vout}"),
               if (secret != null)
-                _row("Masternode key (operator secret)", secret, secret: true),
+                _row(l10n.mnOperatorSecretForHost, secret, secret: true),
               const SizedBox(height: 8),
               SecondaryButton(
-                label: "Copy all",
-                onPressed: () => _copy(all, "Hosting details copied"),
+                label: l10n.mnCopyAll,
+                onPressed: () => _copy(all, l10n.mnHostingCopied),
               ),
               const SizedBox(height: 8),
               PrimaryButton(
-                label: "Open masternode.space",
+                label: l10n.mnOpenMasternodeSpace,
                 onPressed: () => launchUrl(
                   Uri.parse(_kMasternodeSpaceUrl),
                   mode: LaunchMode.externalApplication,
@@ -512,17 +505,14 @@ class _KerriganMasternodeDetailsViewState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => StackDialog(
-        title: "Remove masternode?",
-        message:
-            "Astronaut forgets this masternode and unfreezes its collateral, "
-            "so it can be spent. Spending the collateral ends the masternode "
-            "on the network.",
+        title: l10n.mnRemoveTitle,
+        message: l10n.mnRemoveTextKerrigan,
         leftButton: SecondaryButton(
-          label: "Cancel",
+          label: l10n.commonCancel,
           onPressed: () => Navigator.of(context).pop(false),
         ),
         rightButton: PrimaryButton(
-          label: "Remove",
+          label: l10n.commonRemove,
           onPressed: () => Navigator.of(context).pop(true),
         ),
       ),
@@ -556,17 +546,13 @@ class _KerriganMasternodeDetailsViewState
     final brood = mn.type == KerriganMasternodeType.broodNode;
     return [
       _section(
-        "Register on the network",
-        subtitle:
-            "Registering puts the masternode on the network with its "
-            "server's address and the operator key the server runs with. "
-            "Get the server ready first (see below); you may also register "
-            "now without a server and set it later.",
+        l10n.mnRegisterSection,
+        subtitle: l10n.mnRegisterSectionText,
         [
           _field(
             controller: _serviceController,
             focus: _serviceFocus,
-            hint: "Server IP, e.g. 203.0.113.5",
+            hint: l10n.mnServerIpExample,
             error: _serviceError,
             keyboardType: TextInputType.url,
           ),
@@ -577,24 +563,20 @@ class _KerriganMasternodeDetailsViewState
                 Expanded(
                   child: Text(
                     _useHostKey
-                        ? "Operator key from my host"
-                        : "Operator key made by this wallet",
+                        ? l10n.mnOperatorFromHost
+                        : l10n.mnOperatorFromWallet,
                     style: STextStyles.smallMed12(context),
                   ),
                 ),
                 CustomTextButton(
-                  text: _useHostKey
-                      ? "Make one here"
-                      : "My host gave me an operator key",
+                  text: _useHostKey ? l10n.mnMakeOneHere : l10n.mnHostGaveKey,
                   onTap: () => setState(() => _useHostKey = !_useHostKey),
                 ),
               ],
             )
           else
             Text(
-              "A BroodNode registers with its server's identity key: run "
-              "\"kerrigan-cli gethmpidentity\" on the server and paste the "
-              "identity here.",
+              l10n.mnBroodNodeRegisterText,
               style: STextStyles.itemSubtitle(context),
             ),
           const SizedBox(height: 8),
@@ -602,18 +584,17 @@ class _KerriganMasternodeDetailsViewState
             _field(
               controller: _hostKeyController,
               focus: _hostKeyFocus,
-              hint: "Operator public key (96 hex characters)",
+              hint: l10n.mnOperatorKeyHint,
               error: _hostKeyError,
             )
           else
             Text(
-              "The server runs with this wallet's operator secret key "
-              "(shown below). Restoring this wallet brings it back.",
+              l10n.mnOperatorWalletText,
               style: STextStyles.itemSubtitle(context),
             ),
           const SizedBox(height: 12),
           PrimaryButton(
-            label: "Register masternode",
+            label: l10n.mnRegister,
             enabled:
                 !wallet.isViewOnly &&
                 _serviceError == null &&
@@ -637,27 +618,26 @@ class _KerriganMasternodeDetailsViewState
         state?.status == KerriganMasternodeStatus.banned;
     return [
       _section(
-        "Server",
+        l10n.mnServer,
         subtitle: mn.walletOperates
             ? needsServer
-                  ? "Enter the server's address to ${state?.status == KerriganMasternodeStatus.banned ? "revive the masternode" : "start the masternode"}. "
-                        "The server must run Kerrigan Core with this "
-                        "masternode's operator secret key."
-                  : "Moved to another server? Enter its address."
-            : "Your host holds this masternode's operator key and sets its "
-                  "server.",
+                  ? state?.status == KerriganMasternodeStatus.banned
+                        ? l10n.mnServerRevive
+                        : l10n.mnServerStart
+                  : l10n.mnServerMoved
+            : l10n.mnHostSetsServerNote,
         [
           if (mn.walletOperates) ...[
             _field(
               controller: _serviceController,
               focus: _serviceFocus,
-              hint: "Server IP, e.g. 203.0.113.5",
+              hint: l10n.mnServerIpExample,
               error: _serviceError,
               keyboardType: TextInputType.url,
             ),
             const SizedBox(height: 10),
             PrimaryButton(
-              label: needsServer ? "Set server" : "Update server",
+              label: needsServer ? l10n.mnSetServer : l10n.mnUpdateServer,
               enabled:
                   !wallet.isViewOnly &&
                   _serviceController.text.trim().isNotEmpty &&
@@ -666,20 +646,18 @@ class _KerriganMasternodeDetailsViewState
             ),
           ] else
             Text(
-              state?.service ?? "Not set",
+              state?.service ?? l10n.mnNotSet,
               style: STextStyles.w600_14(context),
             ),
         ],
       ),
       if (mn.keyIndex != null)
         _section(
-          "Operator",
-          subtitle:
-              "Moving to another host, or a key that leaked? Give the "
-              "masternode a new operator key.",
+          l10n.mnOperator,
+          subtitle: l10n.mnOperatorText,
           [
             SecondaryButton(
-              label: "Change operator key",
+              label: l10n.mnChangeOperator,
               enabled: !wallet.isViewOnly,
               onPressed: () => _changeOperator(mn),
             ),
@@ -704,7 +682,7 @@ class _KerriganMasternodeDetailsViewState
         backgroundColor: colors.background,
         appBar: PageAppBar(
           title: Text(
-            mn == null || mn.label.isEmpty ? "Masternode" : mn.label,
+            mn == null || mn.label.isEmpty ? l10n.mnMasternode : mn.label,
             style: STextStyles.navBarTitle(context),
           ),
         ),
@@ -747,7 +725,7 @@ class _KerriganMasternodeDetailsViewState
                                   ),
                                   const SizedBox(width: 8),
                                   CustomTextButton(
-                                    text: "Refresh",
+                                    text: l10n.commonRefresh,
                                     onTap: _refresh,
                                   ),
                                 ],
@@ -756,10 +734,20 @@ class _KerriganMasternodeDetailsViewState
                                   state.registeredHeight > 0) ...[
                                 const SizedBox(height: 8),
                                 Text(
-                                  "Registered at block "
-                                  "${state.registeredHeight} · last paid "
-                                  "${state.lastPaidHeight > 0 ? kerriganBlocksAgo(height, state.lastPaidHeight, blockSeconds) : "not yet"}"
-                                  "${state.posePenalty > 0 ? " · PoSe penalty ${state.posePenalty}" : ""}",
+                                  [
+                                    l10n.mnRegisteredLastPaid(
+                                      state.registeredHeight,
+                                      state.lastPaidHeight > 0
+                                          ? kerriganBlocksAgo(
+                                              height,
+                                              state.lastPaidHeight,
+                                              blockSeconds,
+                                            )
+                                          : l10n.mnNotYet,
+                                    ),
+                                    if (state.posePenalty > 0)
+                                      l10n.mnPosePenalty(state.posePenalty),
+                                  ].join(" · "),
                                   style: STextStyles.itemSubtitle(context),
                                 ),
                               ],
@@ -767,8 +755,7 @@ class _KerriganMasternodeDetailsViewState
                                   KerriganMasternodeStatus.revoked) ...[
                                 const SizedBox(height: 8),
                                 Text(
-                                  "Its operator stopped serving it. Give it "
-                                  "a new operator key below.",
+                                  l10n.mnRevokedText,
                                   style: STextStyles.itemSubtitle(context),
                                 ),
                               ],
@@ -782,19 +769,17 @@ class _KerriganMasternodeDetailsViewState
                           ..._registeredSections(mn, state),
                         const SizedBox(height: 16),
                         Text(
-                          "Easiest: host it on masternode.space",
+                          l10n.mnEasiest,
                           style: STextStyles.w600_14(context),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "masternode.space runs the server for you: no "
-                          "server to rent, set up or keep online. Your "
-                          "collateral stays in this wallet.",
+                          l10n.mnEasiestTextKerrigan,
                           style: STextStyles.itemSubtitle(context),
                         ),
                         const SizedBox(height: 12),
                         PrimaryButton(
-                          label: "Show what masternode.space needs",
+                          label: l10n.mnShowWhatNeeded,
                           onPressed: () async {
                             if ((_keys?.operator?.secret == null ||
                                     await _revealSecret()) &&
@@ -805,29 +790,30 @@ class _KerriganMasternodeDetailsViewState
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          "Or run it on your own server",
+                          l10n.mnOwnServer,
                           style: STextStyles.w600_14(context),
                         ),
                         const SizedBox(height: 8),
                         if (mn.type == KerriganMasternodeType.broodNode)
                           Text(
-                            "Install Kerrigan Core on the server and open "
-                            "port ${wallet.masternodePortOf(mn.service ?? state?.service)}. "
-                            "Register with "
-                            "the identity \"kerrigan-cli gethmpidentity\" "
-                            "prints there, following Kerrigan's BroodNode "
-                            "guide for the server's settings.",
+                            l10n.mnOwnServerBroodNode(
+                              wallet.masternodePortOf(
+                                mn.service ?? state?.service,
+                              ),
+                            ),
                             style: STextStyles.itemSubtitle(context),
                           )
                         else if (operatorSecret != null) ...[
                           Text(
-                            "Install Kerrigan Core on the server, put these "
-                            "lines in its kerrigan.conf"
-                            "${(mn.service ?? state?.service) == null ? " (replace YOUR_SERVER_IP with its public IP)" : ""}, "
-                            "open port ${wallet.masternodePortOf(mn.service ?? state?.service)} "
-                            "and restart "
-                            "kerrigand. Then register the masternode (or "
-                            "set its server) above.",
+                            (mn.service ?? state?.service) == null
+                                ? l10n.mnOwnServerTextReplaceIp(
+                                    wallet.masternodePortOf(null),
+                                  )
+                                : l10n.mnOwnServerText(
+                                    wallet.masternodePortOf(
+                                      mn.service ?? state?.service,
+                                    ),
+                                  ),
                             style: STextStyles.itemSubtitle(context),
                           ),
                           const SizedBox(height: 8),
@@ -840,49 +826,46 @@ class _KerriganMasternodeDetailsViewState
                           ),
                         ] else
                           Text(
-                            "This masternode's operator key comes from its "
-                            "host. To run it yourself, give it a new "
-                            "operator key made by this wallet (\"Change "
-                            "operator key\").",
+                            l10n.mnOperatorFromHostText(l10n.mnChangeOperator),
                             style: STextStyles.itemSubtitle(context),
                           ),
                         const SizedBox(height: 24),
-                        _row("Collateral address", mn.address),
-                        _row("Collateral transaction", mn.txid),
-                        _row("Output index", "${mn.vout}"),
+                        _row(l10n.mnCollateralAddress, mn.address),
+                        _row(l10n.mnCollateralTx, mn.txid),
+                        _row(l10n.mnOutputIndex, "${mn.vout}"),
                         _row(
-                          "Payout address",
+                          l10n.mnPayoutAddress,
                           state?.payoutAddress ?? mn.payoutAddress,
                         ),
                         if (mn.proTxHash != null)
-                          _row("Registration transaction", mn.proTxHash!),
+                          _row(l10n.mnRegistrationTx, mn.proTxHash!),
                         if ((state?.ownerAddress ?? _keys?.owner ?? "")
                             .isNotEmpty)
                           _row(
-                            "Owner address",
+                            l10n.mnOwnerAddress,
                             state?.ownerAddress ?? _keys!.owner,
                           ),
                         if ((state?.votingAddress ?? _keys?.voting ?? "")
                             .isNotEmpty)
                           _row(
-                            "Voting address",
+                            l10n.mnVotingAddress,
                             state?.votingAddress ?? _keys!.voting,
                           ),
                         if ((state?.operatorPublicKey ?? operatorPublic) !=
                             null)
                           _row(
-                            "Operator public key",
+                            l10n.mnOperatorPublicKey,
                             state?.operatorPublicKey ?? operatorPublic!,
                           ),
                         if (operatorSecret != null)
                           _row(
-                            "Operator secret key",
+                            l10n.mnOperatorSecretKey,
                             operatorSecret,
                             secret: true,
                           ),
                         const SizedBox(height: 16),
                         SecondaryButton(
-                          label: "Remove masternode",
+                          label: l10n.mnRemove,
                           onPressed: () => _remove(mn),
                         ),
                       ],
@@ -941,7 +924,7 @@ class _OperatorSheetState extends State<_OperatorSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text("New operator key", style: STextStyles.pageTitleH2(context)),
+          Text(l10n.mnNewOperatorKey, style: STextStyles.pageTitleH2(context)),
           const SizedBox(height: 12),
           if (!brood) ...[
             RadioListTile<bool>(
@@ -950,11 +933,11 @@ class _OperatorSheetState extends State<_OperatorSheet> {
               activeColor: colors.radioButtonIconEnabled,
               contentPadding: EdgeInsets.zero,
               title: Text(
-                "Make a new one in this wallet",
+                l10n.mnMakeNewOperator,
                 style: STextStyles.w600_14(context),
               ),
               subtitle: Text(
-                "For your own server: put its secret in kerrigan.conf.",
+                l10n.mnMakeNewOperatorText,
                 style: STextStyles.itemSubtitle(context),
               ),
               onChanged: (v) => setState(() => _host = v!),
@@ -965,15 +948,14 @@ class _OperatorSheetState extends State<_OperatorSheet> {
               activeColor: colors.radioButtonIconEnabled,
               contentPadding: EdgeInsets.zero,
               title: Text(
-                "Use my host's key",
+                l10n.mnUseHostKey,
                 style: STextStyles.w600_14(context),
               ),
               onChanged: (v) => setState(() => _host = v!),
             ),
           ] else
             Text(
-              "Paste the identity \"kerrigan-cli gethmpidentity\" prints on "
-              "the BroodNode's server.",
+              l10n.mnPasteIdentity,
               style: STextStyles.itemSubtitle(context),
             ),
           if (_host) ...[
@@ -988,7 +970,7 @@ class _OperatorSheetState extends State<_OperatorSheet> {
                 style: STextStyles.field(context),
                 onChanged: (_) => setState(() {}),
                 decoration: standardInputDecoration(
-                  "Operator public key (96 hex characters)",
+                  l10n.mnOperatorKeyHint,
                   _focus,
                   context,
                 ),
@@ -997,7 +979,7 @@ class _OperatorSheetState extends State<_OperatorSheet> {
           ],
           const SizedBox(height: 16),
           PrimaryButton(
-            label: "Continue",
+            label: l10n.commonContinue,
             enabled: !_host || valid,
             onPressed: () =>
                 Navigator.of(context).pop(_host ? key.toLowerCase() : ""),

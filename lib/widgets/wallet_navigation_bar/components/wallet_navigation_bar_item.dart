@@ -23,6 +23,7 @@ class WalletNavigationBarItemData {
     required this.onTap,
     this.isMore = false,
     this.overrideText,
+    this.isNew = false,
   });
 
   final Widget icon;
@@ -30,6 +31,24 @@ class WalletNavigationBarItemData {
   final VoidCallback? onTap;
   final bool isMore;
   final Widget? overrideText;
+
+  /// Marked with a dot (and the More button with it) until opened.
+  final bool isNew;
+}
+
+/// The dot on something new in the wallet's menus.
+class NewItemDot extends StatelessWidget {
+  const NewItemDot({super.key});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 8,
+    height: 8,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Theme.of(context).extension<StackColors>()!.accentColorRed,
+    ),
+  );
 }
 
 class WalletNavigationBarItem extends ConsumerWidget {
@@ -65,16 +84,37 @@ class WalletNavigationBarItem extends ConsumerWidget {
                   SizedBox(
                     width: 24,
                     height: 24,
-                    child: Center(child: data.icon),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Center(child: data.icon),
+                        if (data.isNew)
+                          const Positioned(
+                            top: -1,
+                            right: -3,
+                            child: NewItemDot(),
+                          ),
+                      ],
+                    ),
                   ),
                   const Spacer(),
                   data.overrideText ??
-                      Text(
-                        data.label ?? "",
-                        style: STextStyles.buttonSmall(context).copyWith(
-                          color: Theme.of(context)
-                              .extension<StackColors>()!
-                              .bottomNavText,
+                      // One line, shrunk when a translation is wider than
+                      // the item (a fifth of a 360 px screen), with a gap
+                      // to the next label.
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            data.label ?? "",
+                            maxLines: 1,
+                            style: STextStyles.buttonSmall(context).copyWith(
+                              color: Theme.of(context)
+                                  .extension<StackColors>()!
+                                  .bottomNavText,
+                            ),
+                          ),
                         ),
                       ),
                 ],
@@ -119,6 +159,7 @@ class WalletNavigationBarMoreItem extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 10),
+              if (data.isNew) ...[const NewItemDot(), const SizedBox(width: 8)],
               data.icon,
             ],
           ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../services/kerrigan_name/kerrigan_name.dart';
 import '../../services/kerrigan_name/kerrigan_names_protocol.dart';
@@ -97,9 +98,7 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
     if (!isValidKerriganNamesLabel(label) || _name.length > kKerriganNameMaxLength) {
       setState(() {
         _result = null;
-        _error =
-            "Use letters, numbers and single hyphens (not at the start or "
-            "end), up to $kKerriganNameMaxLength characters with the zone.";
+        _error = l10n.kerriganNamesInvalidName(kKerriganNameMaxLength);
       });
       return;
     }
@@ -116,7 +115,7 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
         setState(
           () => _error = e is KerriganNamesException && e.fromServer
               ? e.message
-              : "Couldn't reach Kerrigan.name. Please try again.",
+              : l10n.kerriganNamesUnreachable,
         );
       }
     } finally {
@@ -139,11 +138,12 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
   Future<void> _buy(KerriganNamesListed l) async {
     final ok = await kerriganNamesConfirm(
       context,
-      title: "Buy name",
-      message:
-          "Do you want to buy ${l.name} for "
-          "${kerriganNamesAmount(l.price, ref, _wallet)}?",
-      action: "Buy",
+      title: l10n.kerriganNamesBuyName,
+      message: l10n.kerriganNamesBuyConfirm(
+        kerriganNamesUnbroken(l.name),
+        kerriganNamesAmount(l.price, ref, _wallet),
+      ),
+      action: l10n.kerriganNamesBuy,
     );
     if (!ok || !mounted) return;
     await startKerriganNamesFlow(
@@ -162,9 +162,9 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
   Future<void> _unlist(KerriganNamesListed l) async {
     final ok = await kerriganNamesConfirm(
       context,
-      title: "Unlist from sale",
-      message: "Take ${l.name} off the marketplace?",
-      action: "Unlist",
+      title: l10n.kerriganNamesUnlistTitle,
+      message: l10n.kerriganNamesUnlistConfirm(kerriganNamesUnbroken(l.name)),
+      action: l10n.kerriganNamesUnlist,
     );
     if (!ok || !mounted) return;
     await startKerriganNamesFlow(
@@ -194,13 +194,13 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text("Zone", style: STextStyles.pageTitleH2(context)),
+              Text(l10n.kerriganNamesZone, style: STextStyles.pageTitleH2(context)),
               const SizedBox(height: 8),
               for (final z in kKerriganNameZones)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: KerriganNamesNameText(
-                    "${_label.text.isEmpty ? "name" : _label.text}.$z",
+                    "${_label.text.isEmpty ? l10n.kerriganNamesZoneSample : _label.text}.$z",
                   ),
                   trailing: ".$z" == _zone
                       ? Icon(Icons.check_rounded, color: colors.accentColorBlue)
@@ -288,18 +288,20 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
     return switch (result) {
       KerriganNamesAvailable() => box(
         color: green,
-        text: "is available for ${kerriganNamesAmount(result.price, ref, wallet)}",
-        action: "Get it now",
+        text: l10n.kerriganNamesAvailableFor(
+          kerriganNamesAmount(result.price, ref, wallet),
+        ),
+        action: l10n.kerriganNamesGetItNow,
         onTap: () => _register(result),
       ),
       KerriganNamesListed() => box(
         color: purple,
-        text:
-            "is listed on the marketplace for "
-            "${kerriganNamesAmount(result.price, ref, wallet)}",
+        text: l10n.kerriganNamesListedFor(
+          kerriganNamesAmount(result.price, ref, wallet),
+        ),
         action: result.owner != null && result.owner == _ownKey
-            ? "Unlist it now"
-            : "Buy it now",
+            ? l10n.kerriganNamesUnlistItNow
+            : l10n.kerriganNamesBuyItNow,
         onTap: () => result.owner != null && result.owner == _ownKey
             ? _unlist(result)
             : _buy(result),
@@ -312,7 +314,7 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                "${result.name} is already taken.",
+                l10n.kerriganNamesTaken(kerriganNamesUnbroken(result.name)),
                 style: STextStyles.w600_14(context)
                     .copyWith(color: colors.textError),
               ),
@@ -360,10 +362,10 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
               Text.rich(
                 TextSpan(
                   children: [
-                    const TextSpan(text: "Get your "),
-                    TextSpan(
-                      text: "Kerrigan name",
-                      style: TextStyle(color: colors.accentColorBlue),
+                    ...l10nSpans(
+                      l10n.kerriganNamesGetYourName,
+                      style: const TextStyle(),
+                      bold: TextStyle(color: colors.accentColorBlue),
                     ),
                   ],
                 ),
@@ -372,15 +374,14 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
               ),
               const SizedBox(height: 8),
               Text(
-                "Register an easy name for your Kerrigan address, and getting "
-                "paid is as simple as sharing it.",
+                l10n.kerriganNamesIntro,
                 textAlign: TextAlign.center,
                 style: STextStyles.itemSubtitle(context),
               ),
               const SizedBox(height: 10),
               Center(
                 child: CustomTextButton(
-                  text: "How does it work?",
+                  text: l10n.kerriganNamesHowDoesItWork,
                   onTap: () => showKerriganNamesInfo(context),
                 ),
               ),
@@ -391,7 +392,7 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      "Register your name",
+                      l10n.kerriganNamesRegisterYourName,
                       style: STextStyles.w600_16(context),
                     ),
                     const SizedBox(height: 12),
@@ -424,7 +425,7 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
                         style: STextStyles.field(context),
                         decoration:
                             standardInputDecoration(
-                              "Enter the name you want",
+                              l10n.kerriganNamesEnterName,
                               _focus,
                               context,
                             ).copyWith(
@@ -467,14 +468,14 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
                     const SizedBox(height: 12),
                     _checking
                         ? SecondaryButton(
-                            label: "Checking…",
+                            label: l10n.kerriganNamesChecking,
                             enabled: false,
                             buttonHeight: Util.isDesktop
                                 ? ButtonHeight.l
                                 : null,
                           )
                         : PrimaryButton(
-                            label: "Check",
+                            label: l10n.kerriganNamesCheck,
                             enabled: _label.text.isNotEmpty,
                             buttonHeight: Util.isDesktop
                                 ? ButtonHeight.l

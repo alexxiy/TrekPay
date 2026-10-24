@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 
+import '../../l10n/l10n.dart';
 import '../../models/isar/models/isar_models.dart';
 import '../../models/isar/models/transaction_note.dart';
 import '../../notifications/show_flush_bar.dart';
@@ -51,6 +52,7 @@ import '../../widgets/stack_text_field.dart';
 import '../../widgets/textfield_icon_button.dart';
 import '../pinpad_views/lock_screen_view.dart';
 import '../wallet_view/wallet_view.dart';
+import 'sub_widgets/kerrigan_name_lookup.dart';
 import 'sub_widgets/sending_transaction_dialog.dart';
 
 class ConfirmTransactionView extends ConsumerStatefulWidget {
@@ -97,8 +99,9 @@ class _ConfirmTransactionViewState
     if (widget.kerriganName != null) return widget.kerriganName!.name;
     final address = widget.txData.recipients?.firstOrNull?.address ?? "";
     return isKerriganOpReturn(address)
-        ? "Proposal fee, burnt (proposal "
-              "${address.substring(kKerriganOpReturnPrefix.length, kKerriganOpReturnPrefix.length + 16)}…)"
+        ? l10n.sendProposalFeeBurnt(
+            "${address.substring(kKerriganOpReturnPrefix.length, kKerriganOpReturnPrefix.length + 16)}…",
+          )
         : address;
   }
 
@@ -115,7 +118,7 @@ class _ConfirmTransactionViewState
         ),
         const SizedBox(height: 4),
         Text(
-          "Checked against the Kerrigan.name registry on BNB Smart Chain",
+          l10n.sendNameChecked,
           style: style.copyWith(color: colors.textSubtitle2, fontSize: 12),
         ),
       ],
@@ -140,12 +143,11 @@ class _ConfirmTransactionViewState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        Text("Change: $amount to", style: style.copyWith(color: color)),
+        Text(l10n.sendChangeTo(amount), style: style.copyWith(color: color)),
         SelectableText(change.address, style: style.copyWith(color: color)),
         const SizedBox(height: 4),
         Text(
-          "This change address isn't one of this wallet's, so the change "
-          "goes to whoever owns it.",
+          l10n.sendForeignChange,
           style: style.copyWith(color: color, fontSize: 12),
         ),
       ],
@@ -164,29 +166,25 @@ class _ConfirmTransactionViewState
     if (resolver == null ||
         recipients.length != 1 ||
         recipients.first.address != checked.address) {
-      throw _NotSent("This payment doesn't match the address $name points to.");
+      throw _NotSent(l10n.sendNameMismatch(name));
     }
     final KerriganNameLookup now;
     try {
       now = await resolver.lookup(name);
     } on KerriganNameException catch (e) {
-      throw _NotSent("Couldn't check $name again before sending. $e");
+      throw _NotSent(
+        l10n.sendNameRecheckFailed(name, kerriganNameErrorText(e, detail: true)),
+      );
     }
     switch (now) {
       case KerriganNameVerified(:final address) when address == checked.address:
         return;
       case KerriganNameVerified():
-        throw _NotSent(
-          "$name now points to a different address than the one shown. Go "
-          "back and preview the payment again to see the new address.",
-        );
+        throw _NotSent(l10n.sendNameChanged(name));
       case KerriganNameIndexerBehind():
-        throw _NotSent(
-          "Kerrigan.name is processing a registry update, so $name can't be "
-          "checked right now. Try again in a few minutes.",
-        );
+        throw _NotSent(l10n.sendNameBehind(name));
       case KerriganNameNotRegistered():
-        throw _NotSent("$name is no longer registered on Kerrigan.name.");
+        throw _NotSent(l10n.sendNameGone(name));
     }
   }
 
@@ -261,8 +259,8 @@ class _ConfirmTransactionViewState
       await time;
     } catch (e, s) {
       final message = e is _NotSent
-          ? "Not sent"
-          : "Broadcast transaction failed";
+          ? l10n.sendNotSent
+          : l10n.sendBroadcastFailed;
       Logging.instance.e(message, error: e, stackTrace: s);
       // pop sending dialog
       if (context.mounted) {
@@ -299,7 +297,7 @@ class _ConfirmTransactionViewState
                           Expanded(
                             child: PrimaryButton(
                               buttonHeight: ButtonHeight.l,
-                              label: "Ok",
+                              label: l10n.commonOk,
                               onPressed: Navigator.of(context).pop,
                             ),
                           ),
@@ -318,7 +316,7 @@ class _ConfirmTransactionViewState
                       .extension<StackColors>()!
                       .getSecondaryEnabledButtonStyle(context),
                   child: Text(
-                    "Ok",
+                    l10n.commonOk,
                     style: STextStyles.button(context).copyWith(
                       color: Theme.of(context)
                           .extension<StackColors>()!
@@ -430,7 +428,7 @@ class _ConfirmTransactionViewState
               },
             ),
             title: Text(
-              "Confirm transaction",
+              l10n.sendConfirmTransaction,
               style: STextStyles.navBarTitle(context),
             ),
           ),
@@ -472,7 +470,7 @@ class _ConfirmTransactionViewState
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 Text(
-                  "Confirm $unit transaction",
+                  l10n.sendConfirmUnitTransaction(unit),
                   style: STextStyles.desktopH3(context),
                 ),
               ],
@@ -488,14 +486,17 @@ class _ConfirmTransactionViewState
               Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text("Send $unit", style: STextStyles.pageTitleH1(context)),
+                  Text(
+                    l10n.sendUnit(unit),
+                    style: STextStyles.pageTitleH1(context),
+                  ),
                   const SizedBox(height: 12),
                   RoundedWhiteContainer(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          "Recipient",
+                          l10n.sendRecipient,
                           style: STextStyles.smallMed12(context),
                         ),
                         const SizedBox(height: 4),
@@ -523,7 +524,10 @@ class _ConfirmTransactionViewState
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text("Amount", style: STextStyles.smallMed12(context)),
+                        Text(
+                          l10n.commonAmount,
+                          style: STextStyles.smallMed12(context),
+                        ),
                         SelectableText(
                           ref
                               .watch(pAmountFormatter(coin))
@@ -540,7 +544,7 @@ class _ConfirmTransactionViewState
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Transaction fee",
+                          l10n.sendTransactionFee,
                           style: STextStyles.smallMed12(context),
                         ),
                         SelectableText(
@@ -582,7 +586,10 @@ class _ConfirmTransactionViewState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text("Note", style: STextStyles.smallMed12(context)),
+                          Text(
+                            l10n.sendNote,
+                            style: STextStyles.smallMed12(context),
+                          ),
                           const SizedBox(height: 4),
                           SelectableText(
                             widget.txData.note ?? "",
@@ -644,7 +651,7 @@ class _ConfirmTransactionViewState
                               ),
                               const SizedBox(width: 16),
                               Text(
-                                "Send $unit",
+                                l10n.sendUnit(unit),
                                 style: STextStyles.desktopTextMedium(context),
                               ),
                             ],
@@ -658,7 +665,7 @@ class _ConfirmTransactionViewState
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Amount",
+                              l10n.commonAmount,
                               style: STextStyles.desktopTextExtraExtraSmall(
                                 context,
                               ),
@@ -743,7 +750,7 @@ class _ConfirmTransactionViewState
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Send to",
+                              l10n.sendSendTo,
                               style: STextStyles.desktopTextExtraExtraSmall(
                                 context,
                               ),
@@ -787,7 +794,7 @@ class _ConfirmTransactionViewState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SelectableText(
-                      "Note (optional)",
+                      l10n.sendNoteOptional,
                       style: STextStyles.desktopTextExtraSmall(context)
                           .copyWith(
                             color: Theme.of(context)
@@ -818,7 +825,7 @@ class _ConfirmTransactionViewState
                         onChanged: (_) => setState(() {}),
                         decoration:
                             standardInputDecoration(
-                              "Type something...",
+                              l10n.sendTypeSomething,
                               _noteFocusNode,
                               context,
                               desktopMed: true,
@@ -860,7 +867,7 @@ class _ConfirmTransactionViewState
               Padding(
                 padding: const EdgeInsets.only(left: 32),
                 child: Text(
-                  "Transaction fee",
+                  l10n.sendTransactionFee,
                   style: STextStyles.desktopTextExtraExtraSmall(context),
                 ),
               ),
@@ -929,7 +936,9 @@ class _ConfirmTransactionViewState
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      isDesktop ? "Total amount to send" : "Total amount",
+                      isDesktop
+                          ? l10n.sendTotalAmountToSend
+                          : l10n.sendTotalAmount,
                       style: isDesktop
                           ? STextStyles.desktopTextExtraExtraSmall(context)
                                 .copyWith(
@@ -969,7 +978,7 @@ class _ConfirmTransactionViewState
                   ? const EdgeInsets.symmetric(horizontal: 32)
                   : const EdgeInsets.all(0),
               child: PrimaryButton(
-                label: "Send",
+                label: l10n.commonSend,
                 buttonHeight: isDesktop ? ButtonHeight.l : null,
                 onPressed: () async {
                   if (isDesktop) {
@@ -1004,7 +1013,7 @@ class _ConfirmTransactionViewState
                         unawaited(
                           showFloatingFlushBar(
                             type: FlushBarType.warning,
-                            message: "Invalid passphrase",
+                            message: l10n.sendInvalidPassphrase,
                             context: context,
                           ),
                         );
@@ -1016,15 +1025,15 @@ class _ConfirmTransactionViewState
                       RouteGenerator.getRoute<bool>(
                         shouldUseMaterialRoute:
                             RouteGenerator.useMaterialPageRoute,
-                        builder: (_) => const LockscreenView(
+                        builder: (_) => LockscreenView(
                           showBackButton: true,
                           popOnSuccess: true,
                           routeOnSuccessArguments: true,
                           routeOnSuccess: "",
-                          biometricsCancelButtonString: "CANCEL",
-                          biometricsLocalizedReason:
-                              "Authenticate to send transaction",
-                          biometricsAuthenticationTitle: "Confirm Transaction",
+                          biometricsCancelButtonString: l10n.commonCancelCaps,
+                          biometricsLocalizedReason: l10n.sendAuthReason,
+                          biometricsAuthenticationTitle:
+                              l10n.sendConfirmTransactionTitle,
                         ),
                         settings: const RouteSettings(
                           name: "/confirmsendlockscreen",

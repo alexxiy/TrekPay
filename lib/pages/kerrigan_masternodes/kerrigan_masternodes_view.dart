@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/amount/amount.dart';
@@ -86,7 +87,7 @@ class _KerriganMasternodesViewState
       child: Scaffold(
         backgroundColor: colors.background,
         appBar: PageAppBar(
-          title: Text("Masternodes", style: STextStyles.navBarTitle(context)),
+          title: Text(l10n.mnTitle, style: STextStyles.navBarTitle(context)),
         ),
         body: SafeArea(
           child: Padding(
@@ -125,7 +126,7 @@ class _KerriganMasternodesViewState
                 ),
                 const SizedBox(height: 12),
                 PrimaryButton(
-                  label: "Create masternode",
+                  label: l10n.mnCreate,
                   onPressed: () => _open(
                     KerriganCreateMasternodeView.routeName,
                     widget.walletId,
@@ -133,7 +134,7 @@ class _KerriganMasternodesViewState
                 ),
                 const SizedBox(height: 8),
                 SecondaryButton(
-                  label: "Add existing masternode",
+                  label: l10n.mnAddExisting,
                   onPressed: () =>
                       _open(KerriganCreateMasternodeView.routeName, (
                         walletId: widget.walletId,
@@ -164,19 +165,20 @@ class _Empty extends ConsumerWidget {
         Center(child: _MasternodeIcon(color: colors.textSubtitle1, size: 56)),
         const SizedBox(height: 24),
         Text(
-          "No masternodes yet",
+          l10n.mnNoneYet,
           textAlign: TextAlign.center,
           style: STextStyles.pageTitleH2(context),
         ),
         const SizedBox(height: 8),
         Text(
-          "A masternode locks a collateral of "
-          "${fmt.format(wallet.masternodeCollateral(KerriganMasternodeType.regular))} "
-          "in this wallet and earns rewards while a server runs it. The "
-          "collateral stays yours and is frozen so it can't be spent by "
-          "accident. A BroodNode locks "
-          "${fmt.format(wallet.masternodeCollateral(KerriganMasternodeType.broodNode))} "
-          "and votes with four times the weight.",
+          l10n.mnNoneYetText(
+            fmt.format(
+              wallet.masternodeCollateral(KerriganMasternodeType.regular),
+            ),
+            fmt.format(
+              wallet.masternodeCollateral(KerriganMasternodeType.broodNode),
+            ),
+          ),
           textAlign: TextAlign.center,
           style: STextStyles.itemSubtitle(context),
         ),
@@ -245,9 +247,9 @@ class KerriganMasternodesSummary extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
           child: Row(
             children: [
-              stat("Masternodes", "${masternodes.length}"),
-              stat("Enabled", enabled == null ? "…" : "$enabled"),
-              stat("Earned", earned == null ? "…" : fmt.format(earned)),
+              stat(l10n.mnTitle, "${masternodes.length}"),
+              stat(l10n.mnEnabled, enabled == null ? "…" : "$enabled"),
+              stat(l10n.mnEarned, earned == null ? "…" : fmt.format(earned)),
             ],
           ),
         );
@@ -341,23 +343,29 @@ class KerriganMasternodeCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 6),
                 Divider(height: 16, color: colors.backgroundAppBar),
-                row("Server", state?.service ?? mn.service ?? "Not set"),
+                row(l10n.mnServer, state?.service ?? mn.service ?? l10n.mnNotSet),
                 row(
-                  "Collateral",
+                  l10n.mnCollateral,
                   "${fmt.format(wallet.masternodeCollateral(mn.type))} · "
                       "${mn.txid.substring(0, 8)}…:${mn.vout}",
                 ),
                 if (mn.type == KerriganMasternodeType.broodNode)
-                  row("Type", "BroodNode"),
+                  row(l10n.mnType, KerriganMasternodeType.broodNode.label),
                 if (registered)
                   row(
-                    "Last paid",
+                    l10n.mnLastPaid,
                     state.lastPaidHeight > 0
-                        ? "${kerriganBlocksAgo(height, state.lastPaidHeight, wallet.cryptoCurrency.targetBlockTimeSeconds)} "
-                              "(block ${state.lastPaidHeight})"
-                        : "Not yet",
+                        ? l10n.mnPaidAtBlock(
+                            kerriganBlocksAgo(
+                              height,
+                              state.lastPaidHeight,
+                              wallet.cryptoCurrency.targetBlockTimeSeconds,
+                            ),
+                            state.lastPaidHeight,
+                          )
+                        : l10n.mnNotYet,
                   ),
-                if (d != null) row("Earned", fmt.format(d.earned)),
+                if (d != null) row(l10n.mnEarned, fmt.format(d.earned)),
               ],
             ),
           ),
@@ -387,18 +395,26 @@ class _MasternodeIcon extends StatelessWidget {
 
 /// "3 d 4 h", "2 h 15 min", "12 min", "40 s".
 String kerriganDuration(int seconds) {
-  if (seconds < 60) return "${seconds.clamp(0, 59)} s";
+  if (seconds < 60) return l10n.durationSeconds(seconds.clamp(0, 59));
   final m = seconds ~/ 60, h = m ~/ 60, d = h ~/ 24;
-  if (d > 0) return h % 24 > 0 ? "$d d ${h % 24} h" : "$d d";
-  if (h > 0) return m % 60 > 0 ? "$h h ${m % 60} min" : "$h h";
-  return "$m min";
+  if (d > 0) {
+    return h % 24 > 0
+        ? "${l10n.durationDays(d)} ${l10n.durationHours(h % 24)}"
+        : l10n.durationDays(d);
+  }
+  if (h > 0) {
+    return m % 60 > 0
+        ? "${l10n.durationHours(h)} ${l10n.durationMinutes(m % 60)}"
+        : l10n.durationHours(h);
+  }
+  return l10n.durationMinutes(m);
 }
 
 /// "~2 h ago" for block [height] seen from [chainHeight].
 String kerriganBlocksAgo(int chainHeight, int height, int blockSeconds) {
   final blocks = chainHeight - height;
-  if (blocks <= 0) return "Just now";
-  return "~${kerriganDuration(blocks * blockSeconds)} ago";
+  if (blocks <= 0) return l10n.durationJustNow;
+  return l10n.durationAgo("~${kerriganDuration(blocks * blockSeconds)}");
 }
 
 Color kerriganMasternodeStatusColor(

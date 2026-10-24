@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar_community/isar.dart';
 
 import '../../db/isar/main_db.dart';
+import '../../l10n/l10n.dart';
 import '../../models/isar/models/isar_models.dart';
 import '../../notifications/show_flush_bar.dart';
 import '../../providers/global/wallets_provider.dart';
@@ -13,11 +14,13 @@ import '../../themes/stack_colors.dart';
 import '../../utilities/amount/amount.dart';
 import '../../utilities/amount/amount_formatter.dart';
 import '../../utilities/text_styles.dart';
+import '../../utilities/util.dart';
 import '../../wallets/models/tx_data.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../widgets/background.dart';
 import '../../widgets/desktop/desktop_page_column.dart';
 import '../../widgets/desktop/primary_button.dart';
+import '../../widgets/middle_ellipsis_text.dart';
 import '../../widgets/page_app_bar.dart';
 import '../../widgets/rounded_white_container.dart';
 import '../../widgets/secret_screen.dart';
@@ -209,7 +212,7 @@ class _KerriganCreateMasternodeViewState
           address: address,
           type: type,
           funding: _funding,
-          note: "Create masternode $label",
+          note: l10n.mnCreateNote(label),
         );
         return (txData, wallet.collateralVout(txData, address, type));
       },
@@ -335,7 +338,7 @@ class _KerriganCreateMasternodeViewState
             style: STextStyles.field(context),
             onChanged: (_) => setState(() {}),
             decoration: standardInputDecoration(
-              "e.g. MN1",
+              l10n.mnAliasHint,
               _labelFocus,
               context,
             ).copyWith(enabledBorder: border, focusedBorder: border),
@@ -371,13 +374,19 @@ class _KerriganCreateMasternodeViewState
         RoundedWhiteContainer(
           child: Text(
             _findError != null
-                ? "Couldn't look up the network's masternodes: $_findError"
-                : "No masternode registration or unused collateral among "
-                      "this wallet's coins. A collateral is one output of "
-                      "exactly "
-                      "${fmt.format(wallet.masternodeCollateral(KerriganMasternodeType.regular))} "
-                      "or "
-                      "${fmt.format(wallet.masternodeCollateral(KerriganMasternodeType.broodNode))}.",
+                ? l10n.mnLookupFailed(_findError!)
+                : l10n.mnNoExistingFound(
+                    fmt.format(
+                      wallet.masternodeCollateral(
+                        KerriganMasternodeType.regular,
+                      ),
+                    ),
+                    fmt.format(
+                      wallet.masternodeCollateral(
+                        KerriganMasternodeType.broodNode,
+                      ),
+                    ),
+                  ),
             style: STextStyles.itemSubtitle(context),
           ),
         ),
@@ -390,12 +399,19 @@ class _KerriganCreateMasternodeViewState
           group: _picked ?? existing.first,
           onChanged: (v) => setState(() => _picked = v),
           title: e.found != null
-              ? "Registered ${e.found!.type.label}"
-                    "${e.found!.service == null ? "" : " · ${e.found!.service}"}"
-              : "Unused collateral · ${fmt.format(Amount(rawValue: BigInt.from(e.output!.value), fractionDigits: wallet.cryptoCurrency.fractionDigits))}",
+              ? l10n.mnRegisteredType(e.found!.type.label) +
+                    (e.found!.service == null ? "" : " · ${e.found!.service}")
+              : l10n.mnUnusedCollateral(
+                  fmt.format(
+                    Amount(
+                      rawValue: BigInt.from(e.output!.value),
+                      fractionDigits: wallet.cryptoCurrency.fractionDigits,
+                    ),
+                  ),
+                ),
           subtitle: e.found != null
               ? "${e.found!.txid.substring(0, 16)}…:${e.found!.vout}"
-                    "${e.found!.keyIndex == null ? " · its owner and voting keys aren't in this wallet" : ""}"
+                    "${e.found!.keyIndex == null ? " · ${l10n.mnKeysNotInWallet}" : ""}"
               : "${e.output!.txid.substring(0, 16)}…:${e.output!.vout}",
         ),
     ];
@@ -417,7 +433,7 @@ class _KerriganCreateMasternodeViewState
         backgroundColor: colors.background,
         appBar: PageAppBar(
           title: Text(
-            widget.existing ? "Add existing masternode" : "Create masternode",
+            widget.existing ? l10n.mnAddExisting : l10n.mnCreate,
             style: STextStyles.navBarTitle(context),
           ),
         ),
@@ -427,26 +443,24 @@ class _KerriganCreateMasternodeViewState
             children: [
               if (widget.existing) ...[
                 Text(
-                  "For a masternode whose collateral is already in this "
-                  "wallet, e.g. after restoring it. Nothing is sent: "
-                  "Astronaut lists it and freezes its collateral.",
+                  l10n.mnAddExistingIntroKerrigan,
                   style: STextStyles.itemSubtitle(context),
                 ),
                 const SizedBox(height: 20),
               ],
-              Text("Masternode alias", style: STextStyles.smallMed12(context)),
+              Text(l10n.mnAlias, style: STextStyles.smallMed12(context)),
               const SizedBox(height: 8),
               _aliasField(aliasError),
               const SizedBox(height: 20),
               if (widget.existing) ...[
                 Text(
-                  "Masternode or collateral",
+                  l10n.mnOrCollateral,
                   style: STextStyles.smallMed12(context),
                 ),
                 const SizedBox(height: 8),
                 ..._existingOptions(),
               ] else ...[
-                Text("Type", style: STextStyles.smallMed12(context)),
+                Text(l10n.mnType, style: STextStyles.smallMed12(context)),
                 const SizedBox(height: 8),
                 for (final t in KerriganMasternodeType.values)
                   _radioCard<KerriganMasternodeType>(
@@ -456,20 +470,17 @@ class _KerriganCreateMasternodeViewState
                     title:
                         "${t.label} · ${fmt.format(wallet.masternodeCollateral(t))}",
                     subtitle: t == KerriganMasternodeType.regular
-                        ? "Earns masternode rewards and votes on proposals."
-                        : "Votes with four times the weight. On a server "
-                              "that also mines, it reaches the top Hivemind "
-                              "sealing tier. It registers with its server's "
-                              "identity key.",
+                        ? l10n.mnRegularText
+                        : l10n.mnBroodNodeText,
                   ),
                 const SizedBox(height: 12),
-                Text("Collateral", style: STextStyles.smallMed12(context)),
+                Text(l10n.mnCollateral, style: STextStyles.smallMed12(context)),
                 const SizedBox(height: 8),
                 _radioCard<_Collateral>(
                   value: _Collateral.newAddress,
                   group: _collateral,
                   onChanged: (v) => setState(() => _collateral = v),
-                  title: "Send $collateral to a new address",
+                  title: l10n.mnSendToNewAddress(collateral),
                   body: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -482,9 +493,14 @@ class _KerriganCreateMasternodeViewState
                           focusNode: _addressLabelFocus,
                           style: STextStyles.field(context),
                           decoration: standardInputDecoration(
-                            "Address label (optional), e.g. "
-                            "${_labelController.text.trim().isEmpty ? "MN1" : _labelController.text.trim()} "
-                            "collateral",
+                            // The example doesn't fit a phone's field.
+                            Util.isDesktop
+                                ? l10n.mnAddressLabelExample(
+                                    _labelController.text.trim().isEmpty
+                                        ? "MN1"
+                                        : _labelController.text.trim(),
+                                  )
+                                : l10n.mnAddressLabelOptional,
                             _addressLabelFocus,
                             context,
                           ),
@@ -498,7 +514,7 @@ class _KerriganCreateMasternodeViewState
                     value: _Collateral.ownAddress,
                     group: _collateral,
                     onChanged: (v) => setState(() => _collateral = v),
-                    title: "Send $collateral to one of my addresses",
+                    title: l10n.mnSendToMyAddress(collateral),
                     body: DropdownButton<Address>(
                       isExpanded: true,
                       itemHeight: null,
@@ -518,9 +534,8 @@ class _KerriganCreateMasternodeViewState
                                     _addressTitle(a),
                                     style: STextStyles.w600_14(context),
                                   ),
-                                  Text(
+                                  MiddleEllipsisText(
                                     a.value,
-                                    overflow: TextOverflow.ellipsis,
                                     style: STextStyles.w500_12(context)
                                         .copyWith(color: colors.textSubtitle1),
                                   ),
@@ -541,18 +556,12 @@ class _KerriganCreateMasternodeViewState
                 ),
                 const SizedBox(height: 12),
                 _subtitle(
-                  "Next, on the masternode's page, you register it on the "
-                  "network with its server's address: on your own server, "
-                  "or hosted on masternode.space. Registering pays a tiny "
-                  "fee from your transparent balance; paying the collateral "
-                  "from the shield keeps 0.001 "
-                  "${wallet.cryptoCurrency.ticker} transparent for it when "
-                  "you have none.",
+                  l10n.mnCreateNextKerrigan(wallet.cryptoCurrency.ticker),
                 ),
               ],
               const SizedBox(height: 24),
               PrimaryButton(
-                label: widget.existing ? "Add masternode" : "Send collateral",
+                label: widget.existing ? l10n.mnAdd : l10n.mnSendCollateral,
                 enabled:
                     aliasError == null &&
                     (!widget.existing || _picked != null),

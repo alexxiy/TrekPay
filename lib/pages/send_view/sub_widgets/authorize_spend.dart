@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n.dart';
 import '../../../pages_desktop_specific/my_stack_view/wallet_view/sub_widgets/desktop_auth_send.dart';
 import '../../../route_generator.dart';
 import '../../../utilities/util.dart';
@@ -14,7 +15,7 @@ import '../../pinpad_views/lock_screen_view.dart';
 Future<bool> authorizeSpend(
   BuildContext context, {
   required CryptoCurrency coin,
-  String reason = "Authenticate to send transaction",
+  String? reason,
 }) async {
   if (Util.isDesktop) {
     final unlocked = await showDialog<bool?>(
@@ -48,9 +49,9 @@ Future<bool> authorizeSpend(
         popOnSuccess: true,
         routeOnSuccessArguments: true,
         routeOnSuccess: "",
-        biometricsCancelButtonString: "CANCEL",
-        biometricsLocalizedReason: reason,
-        biometricsAuthenticationTitle: "Confirm Transaction",
+        biometricsCancelButtonString: l10n.commonCancelCaps,
+        biometricsLocalizedReason: reason ?? l10n.sendAuthReason,
+        biometricsAuthenticationTitle: l10n.sendConfirmTransactionTitle,
       ),
       settings: const RouteSettings(name: "/authorizespendlockscreen"),
     ),

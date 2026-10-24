@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../l10n/l10n.dart';
 import '../themes/stack_colors.dart';
 import '../utilities/constants.dart';
 import '../utilities/text_styles.dart';
@@ -80,20 +81,23 @@ class Utf8LengthLimitingFormatter extends TextInputFormatter {
 }
 
 /// A shielded memo input (a send to a shield address, or a payment
-/// request for one), with a byte counter ("37 / 512 bytes").
+/// request for one), with a byte counter ("37 / 512 bytes"). [maxBytes]
+/// is less where the app adds a line of its own.
 class KerriganMemoField extends StatelessWidget {
   const KerriganMemoField({
     super.key,
     required this.controller,
     required this.focusNode,
     this.onChanged,
-    this.hint = "Sent privately with the payment",
+    this.hint,
+    this.maxBytes = kKerriganMaxMemoBytes,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
   final VoidCallback? onChanged;
-  final String hint;
+  final String? hint;
+  final int maxBytes;
 
   @override
   Widget build(BuildContext context) {
@@ -115,9 +119,7 @@ class KerriganMemoField extends StatelessWidget {
                 focusNode: focusNode,
                 minLines: 1,
                 maxLines: 4,
-                inputFormatters: [
-                  Utf8LengthLimitingFormatter(kKerriganMaxMemoBytes),
-                ],
+                inputFormatters: [Utf8LengthLimitingFormatter(maxBytes)],
                 style: isDesktop
                     ? STextStyles.desktopTextExtraSmall(
                         context,
@@ -126,7 +128,7 @@ class KerriganMemoField extends StatelessWidget {
                 onChanged: (_) => onChanged?.call(),
                 decoration:
                     standardInputDecoration(
-                      hint,
+                      hint ?? l10n.memoHint,
                       focusNode,
                       context,
                       desktopMed: isDesktop,
@@ -157,10 +159,10 @@ class KerriganMemoField extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 4, right: 4),
                 child: Text(
-                  "$bytes / $kKerriganMaxMemoBytes bytes",
+                  l10n.memoBytes(bytes, maxBytes),
                   textAlign: TextAlign.right,
                   style: STextStyles.label(context).copyWith(
-                    color: bytes > kKerriganMaxMemoBytes
+                    color: bytes > maxBytes
                         ? colors.textError
                         : colors.textSubtitle2,
                   ),

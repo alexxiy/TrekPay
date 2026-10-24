@@ -312,7 +312,7 @@ extension _KerriganShield on KerriganWallet {
           bridge.shieldData(state.lastProcessedBlock + 1),
         )) {
           if (_recovering && _recoverCancelled) {
-            throw Exception("Restore cancelled");
+            throw Exception(l10n.restoreCancelled);
           }
           progress(block.height);
           batch.add(block);
@@ -641,7 +641,7 @@ extension _KerriganShield on KerriganWallet {
         }
       }
       if (lastError != null)
-        throw Exception("Could not download $name: $lastError");
+        throw Exception(l10n.shieldDownloadFailed(name, "$lastError"));
     }
     try {
       await libKerriganShield.loadProver(
@@ -667,16 +667,10 @@ extension _KerriganShield on KerriganWallet {
       return await _buildShieldSend(txData: txData, fromShield: fromShield);
     } catch (e) {
       if (e.toString().contains("Not enough balance")) {
-        throw Exception(
-          "Insufficient funds to pay the transaction fee. Lower the amount "
-          "or tick \"Subtract fee from amount\".",
-        );
+        throw Exception(l10n.sendInsufficientForFee);
       }
       if (e.toString().contains("below the dust limit")) {
-        throw Exception(
-          "After the fee, the amount is too small to send to a transparent "
-          "address.",
-        );
+        throw Exception(l10n.shieldTooSmallAfterFee);
       }
       rethrow;
     }
@@ -688,10 +682,10 @@ extension _KerriganShield on KerriganWallet {
   }) async {
     final recipients = txData.recipients!;
     if (recipients.length != 1) {
-      throw Exception("Shield transactions support a single recipient");
+      throw Exception(l10n.shieldSingleRecipient);
     }
     if (utf8.encode(txData.memo ?? "").length > 512) {
-      throw Exception("Shielded memo is too long (max 512 bytes)");
+      throw Exception(l10n.shieldMemoTooLong);
     }
     final recipient = recipients.first;
     final state = await _loadShield();
@@ -735,7 +729,7 @@ extension _KerriganShield on KerriganWallet {
                 as String?;
       if (custom != null && custom.isNotEmpty) {
         if (!isShieldAddress(custom)) {
-          throw Exception("Change must go to a shield address");
+          throw Exception(l10n.shieldChangeMustBeShield);
         }
         changeAddress = custom;
       } else {
@@ -748,7 +742,7 @@ extension _KerriganShield on KerriganWallet {
         (p, n) => p + (n["value"] as num).toInt(),
       );
       if (available < recipient.amount.raw.toInt()) {
-        throw Exception("Insufficient shield balance");
+        throw Exception(l10n.shieldInsufficient);
       }
       result = await libKerriganShield.createTransaction(
         notes: notes,
@@ -779,7 +773,7 @@ extension _KerriganShield on KerriganWallet {
         throw Exception("Attempted to use an unavailable utxo");
       }
       if (extra.isNotEmpty || isKerriganOpReturn(recipient.address)) {
-        throw Exception("This payment can only be made from the shield");
+        throw Exception(l10n.sendShieldOnly);
       }
       // Keys only for the coins the library will spend (all of a
       // coin-control selection).

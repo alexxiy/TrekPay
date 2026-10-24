@@ -17,6 +17,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tuple/tuple.dart';
 
+import '../../../../l10n/l10n.dart';
 import '../../../../models/balance.dart';
 import '../../../../models/isar/models/blockchain_data/utxo.dart';
 import '../../../../models/isar/models/contact_entry.dart';
@@ -216,7 +217,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Confirm send all",
+                          l10n.sendConfirmSendAll,
                           style: STextStyles.desktopH3(context),
                         ),
                         const DesktopDialogCloseButton(),
@@ -226,7 +227,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
                     Padding(
                       padding: const EdgeInsets.only(right: 32),
                       child: Text(
-                        "You are about to send your entire balance. Would you like to continue?",
+                        l10n.sendConfirmSendAllText,
                         textAlign: TextAlign.left,
                         style: STextStyles.desktopTextExtraExtraSmall(context)
                             .copyWith(fontSize: 18),
@@ -240,7 +241,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
                           Expanded(
                             child: SecondaryButton(
                               buttonHeight: ButtonHeight.l,
-                              label: "Cancel",
+                              label: l10n.commonCancel,
                               onPressed: () {
                                 Navigator.of(context).pop(false);
                               },
@@ -250,7 +251,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
                           Expanded(
                             child: PrimaryButton(
                               buttonHeight: ButtonHeight.l,
-                              label: "Yes",
+                              label: l10n.commonYes,
                               onPressed: () {
                                 Navigator.of(context).pop(true);
                               },
@@ -409,7 +410,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "Transaction failed",
+                            l10n.sendTransactionFailed,
                             style: STextStyles.desktopH3(context),
                           ),
                           const DesktopDialogCloseButton(),
@@ -431,7 +432,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
                           Expanded(
                             child: SecondaryButton(
                               buttonHeight: ButtonHeight.l,
-                              label: "Ok",
+                              label: l10n.commonOk,
                               onPressed: () {
                                 Navigator.of(
                                   context,
@@ -466,6 +467,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
     noteController.text = "";
     _address = "";
     _addressToggleFlag = false;
+    _setValidAddressProviders("");
     setState(() {});
   }
 
@@ -676,10 +678,10 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
 
   String _getSendAllTitle(bool showCoinControl, Set<UTXO> selectedUTXOs) {
     if (showCoinControl && selectedUTXOs.isNotEmpty) {
-      return "Send all selected";
+      return l10n.sendAllSelected;
     }
 
-    return "Send all ${coin.ticker}";
+    return l10n.sendAllTicker(coin.ticker);
   }
 
   Amount _selectedUtxosAmount(Set<UTXO> utxos) => Amount(
@@ -949,13 +951,13 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
       children: [
         if (kerriganShield) ...[
           const SizedBox(height: 4),
-          Text("Send from", style: labelStyle),
+          Text(l10n.sendSendFrom, style: labelStyle),
           const SizedBox(height: 10),
           Row(
             children: [
               Expanded(
                 child: _balanceChoice(
-                  title: "Shielded balance",
+                  title: l10n.balanceShielded,
                   balance: ref.watch(pWalletBalanceSecondary(walletId)),
                   selected: fromShield,
                   onTap: () =>
@@ -968,7 +970,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
               const SizedBox(width: 16),
               Expanded(
                 child: _balanceChoice(
-                  title: "Transparent balance",
+                  title: l10n.balanceTransparent,
                   balance: ref.watch(pWalletBalance(walletId)),
                   selected: !fromShield,
                   onTap: () =>
@@ -987,7 +989,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              "Amount",
+              l10n.commonAmount,
               style: STextStyles.desktopTextExtraSmall(context).copyWith(
                 color: Theme.of(context)
                     .extension<StackColors>()!
@@ -1122,13 +1124,15 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Coin control",
+                  l10n.coinControlTitle,
                   style: STextStyles.desktopTextExtraExtraSmall(context),
                 ),
                 CustomTextButton(
                   text: ref.watch(desktopUseUTXOs).isEmpty
-                      ? "Select coins"
-                      : "Selected coins (${ref.watch(desktopUseUTXOs).length})",
+                      ? l10n.sendSelectCoins
+                      : l10n.sendSelectedCoins(
+                          ref.watch(desktopUseUTXOs).length,
+                        ),
                   onTap: _showDesktopCoinControl,
                 ),
               ],
@@ -1155,7 +1159,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    "Subtract fee from amount",
+                    l10n.sendSubtractFee,
                     style: STextStyles.desktopTextExtraExtraSmall(context),
                   ),
                 ],
@@ -1172,12 +1176,12 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Change address",
+                  l10n.sendChangeAddress,
                   style: STextStyles.desktopTextExtraExtraSmall(context),
                 ),
                 CustomTextButton(
                   text: _kerriganChange == null
-                      ? "Automatic"
+                      ? l10n.sendAutomatic
                       : "${_kerriganChange!.substring(0, 6)}…"
                             "${_kerriganChange!.substring(_kerriganChange!.length - 6)}",
                   onTap: _pickKerriganChangeAddress,
@@ -1188,7 +1192,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
         ],
         const SizedBox(height: 20),
         Text(
-          "Send to",
+          l10n.sendSendTo,
           style: STextStyles.desktopTextExtraSmall(context).copyWith(
             color: Theme.of(context)
                 .extension<StackColors>()!
@@ -1321,7 +1325,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
                                                         left: 32,
                                                       ),
                                                   child: Text(
-                                                    "Address book",
+                                                    l10n.addressBookTitle,
                                                     style:
                                                         STextStyles.desktopH3(
                                                           context,
@@ -1357,7 +1361,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
                             ),
                           if (sendToController.text.isEmpty)
                             TextFieldIconButton(
-                              semanticsLabel: "Scan QR Button. Opens Camera For Scanning QR Code.",
+                              semanticsLabel: l10n.sendScanQrSemantics,
                               key: const Key("sendViewScanQrButtonKey"),
                               onTap: scanWebcam,
                               child: const QrCodeIcon(),
@@ -1406,7 +1410,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
         if (_sendsToShield) ...[
           const SizedBox(height: 20),
           Text(
-            "Shielded memo (optional)",
+            l10n.sendShieldedMemoOptional,
             style: STextStyles.desktopTextExtraSmall(context).copyWith(
               color: Theme.of(context)
                   .extension<StackColors>()!
@@ -1418,7 +1422,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
           KerriganMemoField(controller: memoController, focusNode: _memoFocus),
         ],
         const SizedBox(height: 20),
-        Text("Note (optional)", style: labelStyle),
+        Text(l10n.sendNoteOptional, style: labelStyle),
         const SizedBox(height: 10),
         ClipRRect(
           borderRadius: BorderRadius.circular(
@@ -1441,7 +1445,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
             onChanged: (_) => setState(() {}),
             decoration:
                 standardInputDecoration(
-                  "Just for you: kept in your history, never sent",
+                  l10n.sendNoteHintLong,
                   _noteFocus,
                   context,
                   desktopMed: true,
@@ -1466,7 +1470,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
         const SizedBox(height: 36),
         PrimaryButton(
           buttonHeight: ButtonHeight.l,
-          label: "Preview send",
+          label: l10n.sendPreviewSend,
           enabled: ref.watch(pPreviewTxButtonEnabled(coin)),
           onPressed: ref.watch(pPreviewTxButtonEnabled(coin))
               ? previewSend

@@ -38,7 +38,7 @@ extension KerriganNamesWallet on KerriganWallet {
     KerriganFunding funding = kKerriganAutoFunding,
   }) {
     if (!isShieldAddress(address)) {
-      throw Exception("The Kerrigan.name address isn't a shield address");
+      throw Exception(l10n.namesNotShieldAddress);
     }
     return prepareSend(
       txData: TxData(

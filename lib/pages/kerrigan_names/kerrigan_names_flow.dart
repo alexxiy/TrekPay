@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/global/barcode_scanner_provider.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../route_generator.dart';
@@ -65,13 +66,15 @@ class KerriganNamesFlow {
   final BigInt? listedPrice;
 
   String get title => switch (op) {
-    KerriganNamesOp.reg => "Register $name",
-    KerriganNamesOp.buy => "Buy $name",
-    KerriganNamesOp.upd => "Change destination",
-    KerriganNamesOp.chg => "Change owner",
+    KerriganNamesOp.reg => l10n.kerriganNamesFlowRegister(kerriganNamesUnbroken(name)),
+    KerriganNamesOp.buy => l10n.kerriganNamesFlowBuy(kerriganNamesUnbroken(name)),
+    KerriganNamesOp.upd => l10n.kerriganNamesFlowChangeDestination,
+    KerriganNamesOp.chg => l10n.kerriganNamesFlowChangeOwner,
     KerriganNamesOp.lst =>
-      listedPrice == null ? "List on the marketplace" : "Change sell price",
-    KerriganNamesOp.ult => "Unlist $name",
+      listedPrice == null
+          ? l10n.kerriganNamesFlowList
+          : l10n.kerriganNamesFlowChangePrice,
+    KerriganNamesOp.ult => l10n.kerriganNamesFlowUnlist(kerriganNamesUnbroken(name)),
   };
 }
 
@@ -140,7 +143,7 @@ Future<KerriganNamesPayment?> _sign(
   Object? error;
   final payment = await showLoading<KerriganNamesPayment>(
     context: context,
-    message: "Signing",
+    message: l10n.kerriganNamesSigning,
     onException: (e) => error = e,
     whileFutureAlt: () async {
       final registrar = KerriganNamesRegistrar.forCoin(wallet.cryptoCurrency)!;
@@ -158,9 +161,7 @@ Future<KerriganNamesPayment?> _sign(
         priceSats: priceSats,
       );
       if (!kerriganNamesCommandFits(command)) {
-        throw const KerriganNamesException(
-          "This doesn't fit in a payment memo. Choose a shorter name.",
-        );
+        throw KerriganNamesException(l10n.kerriganNamesMemoTooLong);
       }
       return KerriganNamesPayment(
         flow: flow,
@@ -171,7 +172,7 @@ Future<KerriganNamesPayment?> _sign(
     },
   );
   if (payment == null && context.mounted) {
-    await showKerriganNamesError(context, error ?? "Signing failed");
+    await showKerriganNamesError(context, error ?? l10n.kerriganNamesSigningFailed);
   }
   return payment;
 }
@@ -260,6 +261,7 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
   }
 
   Future<void> _loadCost() async {
+    if (!mounted) return;
     final price = _flow.price;
     if (price != null) {
       setState(() => _cost = price);
@@ -303,25 +305,23 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
       case KerriganNamesOp.upd:
       case KerriganNamesOp.buy:
         final target = _destination;
-        if (target == null) return "Choose an address";
+        if (target == null) return l10n.kerriganNamesChooseAddress;
         if (target.isEmpty) return "";
         if (target == _flow.currentAddress) {
-          return "${_flow.name} already points to this address.";
+          return l10n.kerriganNamesAlreadyPointsHere(_flow.name);
         }
         if (!isValidKerriganNamesTarget(target)) {
           return target.startsWith("ps1")
-              ? "That isn't a valid shield address. Check it for typos."
-              : "A name can only point to a shield address. It starts with "
-                    "\"ps1\".";
+              ? l10n.kerriganNamesInvalidShieldAddress
+              : l10n.kerriganNamesShieldOnly;
         }
         return null;
       case KerriganNamesOp.chg:
         final key = _newOwner;
         if (key.isEmpty) return "";
-        if (key == _ownKey) return "That's your own key: the name is yours.";
+        if (key == _ownKey) return l10n.kerriganNamesOwnKey;
         if (!isValidKerriganNamesPublicKey(key)) {
-          return "That isn't a valid public key. It's 64 characters, 0-9 "
-              "and a-f.";
+          return l10n.kerriganNamesInvalidPublicKey;
         }
         return null;
       case KerriganNamesOp.lst:
@@ -335,10 +335,9 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
             _wallet,
           );
           final decimals = coin.fractionDigits - _shift;
-          final places = decimals > 0
-              ? "with up to $decimals decimals"
-              : "without decimals";
-          return "Enter a price above 0 and up to $max, $places.";
+          return decimals > 0
+              ? l10n.kerriganNamesInvalidPrice(max, decimals)
+              : l10n.kerriganNamesInvalidPriceWhole(max);
         }
         return null;
       case KerriganNamesOp.ult:
@@ -458,39 +457,38 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
         : kerriganNamesAmount(listedPrice, ref, wallet, exact: true);
     final targetError = op.hasTarget ? error : null;
 
+    final name = kerriganNamesUnbroken(_flow.name);
     final (String heading, String text) = switch (op) {
       KerriganNamesOp.reg || KerriganNamesOp.buy => (
-        "Where should ${_flow.name} point?",
-        "Choose one of your shield addresses, or enter another one. Anyone "
-            "who pays ${_flow.name} pays this address, and you can change it "
-            "later.",
+        l10n.kerriganNamesWherePoint(name),
+        l10n.kerriganNamesWherePointText(name),
       ),
       KerriganNamesOp.upd => (
-        "Choose the new destination",
-        "Payments to ${_flow.name} will go to this address. People keep "
-            "paying the name and never need to know.",
+        l10n.kerriganNamesNewDestination,
+        l10n.kerriganNamesNewDestinationText(name),
       ),
       KerriganNamesOp.chg => (
-        "Who will own ${_flow.name}?",
-        "Paste the public key of the new owner. They find it in My Names, "
-            "in Astronaut or on Kerrigan.name.",
+        l10n.kerriganNamesWhoOwns(name),
+        l10n.kerriganNamesWhoOwnsText,
       ),
       KerriganNamesOp.lst => (
         _flow.listedPrice == null
-            ? "Set the price for ${_flow.name}"
-            : "Set a new price for ${_flow.name}",
-        "Anyone can buy the name for this price on the marketplace. The "
-            "price then goes to your Kerrigan.name balance (My Balance), to "
-            "withdraw to your wallet.",
+            ? l10n.kerriganNamesSetPrice(name)
+            : l10n.kerriganNamesSetNewPrice(name),
+        l10n.kerriganNamesSetPriceText,
       ),
       KerriganNamesOp.ult => ("", ""),
     };
 
     final costLine = switch (op) {
       _ when cost == null => null,
-      KerriganNamesOp.reg => "Registration: ${kerriganNamesAmount(cost, ref, wallet)}",
-      KerriganNamesOp.buy => "Price: ${kerriganNamesAmount(cost, ref, wallet)}",
-      _ => "This change costs ${kerriganNamesAmount(cost, ref, wallet)}",
+      KerriganNamesOp.reg => l10n.kerriganNamesCostRegistration(
+        kerriganNamesAmount(cost, ref, wallet),
+      ),
+      KerriganNamesOp.buy => l10n.kerriganNamesCostPrice(
+        kerriganNamesAmount(cost, ref, wallet),
+      ),
+      _ => l10n.kerriganNamesCostChange(kerriganNamesAmount(cost, ref, wallet)),
     };
 
     return Background(
@@ -519,11 +517,11 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
                           onColor: Util.isDesktop
                               ? colors.rateTypeToggleDesktopColorOn
                               : colors.popupBG,
-                          onText: "My addresses",
+                          onText: l10n.kerriganNamesMyAddresses,
                           offColor: Util.isDesktop
                               ? colors.rateTypeToggleDesktopColorOff
                               : colors.textFieldDefaultBG,
-                          offText: "Another address",
+                          offText: l10n.kerriganNamesAnotherAddress,
                           isOn: _custom,
                           onValueChanged: (custom) => setState(() {
                             _custom = custom;
@@ -541,18 +539,18 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
                     ],
                     if (op.hasTarget && _custom)
                       _field(
-                        hint: "Shield address",
+                        hint: l10n.kerriganNamesShieldAddress,
                         input: _Input.address,
                         suffix: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              tooltip: "Paste",
+                              tooltip: l10n.commonPaste,
                               onPressed: _paste,
                               icon: const ClipboardIcon(),
                             ),
                             IconButton(
-                              tooltip: "Scan QR code",
+                              tooltip: l10n.qrScanTitle,
                               onPressed: _scan,
                               icon: const QrCodeIcon(),
                             ),
@@ -564,10 +562,11 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
                         walletId: _flow.walletId,
                         value: _target,
                         shield: true,
-                        placeholder: "Choose an address",
+                        placeholder: l10n.kerriganNamesChooseAddress,
                         tags: {
                           if (_flow.currentAddress != null)
-                            _flow.currentAddress!: "current destination",
+                            _flow.currentAddress!:
+                                l10n.kerriganNamesCurrentDestination,
                         },
                         onChanged: (a) => setState(() {
                           _target = a;
@@ -586,9 +585,9 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
                     ],
                     if (op == KerriganNamesOp.chg) ...[
                       _field(
-                        hint: "New owner's public key",
+                        hint: l10n.kerriganNamesNewOwnerKey,
                         suffix: IconButton(
-                          tooltip: "Paste",
+                          tooltip: l10n.commonPaste,
                           onPressed: _paste,
                           icon: const ClipboardIcon(),
                         ),
@@ -597,15 +596,14 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
                       RoundedWhiteContainer(
                         borderColor: colors.accentColorOrange,
                         child: Text(
-                          "The new owner gets ${_flow.name} and full control "
-                          "of it. Only they can give it back.",
+                          l10n.kerriganNamesNewOwnerWarning(name),
                           style: STextStyles.w500_12(context),
                         ),
                       ),
                     ],
                     if (op == KerriganNamesOp.lst) ...[
                       _field(
-                        hint: "Price",
+                        hint: l10n.kerriganNamesPrice,
                         input: _Input.price,
                         suffix: Padding(
                           padding: const EdgeInsets.only(right: 14, top: 14),
@@ -620,7 +618,7 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
                         Padding(
                           padding: const EdgeInsets.only(left: 12, top: 4),
                           child: Text(
-                            "Listed for $listed now",
+                            l10n.kerriganNamesListedNow(listed),
                             style: STextStyles.label(context)
                                 .copyWith(color: colors.textSubtitle1),
                           ),
@@ -629,7 +627,7 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
                     const SizedBox(height: 16),
                     if (costLine != null)
                       Text(
-                        "$costLine, plus the network fee.",
+                        costLine,
                         style: STextStyles.w500_12(context)
                             .copyWith(color: colors.textSubtitle1),
                       )
@@ -645,7 +643,7 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
                           ),
                           TextButton(
                             onPressed: _loadCost,
-                            child: const Text("Try again"),
+                            child: Text(l10n.commonTryAgain),
                           ),
                         ],
                       ),
@@ -655,7 +653,7 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: PrimaryButton(
-                  label: "Next",
+                  label: l10n.commonNext,
                   enabled: error == null && cost != null,
                   onPressed: _next,
                 ),
@@ -698,12 +696,12 @@ class _KerriganNamesPaymentViewState extends ConsumerState<KerriganNamesPaymentV
   );
 
   String get _note => switch (_flow.op) {
-    KerriganNamesOp.reg => "Kerrigan.name: register ${_flow.name}",
-    KerriganNamesOp.buy => "Kerrigan.name: buy ${_flow.name}",
-    KerriganNamesOp.upd => "Kerrigan.name: new destination for ${_flow.name}",
-    KerriganNamesOp.chg => "Kerrigan.name: new owner for ${_flow.name}",
-    KerriganNamesOp.lst => "Kerrigan.name: list ${_flow.name}",
-    KerriganNamesOp.ult => "Kerrigan.name: unlist ${_flow.name}",
+    KerriganNamesOp.reg => l10n.kerriganNamesNoteRegister(_flow.name),
+    KerriganNamesOp.buy => l10n.kerriganNamesNoteBuy(_flow.name),
+    KerriganNamesOp.upd => l10n.kerriganNamesNoteDestination(_flow.name),
+    KerriganNamesOp.chg => l10n.kerriganNamesNoteOwner(_flow.name),
+    KerriganNamesOp.lst => l10n.kerriganNamesNoteList(_flow.name),
+    KerriganNamesOp.ult => l10n.kerriganNamesNoteUnlist(_flow.name),
   };
 
   Future<void> _create() async {
@@ -844,45 +842,43 @@ class _KerriganNamesPaymentViewState extends ConsumerState<KerriganNamesPaymentV
                     const SizedBox(height: 20),
                     Text(
                       _flow.op == KerriganNamesOp.reg
-                          ? "Pay to register ${_flow.name}"
-                          : "Pay to process the change",
+                          ? l10n.kerriganNamesPayToRegister(
+                              kerriganNamesUnbroken(_flow.name),
+                            )
+                          : l10n.kerriganNamesPayForChange,
                       style: STextStyles.pageTitleH2(context),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      "Your wallet makes this payment to Kerrigan.name with the "
-                      "memo inside. The memo is the command, and Kerrigan.name "
-                      "acts on it once the payment is confirmed. Kerrigan.name "
-                      "publishes its viewing key, so anyone can read the "
-                      "memo, but there's nothing secret in it.",
+                      l10n.kerriganNamesPaymentExplained,
                       style: STextStyles.itemSubtitle(context),
                     ),
                     const SizedBox(height: 16),
                     _row(
-                      title: "To Kerrigan.name",
+                      title: l10n.kerriganNamesToKerriganName,
                       value: _payment.address,
-                      what: "Address",
+                      what: l10n.commonAddress,
                       mono: true,
                     ),
                     const SizedBox(height: 8),
                     _row(
-                      title: "Amount",
+                      title: l10n.commonAmount,
                       value: kerriganNamesAmount(
                         _payment.amount,
                         ref,
                         wallet,
                         exact: true,
                       ),
-                      what: "Amount",
+                      what: l10n.commonAmount,
                     ),
                     const SizedBox(height: 8),
                     _row(
-                      title: "Shielded memo",
+                      title: l10n.kerriganNamesShieldedMemo,
                       value: _payment.memo,
-                      what: "Memo",
+                      what: l10n.commonMemo,
                       mono: true,
                       badge: KerriganNamesPill(
-                        text: "Added for you",
+                        text: l10n.kerriganNamesAddedForYou,
                         color: kerriganNamesReadable(
                           colors.accentColorGreen,
                           colors,
@@ -898,8 +894,7 @@ class _KerriganNamesPaymentViewState extends ConsumerState<KerriganNamesPaymentV
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      "The network fee comes on top: Kerrigan.name needs the "
-                      "exact amount, and refunds a payment that differs.",
+                      l10n.kerriganNamesFeeOnTop,
                       style: STextStyles.w500_12(context)
                           .copyWith(color: colors.textSubtitle1),
                     ),
@@ -909,7 +904,7 @@ class _KerriganNamesPaymentViewState extends ConsumerState<KerriganNamesPaymentV
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: PrimaryButton(
-                  label: "Create transaction",
+                  label: l10n.kerriganNamesCreateTransaction,
                   onPressed: _create,
                 ),
               ),

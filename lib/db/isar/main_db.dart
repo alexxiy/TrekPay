@@ -14,13 +14,13 @@ import 'package:decimal/decimal.dart';
 import 'package:isar_community/isar.dart';
 
 import '../../exceptions/main_db/main_db_exception.dart';
+import '../../l10n/l10n.dart';
 import '../../models/isar/models/block_explorer.dart';
 import '../../models/isar/models/blockchain_data/v2/transaction_v2.dart';
 import '../../models/isar/models/contact_entry.dart';
 import '../../models/isar/models/isar_models.dart';
 import '../../models/isar/stack_theme.dart';
 import '../../utilities/amount/amount.dart';
-import '../../utilities/extensions/extensions.dart';
 import '../../utilities/stack_file_system.dart';
 import '../../wallets/crypto_currency/crypto_currency.dart';
 import '../../wallets/isar/models/wallet_info.dart';
@@ -312,79 +312,25 @@ class MainDB {
     }
   }
 
-  //
+  // Each query deletes every row it matches. (Deleting in pages by offset
+  // skipped every other page, as the rows before it were already gone.)
   Future<void> deleteWalletBlockchainData(String walletId) async {
     await isar.writeTxn(() async {
-      final transactionCountV2 = await isar.transactionV2s
-          .where()
-          .walletIdEqualTo(walletId)
-          .count();
-      final addressCount = await getAddresses(walletId).count();
-      final utxoCount = await getUTXOs(walletId).count();
-
-      const paginateLimit = 100;
-
-      // transactions V2
-      for (int i = 0; i < transactionCountV2; i += paginateLimit) {
-        final txnIds = await isar.transactionV2s
-            .where()
-            .walletIdEqualTo(walletId)
-            .offset(i)
-            .limit(paginateLimit)
-            .idProperty()
-            .findAll();
-        await isar.transactionV2s.deleteAll(txnIds);
-      }
-
-      // addresses
-      for (int i = 0; i < addressCount; i += paginateLimit) {
-        final addressIds = await getAddresses(walletId)
-            .offset(i)
-            .limit(paginateLimit)
-            .idProperty()
-            .findAll();
-        await isar.addresses.deleteAll(addressIds);
-      }
-
-      // utxos
-      for (int i = 0; i < utxoCount; i += paginateLimit) {
-        final utxoIds = await getUTXOs(walletId)
-            .offset(i)
-            .limit(paginateLimit)
-            .idProperty()
-            .findAll();
-        await isar.utxos.deleteAll(utxoIds);
-      }
+      await isar.transactionV2s.where().walletIdEqualTo(walletId).deleteAll();
+      await getAddresses(walletId).deleteAll();
+      await getUTXOs(walletId).deleteAll();
     });
   }
 
   Future<void> deleteAddressLabels(String walletId) async {
-    final addressLabelCount = await getAddressLabels(walletId).count();
     await isar.writeTxn(() async {
-      const paginateLimit = 50;
-      for (int i = 0; i < addressLabelCount; i += paginateLimit) {
-        final labelIds = await getAddressLabels(walletId)
-            .offset(i)
-            .limit(paginateLimit)
-            .idProperty()
-            .findAll();
-        await isar.addressLabels.deleteAll(labelIds);
-      }
+      await getAddressLabels(walletId).deleteAll();
     });
   }
 
   Future<void> deleteTransactionNotes(String walletId) async {
-    final noteCount = await getTransactionNotes(walletId).count();
     await isar.writeTxn(() async {
-      const paginateLimit = 50;
-      for (int i = 0; i < noteCount; i += paginateLimit) {
-        final labelIds = await getTransactionNotes(walletId)
-            .offset(i)
-            .limit(paginateLimit)
-            .idProperty()
-            .findAll();
-        await isar.transactionNotes.deleteAll(labelIds);
-      }
+      await getTransactionNotes(walletId).deleteAll();
     });
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/l10n.dart';
 import '../../notifications/show_flush_bar.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/assets.dart';
@@ -141,18 +142,18 @@ class KerriganVotesBar extends StatelessWidget {
         Row(
           children: [
             Text(
-              "$yeas Yes",
+              l10n.govYesCount(yeas),
               style: STextStyles.w600_12(context).copyWith(color: yes),
             ),
             Text("  ·  ", style: label),
             Text(
-              "$nays No",
+              l10n.govNoCount(nays),
               style: STextStyles.w600_12(context).copyWith(color: no),
             ),
             const Spacer(),
             if (net != null && need != null)
               Text(
-                "$net of $need net Yes",
+                l10n.govNetOfNeed(net, need),
                 style: STextStyles.w600_12(context)
                     .copyWith(color: net >= need ? yes : colors.textSubtitle1),
               ),
@@ -268,7 +269,7 @@ class KerriganShowAllChip extends StatelessWidget {
               Icon(Icons.unfold_more_rounded, size: 12, color: color),
               const SizedBox(width: 4),
               Text(
-                "Show all $count",
+                l10n.govShowAll(count),
                 style: STextStyles.w600_12(context).copyWith(color: color),
               ),
             ],
@@ -303,7 +304,11 @@ class KerriganVoteCounts extends StatelessWidget {
     final label = STextStyles.w500_12(context)
         .copyWith(color: colors.textSubtitle1);
     TextSpan count(KerriganVote vote) => TextSpan(
-      text: "${counts[vote]} ${vote.label}",
+      text: switch (vote) {
+        KerriganVote.yes => l10n.govYesCount(counts[vote]!),
+        KerriganVote.no => l10n.govNoCount(counts[vote]!),
+        KerriganVote.abstain => l10n.govAbstained(counts[vote]!),
+      },
       style: STextStyles.w600_12(context)
           .copyWith(color: kerriganVoteColor(vote, colors)),
     );
@@ -318,7 +323,7 @@ class KerriganVoteCounts extends StatelessWidget {
             count(KerriganVote.abstain),
           ],
           TextSpan(
-            text: "  ·  ${masternodes.length - voted} not voted",
+            text: "  ·  ${l10n.govNotVotedCount(masternodes.length - voted)}",
             style: label,
           ),
         ],
@@ -355,13 +360,17 @@ class KerriganMasternodeVoteRow extends StatelessWidget {
     final status = problem != null && v == null
         ? problem
         : loading
-        ? "Checking…"
+        ? l10n.kerriganNamesChecking
         : v == null
-        ? "Not voted"
+        ? l10n.govNotVoted
         : v.canChange
-        ? "Voted ${_ago(v.time)}"
-        : "Voted ${_ago(v.time)} · can change in "
-              "~${kerriganDuration(v.changeableAt.difference(DateTime.now()).inSeconds)}";
+        ? l10n.govVotedAgo(_since(v.time))
+        : l10n.govVotedAgoCanChange(
+            _since(v.time),
+            kerriganDuration(
+              v.changeableAt.difference(DateTime.now()).inSeconds,
+            ),
+          );
     final service = masternode.service;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -394,9 +403,9 @@ class KerriganMasternodeVoteRow extends StatelessWidget {
   }
 }
 
-String _ago(int time) {
+String _since(int time) {
   final seconds = DateTime.now().millisecondsSinceEpoch ~/ 1000 - time;
-  return "${kerriganDuration(seconds < 0 ? 0 : seconds)} ago";
+  return kerriganDuration(seconds < 0 ? 0 : seconds);
 }
 
 /// Search the wallet's masternodes by alias or server address.
@@ -444,7 +453,7 @@ class _KerriganMasternodeSearchFieldState
       },
       decoration:
           standardInputDecoration(
-            "Search by alias or IP",
+            l10n.govSearchMasternodes,
             _focus,
             context,
           ).copyWith(
@@ -544,7 +553,7 @@ Widget kerriganNoMasternodeMatches(BuildContext context, String query) =>
     Padding(
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Text(
-        "No masternode matches \"${query.trim()}\".",
+        l10n.govNoMasternodeMatch(query.trim()),
         textAlign: TextAlign.center,
         style: STextStyles.itemSubtitle(context),
       ),
@@ -599,7 +608,7 @@ class _MasternodeVotesSheetState extends State<_MasternodeVotesSheet> {
     return KerriganSheetLayout(
       fullHeight: many,
       header: [
-        Text("Your masternodes", style: STextStyles.pageTitleH2(context)),
+        Text(l10n.govYourMasternodes, style: STextStyles.pageTitleH2(context)),
         const SizedBox(height: 4),
         Text(
           widget.proposalName,
@@ -665,7 +674,7 @@ class KerriganCopyRow extends StatelessWidget {
         if (context.mounted) {
           await showFloatingFlushBar(
             type: FlushBarType.info,
-            message: "$title copied",
+            message: l10n.commonCopiedWhat(title),
             iconAsset: Assets.svg.copy,
             context: context,
           );
@@ -719,7 +728,7 @@ Future<void> openKerriganProposalUrl(BuildContext context, String url) async {
   if (uri == null || !(uri.scheme == "https" || uri.scheme == "http")) {
     await showFloatingFlushBar(
       type: FlushBarType.warning,
-      message: "Not a web link: $url",
+      message: l10n.govNotWebLink(url),
       context: context,
     );
     return;
@@ -727,17 +736,15 @@ Future<void> openKerriganProposalUrl(BuildContext context, String url) async {
   final ok = await showDialog<bool>(
     context: context,
     builder: (context) => StackDialog(
-      title: "Open link?",
-      message:
-          "$url\n\nThe proposal's author set this link. Check it before "
-          "you trust what it shows.",
+      title: l10n.govOpenLink,
+      message: "$url\n\n${l10n.govOpenLinkText}",
       leftButton: TextButton(
         style: Theme.of(context)
             .extension<StackColors>()!
             .getSecondaryEnabledButtonStyle(context),
         onPressed: () => Navigator.of(context).pop(false),
         child: Text(
-          "Cancel",
+          l10n.commonCancel,
           style: STextStyles.button(context).copyWith(
             color: Theme.of(context).extension<StackColors>()!.accentColorDark,
           ),
@@ -748,7 +755,7 @@ Future<void> openKerriganProposalUrl(BuildContext context, String url) async {
             .extension<StackColors>()!
             .getPrimaryEnabledButtonStyle(context),
         onPressed: () => Navigator.of(context).pop(true),
-        child: Text("Open", style: STextStyles.button(context)),
+        child: Text(l10n.commonOpen, style: STextStyles.button(context)),
       ),
     ),
   );

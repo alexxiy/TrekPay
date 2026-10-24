@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/amount/amount_formatter.dart';
@@ -9,6 +9,7 @@ import '../../utilities/block_explorers.dart';
 import '../../utilities/text_styles.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../widgets/background.dart';
+import '../../widgets/block_explorer_link.dart';
 import '../../widgets/custom_buttons/blue_text_button.dart';
 import '../../widgets/desktop/primary_button.dart';
 import '../../widgets/desktop/secondary_button.dart';
@@ -201,7 +202,7 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                             if (!p.isValid) ...[
                               const SizedBox(height: 8),
                               Text(
-                                "Invalid: ${p.invalidReason ?? "unknown reason"}",
+                                l10n.govInvalid(p.invalidReason ?? l10n.govUnknownReason),
                                 style: STextStyles.w500_12(context)
                                     .copyWith(color: colors.textError),
                               ),
@@ -211,14 +212,14 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                               children: [
                                 fact(
                                   p.type == KerriganProposalType.escrowRelease
-                                      ? "Release"
-                                      : "Amount",
+                                      ? l10n.govRelease
+                                      : l10n.commonAmount,
                                   fmt.format(p.paymentAmount),
                                 ),
                                 fact(
-                                  "Voting",
+                                  l10n.govVotingPeriod,
                                   p.endEpoch == null
-                                      ? "Open"
+                                      ? l10n.govVotingOpen
                                       : "${_date(p.startEpoch ?? p.createdAt)} – ${_date(p.endEpoch!)}",
                                 ),
                               ],
@@ -229,9 +230,7 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                                 KerriganProposalType.escrowRelease) ...[
                               const SizedBox(height: 8),
                               Text(
-                                "If it passes, this amount may leave the "
-                                "growth fund escrow, once, to its payment "
-                                "address.",
+                                l10n.govEscrowReleaseText,
                                 style: secondary,
                               ),
                             ],
@@ -244,7 +243,7 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text("Votes", style: STextStyles.w600_14(context)),
+                            Text(l10n.govVotes, style: STextStyles.w600_14(context)),
                             const SizedBox(height: 10),
                             KerriganVotesBar(
                               yeas: p.yeas,
@@ -254,14 +253,12 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              "Passes with ${g.threshold} net Yes vote"
-                              "${g.threshold == 1 ? "" : "s"}; a BroodNode's "
-                              "vote counts four times.",
+                              l10n.govPassesWithKerrigan(g.threshold),
                               style: secondary,
                             ),
                             if (p.abstains > 0) ...[
                               const SizedBox(height: 4),
-                              Text("${p.abstains} abstained", style: secondary),
+                              Text(l10n.govAbstained(p.abstains), style: secondary),
                             ],
                           ],
                         ),
@@ -273,14 +270,13 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Text(
-                              "Your masternodes",
+                              l10n.govYourMasternodes,
                               style: STextStyles.w600_14(context),
                             ),
                             const SizedBox(height: 8),
                             if (masternodes.isEmpty)
                               Text(
-                                "Voting takes a masternode. This wallet has "
-                                "none; add one under Masternodes.",
+                                l10n.govVotingNeedsMasternode,
                                 style: secondary,
                               )
                             else
@@ -291,7 +287,7 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                                 builder: (context, snapshot) {
                                   if (snapshot.hasError) {
                                     return Text(
-                                      "Couldn't load your votes",
+                                      l10n.govVotesLoadFailed,
                                       style: secondary,
                                     );
                                   }
@@ -358,21 +354,26 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             KerriganCopyRow(
-                              title: "Payment address",
+                              title: l10n.govPaymentAddress,
                               value: p.paymentAddress,
-                              openTooltip: "Open in the block explorer",
-                              onOpen: () => launchUrl(
+                              openTooltip: l10n.govOpenInExplorer,
+                              onOpen: () => openInBlockExplorer(
+                                context,
+                                ref,
                                 getBlockExplorerAddressUrlFor(
                                   coin: wallet.cryptoCurrency,
                                   address: p.paymentAddress,
                                 ),
-                                mode: LaunchMode.externalApplication,
+                                address: true,
                               ),
                             ),
-                            KerriganCopyRow(title: "Hash", value: p.hash),
+                            KerriganCopyRow(
+                              title: l10n.govProposalHash,
+                              value: p.hash,
+                            ),
                             if (p.feeHash.isNotEmpty)
                               KerriganCopyRow(
-                                title: "Fee transaction",
+                                title: l10n.govFeeTransaction,
                                 value: p.feeHash,
                               ),
                           ],
@@ -388,21 +389,21 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                       children: [
                         Expanded(
                           child: SecondaryButton(
-                            label: "Abstain",
+                            label: l10n.govAbstain,
                             onPressed: () => _vote(KerriganVote.abstain),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: SecondaryButton(
-                            label: "Vote No",
+                            label: l10n.govVoteNo,
                             onPressed: () => _vote(KerriganVote.no),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: PrimaryButton(
-                            label: "Vote Yes",
+                            label: l10n.govVoteYes,
                             onPressed: () => _vote(KerriganVote.yes),
                           ),
                         ),
@@ -464,10 +465,16 @@ class _VoteSheetState extends State<_VoteSheet> {
     if (problem != null) return problem;
     final v = widget.current[m.id];
     if (v == null) return null;
-    if (v.vote == widget.vote) return "Already voted ${widget.vote.label}";
+    if (v.vote == widget.vote) {
+      return switch (widget.vote) {
+        KerriganVote.yes => l10n.govAlreadyVotedYes,
+        KerriganVote.no => l10n.govAlreadyVotedNo,
+        KerriganVote.abstain => l10n.govAlreadyAbstained,
+      };
+    }
     if (!v.canChange) {
       final wait = v.changeableAt.difference(DateTime.now()).inSeconds;
-      return "Can change its vote in ~${kerriganDuration(wait)}";
+      return l10n.govCanChangeIn(kerriganDuration(wait));
     }
     return null;
   }
@@ -521,9 +528,11 @@ class _VoteSheetState extends State<_VoteSheet> {
         .copyWith(color: colors.textSubtitle1);
     final done = _count(_Result.done);
     final failed = _count(_Result.failed);
-    final verb = vote == KerriganVote.abstain
-        ? "Abstain"
-        : "Vote ${vote.label}";
+    final verb = switch (vote) {
+      KerriganVote.yes => l10n.govVoteYes,
+      KerriganVote.no => l10n.govVoteNo,
+      KerriganVote.abstain => l10n.govAbstain,
+    };
     final many = _masternodes.length > kKerriganManyMasternodes;
     final shown = [
       for (final m in _masternodes)
@@ -565,13 +574,13 @@ class _VoteSheetState extends State<_VoteSheet> {
             children: [
               Expanded(
                 child: Text(
-                  "${_selected.length} of ${_masternodes.length} selected",
+                  l10n.govSelectedOf(_selected.length, _masternodes.length),
                   style: secondary,
                 ),
               ),
               if (_results.isEmpty && selectable.isNotEmpty)
                 CustomTextButton(
-                  text: allSelected ? "Select none" : "Select all",
+                  text: allSelected ? l10n.commonSelectNone : l10n.commonSelectAll,
                   onTap: () => setState(
                     () => allSelected
                         ? _selected.removeAll(selectable)
@@ -596,10 +605,10 @@ class _VoteSheetState extends State<_VoteSheet> {
           Text.rich(
             TextSpan(
               children: [
-                TextSpan(text: "$done of ${_results.length} accepted"),
+                TextSpan(text: l10n.govAcceptedOf(done, _results.length)),
                 if (failed > 0)
                   TextSpan(
-                    text: " · $failed failed",
+                    text: " · ${l10n.govFailedCount(failed)}",
                     style: TextStyle(color: colors.textError),
                   ),
               ],
@@ -609,24 +618,28 @@ class _VoteSheetState extends State<_VoteSheet> {
           const SizedBox(height: 4),
         ],
         Text(
-          "Each masternode signs its vote with its voting key. A vote "
-          "can be changed once an hour.",
+          l10n.govVoteExplainedKerrigan,
           style: secondary,
         ),
         const SizedBox(height: 16),
         if (_finished)
           PrimaryButton(
-            label: "Done",
+            label: l10n.commonDone,
             onPressed: () => Navigator.of(context).pop(done > 0),
           )
         else
           PrimaryButton(
             label: _running
-                ? "Voting… ${done + failed} of ${_results.length}"
+                ? l10n.govVoting(done + failed, _results.length)
                 : _selected.isEmpty
-                ? "Select a masternode"
-                : "$verb with ${_selected.length} "
-                      "masternode${_selected.length == 1 ? "" : "s"}",
+                ? l10n.govSelectMasternode
+                : switch (vote) {
+                    KerriganVote.yes => l10n.govVoteYesWith(_selected.length),
+                    KerriganVote.no => l10n.govVoteNoWith(_selected.length),
+                    KerriganVote.abstain => l10n.govAbstainWith(
+                      _selected.length,
+                    ),
+                  },
             enabled: !_running && _selected.isNotEmpty,
             onPressed: _run,
           ),
@@ -660,20 +673,20 @@ class _VoteSheetState extends State<_VoteSheet> {
         );
       case _Result.pending:
         trailing = Icon(Icons.more_horiz_rounded, color: colors.textSubtitle2);
-        subtitle = "Waiting";
+        subtitle = l10n.govFilterWaiting;
       case _Result.running:
         trailing = const SizedBox(
           width: 20,
           height: 20,
           child: CircularProgressIndicator(strokeWidth: 2),
         );
-        subtitle = "Signing and sending…";
+        subtitle = l10n.govSigningSending;
       case _Result.done:
         trailing = Icon(
           Icons.check_circle_rounded,
           color: kerriganVoteColor(KerriganVote.yes, colors),
         );
-        subtitle = "Vote accepted";
+        subtitle = l10n.govVoteAccepted;
       case _Result.failed:
         trailing = Icon(Icons.error_rounded, color: colors.textError);
         subtitle = result!.$2;

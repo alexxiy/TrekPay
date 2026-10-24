@@ -12,12 +12,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app_config.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../../themes/stack_colors.dart';
 import '../../../../utilities/block_explorers.dart';
 import '../../../../utilities/text_styles.dart';
 import '../../../../wallets/crypto_currency/crypto_currency.dart';
 import '../../../../widgets/background.dart';
 import '../../../../widgets/custom_buttons/app_bar_icon_button.dart';
+import '../../../../widgets/desktop/primary_button.dart';
 import '../../../../widgets/rounded_white_container.dart';
 
 class ManageExplorerView extends ConsumerStatefulWidget {
@@ -63,7 +65,7 @@ class _ManageExplorerViewState extends ConsumerState<ManageExplorerView> {
             },
           ),
           title: Text(
-            "${widget.coin.prettyName} block explorer",
+            l10n.explorerOfCoin(widget.coin.prettyName),
             style: STextStyles.navBarTitle(context),
           ),
         ),
@@ -71,6 +73,7 @@ class _ManageExplorerViewState extends ConsumerState<ManageExplorerView> {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: Column(
@@ -85,12 +88,7 @@ class _ManageExplorerViewState extends ConsumerState<ManageExplorerView> {
                       RoundedWhiteContainer(
                         child: Center(
                           child: Text(
-                            "Edit your block explorer above. Keep in mind that "
-                            "every block explorer has a slightly different URL "
-                            "scheme.\n\nPaste in your block explorer of choice,"
-                            " then edit in [TXID] where the transaction ID "
-                            "should go, and ${AppConfig.appName} will auto fill the "
-                            "transaction ID in that place of URL.",
+                            l10n.explorerEditText(AppConfig.appName),
                             style: STextStyles.itemSubtitle(context),
                           ),
                         ),
@@ -98,32 +96,20 @@ class _ManageExplorerViewState extends ConsumerState<ManageExplorerView> {
                     ],
                   ),
                 ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      minWidth: 480,
-                      minHeight: 70,
-                    ),
-                    child: TextButton(
-                      style: Theme.of(context)
-                          .extension<StackColors>()!
-                          .getPrimaryEnabledButtonStyle(context),
-                      onPressed: () async {
-                        textEditingController.text =
-                            textEditingController.text.trim();
-                        await setBlockExplorerForCoin(
-                          coin: widget.coin,
-                          url: Uri.parse(textEditingController.text),
-                        );
+                PrimaryButton(
+                  label: l10n.commonSave,
+                  onPressed: () async {
+                    textEditingController.text =
+                        textEditingController.text.trim();
+                    await setBlockExplorerForCoin(
+                      coin: widget.coin,
+                      url: Uri.parse(textEditingController.text),
+                    );
 
-                        if (mounted) {
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      child: Text("Save", style: STextStyles.button(context)),
-                    ),
-                  ),
+                    if (mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  },
                 ),
               ],
             ),

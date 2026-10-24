@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mutex/mutex.dart';
 
+import '../../l10n/l10n.dart';
 import '../../notifications/show_flush_bar.dart';
 import '../../providers/global/secure_store_provider.dart';
 import '../../providers/providers.dart';
@@ -29,6 +30,7 @@ import '../../utilities/text_styles.dart';
 import '../../utilities/util.dart';
 import '../../wallets/wallet/wallet.dart';
 import '../../widgets/background.dart';
+import '../../widgets/center_or_scroll.dart';
 import '../../widgets/custom_buttons/app_bar_icon_button.dart';
 import '../../widgets/custom_buttons/blue_text_button.dart';
 import '../../widgets/custom_pin_put/custom_pin_put.dart';
@@ -153,7 +155,7 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
           ),
           opaqueBG: true,
           context: context,
-          message: "Loading wallets...",
+          message: l10n.pinLoadingWallets,
         );
 
         if (loadSuccess == null || loadSuccess == false) {
@@ -355,7 +357,7 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
             type: FlushBarType.warning,
             message: lockout != null
                 ? PinAttempts.lockedMessage(lockout)
-                : "Wrong PIN. Try again.",
+                : l10n.pinWrong,
             context: context,
             iconAsset: Assets.svg.alertCircle,
           ),
@@ -401,7 +403,7 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
                       if (ref.read(prefsChangeNotifierProvider).useBiometrics ==
                           true)
                         CustomTextButton(
-                          text: "Use biometrics",
+                          text: l10n.pinUseBiometrics,
                           onTap: () async {
                             await _checkUseBiometrics();
                           },
@@ -413,61 +415,63 @@ class _LockscreenViewState extends ConsumerState<LockscreenView> {
             ),
           ],
         ),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Shake(
-              animationDuration: const Duration(milliseconds: 700),
-              animationRange: 12,
-              controller: _shakeController,
-              child: Center(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Text(
-                        "Enter PIN",
-                        style: STextStyles.pageTitleH1(context),
+        body: CenterOrScroll(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Shake(
+                animationDuration: const Duration(milliseconds: 700),
+                animationRange: 12,
+                controller: _shakeController,
+                child: Center(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Text(
+                          l10n.pinEnter,
+                          style: STextStyles.pageTitleH1(context),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 52),
-                    CustomPinPut(
-                      fieldsCount: pinCount,
-                      eachFieldHeight: 12,
-                      eachFieldWidth: 12,
-                      textStyle: STextStyles.label(context)
-                          .copyWith(fontSize: 1),
-                      focusNode: _pinFocusNode,
-                      controller: _pinTextController,
-                      useNativeKeyboard: false,
-                      obscureText: "",
-                      inputDecoration: InputDecoration(
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        disabledBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        focusedErrorBorder: InputBorder.none,
-                        fillColor: Theme.of(context)
-                            .extension<StackColors>()!
-                            .background,
-                        counterText: "",
+                      const SizedBox(height: 52),
+                      CustomPinPut(
+                        fieldsCount: pinCount,
+                        eachFieldHeight: 12,
+                        eachFieldWidth: 12,
+                        textStyle: STextStyles.label(context)
+                            .copyWith(fontSize: 1),
+                        focusNode: _pinFocusNode,
+                        controller: _pinTextController,
+                        useNativeKeyboard: false,
+                        obscureText: "",
+                        inputDecoration: InputDecoration(
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          focusedErrorBorder: InputBorder.none,
+                          fillColor: Theme.of(context)
+                              .extension<StackColors>()!
+                              .background,
+                          counterText: "",
+                        ),
+                        submittedFieldDecoration: _pinPutDecoration,
+                        isRandom: ref
+                            .read(prefsChangeNotifierProvider)
+                            .randomizePIN,
+                        onSubmit: (pin) {
+                          if (!_autoPinCheckLock.isLocked) {
+                            unawaited(_onSubmitPin(pin));
+                          }
+                        },
                       ),
-                      submittedFieldDecoration: _pinPutDecoration,
-                      isRandom: ref
-                          .read(prefsChangeNotifierProvider)
-                          .randomizePIN,
-                      onSubmit: (pin) {
-                        if (!_autoPinCheckLock.isLocked) {
-                          unawaited(_onSubmitPin(pin));
-                        }
-                      },
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ),

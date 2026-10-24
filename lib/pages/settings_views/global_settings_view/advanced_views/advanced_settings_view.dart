@@ -13,11 +13,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tuple/tuple.dart';
 
 import '../../../../app_config.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../../providers/global/prefs_provider.dart';
 import '../../../../themes/stack_colors.dart';
 import '../../../../utilities/constants.dart';
 import '../../../../utilities/text_styles.dart';
 import '../../../../utilities/shown_coins.dart';
+import '../../../../wallets/crypto_currency/crypto_currency.dart';
 import '../../../../widgets/background.dart';
 import '../../../../widgets/choose_coin_view.dart';
 import '../../../../widgets/custom_buttons/app_bar_icon_button.dart';
@@ -47,7 +49,10 @@ class AdvancedSettingsView extends ConsumerWidget {
               Navigator.of(context).pop();
             },
           ),
-          title: Text("Advanced", style: STextStyles.navBarTitle(context)),
+          title: Text(
+            l10n.commonAdvanced,
+            style: STextStyles.navBarTitle(context),
+          ),
         ),
         body: SafeArea(
           child: Padding(
@@ -77,7 +82,7 @@ class AdvancedSettingsView extends ConsumerWidget {
                       child: Row(
                         children: [
                           Text(
-                            "Logging",
+                            l10n.settingsLogging,
                             style: STextStyles.titleBold12(context),
                             textAlign: TextAlign.left,
                           ),
@@ -104,11 +109,14 @@ class AdvancedSettingsView extends ConsumerWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                "Toggle testnet coins",
-                                style: STextStyles.titleBold12(context),
-                                textAlign: TextAlign.left,
+                              Expanded(
+                                child: Text(
+                                  l10n.advancedShowTestnet,
+                                  style: STextStyles.titleBold12(context),
+                                  textAlign: TextAlign.left,
+                                ),
                               ),
+                              const SizedBox(width: 12),
                               SizedBox(
                                 height: 20,
                                 width: 40,
@@ -151,11 +159,14 @@ class AdvancedSettingsView extends ConsumerWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                "Enable coin control",
-                                style: STextStyles.titleBold12(context),
-                                textAlign: TextAlign.left,
+                              Expanded(
+                                child: Text(
+                                  l10n.advancedEnableCoinControl,
+                                  style: STextStyles.titleBold12(context),
+                                  textAlign: TextAlign.left,
+                                ),
                               ),
+                              const SizedBox(width: 12),
                               SizedBox(
                                 height: 20,
                                 width: 40,
@@ -215,13 +226,15 @@ class AdvancedSettingsView extends ConsumerWidget {
                                 text: TextSpan(
                                   children: [
                                     TextSpan(
-                                      text: "${AppConfig.prefix} Experience",
+                                      text: l10n.advancedExperience(
+                                        AppConfig.prefix,
+                                      ),
                                       style: STextStyles.titleBold12(context),
                                     ),
                                     TextSpan(
                                       text: externalCalls
-                                          ? "\nEasy crypto"
-                                          : "\nIncognito",
+                                          ? "\n${l10n.advancedEasyCrypto}"
+                                          : "\n${l10n.privacyIncognito}",
                                       style: STextStyles.label(context)
                                           .copyWith(fontSize: 15.0),
                                     ),
@@ -251,11 +264,16 @@ class AdvancedSettingsView extends ConsumerWidget {
                       ref,
                       listRoute: ChooseCoinView.routeName,
                       coinRoute: ManageExplorerView.routeName,
-                      listArguments: const Tuple3<String, String, String>(
-                        "Manage block explorers",
-                        "block explorer",
-                        ManageExplorerView.routeName,
-                      ),
+                      listArguments:
+                          Tuple3<
+                            String,
+                            String Function(CryptoCurrency),
+                            String
+                          >(
+                            l10n.explorerManage,
+                            (coin) => l10n.explorerOfCoin(coin.prettyName),
+                            ManageExplorerView.routeName,
+                          ),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -265,7 +283,7 @@ class AdvancedSettingsView extends ConsumerWidget {
                       child: Row(
                         children: [
                           Text(
-                            "Change block explorer",
+                            l10n.explorerChange,
                             style: STextStyles.titleBold12(context),
                             textAlign: TextAlign.left,
                           ),
@@ -299,7 +317,7 @@ class AdvancedSettingsView extends ConsumerWidget {
                       child: Row(
                         children: [
                           Text(
-                            "Units",
+                            l10n.unitsTitle,
                             style: STextStyles.titleBold12(context),
                             textAlign: TextAlign.left,
                           ),

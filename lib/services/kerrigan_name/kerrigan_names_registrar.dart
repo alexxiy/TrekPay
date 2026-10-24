@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import '../../l10n/l10n.dart';
 import '../../wallets/crypto_currency/crypto_currency.dart';
 import 'kerrigan_name.dart';
 import 'kerrigan_name_resolver.dart';
@@ -109,16 +110,16 @@ enum KerriganNamesTxStatus {
   bool get failed => this == orphaned || this == refunded || this == rejected;
 
   String get label => switch (this) {
-    confirmingPayment => "Confirming payment",
-    pendingProof => "Waiting for the proof",
-    queuedProof => "Proof queued",
-    processingProof => "Creating the proof",
-    submittingProof => "Submitting the proof",
-    done => "Done",
-    orphaned => "Orphaned",
-    pendingRefund => "Refund pending",
-    refunded => "Refunded",
-    rejected => "Rejected",
+    confirmingPayment => l10n.kerriganNamesTxConfirmingPayment,
+    pendingProof => l10n.kerriganNamesTxPendingProof,
+    queuedProof => l10n.kerriganNamesTxQueuedProof,
+    processingProof => l10n.kerriganNamesTxProcessingProof,
+    submittingProof => l10n.kerriganNamesTxSubmittingProof,
+    done => l10n.commonDone,
+    orphaned => l10n.kerriganNamesTxOrphaned,
+    pendingRefund => l10n.kerriganNamesTxPendingRefund,
+    refunded => l10n.kerriganNamesTxRefunded,
+    rejected => l10n.kerriganNamesTxRejectedLabel,
   };
 }
 
@@ -163,24 +164,30 @@ typedef KerriganNamesIncoming = ({
 
 /// Where a withdrawal is (TX_REFUND_* of the registrar).
 enum KerriganNamesRefundStatus {
-  waiting(0, "Waiting"),
-  queued(1, "Queued"),
+  waiting(0),
+  queued(1),
 
   /// Being sent: still on its way, so it reads as queued, as on the web.
-  sending(2, "Queued"),
-  paid(3, "Paid"),
+  sending(2),
+  paid(3),
 
   /// The amount went back to the balance.
-  error(4, "Error"),
+  error(4),
 
   /// Retried on its own after a payout batch the node refused: still on
   /// its way.
-  solo(5, "Queued");
+  solo(5);
 
-  const KerriganNamesRefundStatus(this.code, this.label);
+  const KerriganNamesRefundStatus(this.code);
 
   final int code;
-  final String label;
+
+  String get label => switch (this) {
+    waiting => l10n.kerriganNamesRefundWaiting,
+    queued || sending || solo => l10n.kerriganNamesRefundQueued,
+    paid => l10n.kerriganNamesRefundPaid,
+    error => l10n.kerriganNamesRefundError,
+  };
 
   static KerriganNamesRefundStatus? fromCode(Object? code) {
     for (final s in values) {
@@ -258,7 +265,7 @@ class KerriganNamesRegistrar {
         body: body == null ? null : jsonEncode(body),
       );
     } catch (e) {
-      throw KerriganNamesException("Couldn't reach Kerrigan.name ($e)");
+      throw KerriganNamesException(l10n.kerriganNamesUnreachableError(e.toString()));
     }
     Object? json;
     try {
@@ -273,21 +280,17 @@ class KerriganNamesRegistrar {
           error is Map ? error["error_message"] : error,
         );
         throw KerriganNamesException(
-          text ?? "Kerrigan.name refused the request",
+          text ?? l10n.kerriganNamesRefused,
           fromServer: true,
         );
       }
       if (json.containsKey("response")) return json["response"];
     }
-    throw KerriganNamesException(
-      "Kerrigan.name sent an answer the app doesn't understand "
-      "(HTTP ${response.status})",
-    );
+    throw KerriganNamesException(l10n.kerriganNamesBadAnswerHttp(response.status));
   }
 
-  static Never _malformed() => throw const KerriganNamesException(
-    "Kerrigan.name sent an answer the app doesn't understand",
-  );
+  static Never _malformed() =>
+      throw KerriganNamesException(l10n.kerriganNamesBadAnswer);
 
   /// [_call] for the signed requests the registrar takes within a minute
   /// of their nonce: its "Request timeout" means this device's clock is
@@ -297,11 +300,7 @@ class KerriganNamesRegistrar {
       return await _call(path, body);
     } on KerriganNamesException catch (e) {
       if (e.fromServer && e.message == "Request timeout") {
-        throw const KerriganNamesException(
-          "Kerrigan.name turned the request down because this device's clock "
-          "is off. Set the right time and try again.",
-          fromServer: true,
-        );
+        throw KerriganNamesException(l10n.kerriganNamesClockOff, fromServer: true);
       }
       rethrow;
     }
@@ -325,7 +324,7 @@ class KerriganNamesRegistrar {
     final address = r["address"];
     if (r["network"] != null && r["network"] != service.network) {
       throw KerriganNamesException(
-        "Kerrigan.name answered for ${r["network"]}, not ${service.network}",
+        l10n.kerriganNamesWrongNetwork("${r["network"]}", service.network),
       );
     }
     if (address is! String || !isValidKerriganNamesTarget(address)) _malformed();
@@ -348,7 +347,7 @@ class KerriganNamesRegistrar {
   /// there too, so one that isn't a name never reaches a URL.
   static String _checkPath(String name) {
     if (!isValidKerriganName(name)) {
-      throw KerriganNamesException("$name isn't a valid Kerrigan name");
+      throw KerriganNamesException(l10n.kerriganNamesNotValidName(name));
     }
     return "check/$name";
   }
@@ -536,9 +535,7 @@ class KerriganNamesRegistrar {
       "signature": signature,
     });
     if (r != 1) {
-      throw const KerriganNamesException(
-        "The withdrawal failed: Kerrigan.name sent an unexpected answer",
-      );
+      throw KerriganNamesException(l10n.kerriganNamesWithdrawUnexpected);
     }
   }
 

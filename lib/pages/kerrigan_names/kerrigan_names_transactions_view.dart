@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../services/kerrigan_name/kerrigan_name.dart';
 import '../../services/kerrigan_name/kerrigan_names_protocol.dart';
@@ -132,7 +133,7 @@ class _KerriganNamesTransactionsViewState
     } catch (e) {
       if (!mounted || request != _request) return;
       setState(
-        () => _error = "Couldn't load the transactions. ${kerriganNamesError(e)}",
+        () => _error = l10n.kerriganNamesLoadTransactionsFailed(kerriganNamesError(e)),
       );
     } finally {
       if (mounted && request == _request) setState(() => _loading = false);
@@ -159,13 +160,13 @@ class _KerriganNamesTransactionsViewState
     builder: (context) {
       final colors = Theme.of(context).extension<StackColors>()!;
       return StackDialog(
-        title: "Transaction memo",
+        title: l10n.kerriganNamesTransactionMemo,
         message: memo,
         leftButton: TextButton(
           style: colors.getSecondaryEnabledButtonStyle(context),
           onPressed: () => Navigator.of(context).pop(),
           child: Text(
-            "Close",
+            l10n.commonClose,
             style: STextStyles.button(context)
                 .copyWith(color: colors.accentColorDark),
           ),
@@ -173,10 +174,10 @@ class _KerriganNamesTransactionsViewState
         rightButton: TextButton(
           style: colors.getPrimaryEnabledButtonStyle(context),
           onPressed: () async {
-            await kerriganNamesCopy(context, memo, "Memo");
+            await kerriganNamesCopy(context, memo, l10n.commonMemo);
             if (context.mounted) Navigator.of(context).pop();
           },
-          child: Text("Copy", style: STextStyles.button(context)),
+          child: Text(l10n.commonCopy, style: STextStyles.button(context)),
         ),
       );
     },
@@ -230,9 +231,9 @@ class _KerriganNamesTransactionsViewState
       ),
       child: Row(
         children: [
-          tab("Incoming", KerriganNamesIcons.incoming, false),
+          tab(l10n.kerriganNamesIncoming, KerriganNamesIcons.incoming, false),
           const SizedBox(width: 4),
-          tab("Refunds", KerriganNamesIcons.refunds, true),
+          tab(l10n.kerriganNamesRefunds, KerriganNamesIcons.refunds, true),
         ],
       ),
     );
@@ -242,7 +243,7 @@ class _KerriganNamesTransactionsViewState
     final colors = Theme.of(context).extension<StackColors>()!;
     return InkWell(
       borderRadius: BorderRadius.circular(6),
-      onTap: () => kerriganNamesCopy(context, txId, "Transaction ID"),
+      onTap: () => kerriganNamesCopy(context, txId, l10n.commonTransactionId),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Row(
@@ -311,7 +312,10 @@ class _KerriganNamesTransactionsViewState
                     status,
                     if (confirmations != null) ...[
                       const SizedBox(width: 8),
-                      Text("$confirmations confirmations", style: secondary),
+                      Text(
+                        l10n.kerriganNamesConfirmations(confirmations),
+                        style: secondary,
+                      ),
                     ],
                   ],
                 ),
@@ -332,7 +336,7 @@ class _KerriganNamesTransactionsViewState
                           ),
                           onPressed: () => _showMemo(memo),
                           child: Text(
-                            "Show memo",
+                            l10n.kerriganNamesShowMemo,
                             style: STextStyles.w600_12(context)
                                 .copyWith(color: colors.accentColorBlue),
                           ),
@@ -364,7 +368,7 @@ class _KerriganNamesTransactionsViewState
           name: s.name,
           op: s.op,
           status: const KerriganNamesStatusPill(status: null),
-          note: "Sent. Waiting for Kerrigan.name to see it.",
+          note: l10n.kerriganNamesSentWaiting,
           txId: s.txid,
           memo: s.memo,
           onTap: () => _open(
@@ -436,7 +440,9 @@ class _KerriganNamesTransactionsViewState
                       ),
                     ),
                     KerriganNamesPill(
-                      text: r.status?.label ?? "Status ${r.rawStatus ?? "?"}",
+                      text:
+                          r.status?.label ??
+                          l10n.kerriganNamesStatusCode("${r.rawStatus ?? "?"}"),
                       color: kerriganNamesReadable(switch (r.status) {
                         KerriganNamesRefundStatus.paid => colors.accentColorGreen,
                         KerriganNamesRefundStatus.error => colors.accentColorRed,
@@ -452,7 +458,7 @@ class _KerriganNamesTransactionsViewState
                 Text(
                   [
                     if (r.date != null) day(r.date!),
-                    if (r.fee.isNotEmpty) "Fee ${r.fee}%",
+                    if (r.fee.isNotEmpty) l10n.kerriganNamesFeePercent(r.fee),
                   ].join("  ·  "),
                   style: secondary,
                 ),
@@ -481,7 +487,7 @@ class _KerriganNamesTransactionsViewState
         backgroundColor: colors.background,
         appBar: KerriganNamesAppBar(
           walletId: widget.walletId,
-          title: "My Transactions",
+          title: l10n.kerriganNamesMyTransactions,
           section: KerriganNamesSection.transactions,
         ),
         body: SafeArea(
@@ -495,7 +501,7 @@ class _KerriganNamesTransactionsViewState
                     Expanded(child: _tabs()),
                     const SizedBox(width: 8),
                     IconButton(
-                      tooltip: "Refresh",
+                      tooltip: l10n.commonRefresh,
                       onPressed: _loading ? null : _load,
                       icon: _loading
                           ? const SizedBox(
@@ -513,9 +519,8 @@ class _KerriganNamesTransactionsViewState
                 const SizedBox(height: 8),
                 Text(
                   _refunds
-                      ? "Your withdrawals from My Balance."
-                      : "Your payments to Kerrigan.name. Tap one in progress to "
-                            "follow it.",
+                      ? l10n.kerriganNamesRefundsIntro
+                      : l10n.kerriganNamesIncomingIntro,
                   style: STextStyles.itemSubtitle(context),
                 ),
                 const SizedBox(height: 12),
@@ -526,7 +531,11 @@ class _KerriganNamesTransactionsViewState
                 ] else if (shown == null && _loading)
                   const KerriganNamesListState(loading: true)
                 else if (rows.isEmpty)
-                  const KerriganNamesListState(empty: "No transactions yet.")
+                  KerriganNamesListState(
+                    empty: _refunds
+                        ? l10n.kerriganNamesNoWithdrawals
+                        : l10n.kerriganNamesNoPayments,
+                  )
                 else ...[
                   ...rows,
                   KerriganNamesPager(

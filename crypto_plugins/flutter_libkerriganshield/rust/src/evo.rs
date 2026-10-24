@@ -9,7 +9,7 @@
 use std::net::{IpAddr, SocketAddr};
 
 use bls12_381::hash_to_curve::{ExpandMsgXmd, HashToCurve};
-use bls12_381::{pairing, G1Affine, G1Projective, G2Affine, G2Projective, Scalar};
+use bls12_381::{G1Affine, G1Projective, G2Affine, G2Projective, Scalar};
 use secp256k1::ecdsa::RecoverableSignature;
 use secp256k1::{Message, SecretKey};
 use serde::{Deserialize, Serialize};
@@ -146,6 +146,7 @@ pub fn bls_verify(pk: &[u8; 48], msg: &[u8], sig: &[u8; 96]) -> bool {
     ) else {
         return false;
     };
+    use bls12_381::pairing;
     pairing(&pk, &G2Affine::from(hash_to_g2(msg))) == pairing(&G1Affine::generator(), &sig)
 }
 

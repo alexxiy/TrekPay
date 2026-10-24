@@ -1,0 +1,3991 @@
+{
+  "@@locale": "en",
+  "languageSystem": "System language",
+  "@languageSystem": {
+    "description": "First choice in the language list: follow the phone's or computer's language."
+  },
+  "languageEnglish": "English",
+  "languageGerman": "German",
+  "languageSpanish": "Spanish",
+  "languagePortuguese": "Portuguese",
+  "languageTurkish": "Turkish",
+  "languageAzerbaijani": "Azerbaijani",
+  "languageRussian": "Russian",
+  "languageBelarusian": "Belarusian",
+  "languageUkrainian": "Ukrainian",
+  "languageVietnamese": "Vietnamese",
+  "languageChinese": "Chinese",
+  "languageKorean": "Korean",
+  "languageJapanese": "Japanese",
+  "languageTitle": "Language",
+  "languageSelect": "Select language",
+  "languageChange": "Change language",
+  "languageDescription": "The language of your wallet. By default it follows the system language.",
+  "commonSearch": "Search",
+  "commonCancel": "Cancel",
+  "commonSaveChanges": "Save changes",
+  "logLevelCurrent": "Current level: {level}",
+  "@logLevelCurrent": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "logLevelPrivacyWarning": "<b>Privacy Warning:</b> Selecting <b>Trace</b> or <b>Debug</b> may log sensitive metadata, such as transaction details, amounts, addresses, or network activity. While <b>Info</b> logs are less likely to contain sensitive data, they may still include some. No private keys, mnemonics, or credentials will ever be logged, but enabling these levels could expose information that might compromise privacy if accessed by unauthorized parties.",
+  "@logLevelPrivacyWarning": {
+    "description": "Keep <b> and </b> around the words to bold: the log level names Trace, Debug and Info stay in English."
+  },
+  "privateKeyShowWif": "Show WIF private key",
+  "privateKeyAuthReason": "Authenticate to show WIF private key",
+  "privateKeyWif": "Private key (WIF)",
+  "commonCancelCaps": "CANCEL",
+  "@commonCancelCaps": {
+    "description": "Cancel button of the system's fingerprint prompt, in capitals where the language has them."
+  },
+  "commonLoading": "Loading...",
+  "commonShow": "Show",
+  "commonSearchEllipsis": "Search...",
+  "blockExplorerOpenFailedTitle": "Could not open in block explorer",
+  "blockExplorerOpenFailed": "Failed to open \"{url}\"",
+  "@blockExplorerOpenFailed": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "commonNeverShowAgain": "Never show again",
+  "blockExplorerOutsideTor": "Your browser opens it outside of Tor.",
+  "blockExplorerWarningTransaction": "You are about to view this transaction in a block explorer. The explorer may log your IP address and link it to the transaction. Only proceed if you trust {explorer}.",
+  "@blockExplorerWarningTransaction": {
+    "placeholders": {
+      "explorer": {
+        "type": "String"
+      }
+    }
+  },
+  "blockExplorerWarningAddress": "You are about to view this address in a block explorer. The explorer may log your IP address and link it to the address. Only proceed if you trust {explorer}.",
+  "@blockExplorerWarningAddress": {
+    "placeholders": {
+      "explorer": {
+        "type": "String"
+      }
+    }
+  },
+  "commonAttention": "Attention",
+  "commonContinue": "Continue",
+  "commonCopiedToClipboard": "Copied to clipboard",
+  "commonCopy": "Copy",
+  "commonEdit": "Edit",
+  "pinBackspaceSemantics": "Backspace Button. Deletes The Last Digit.",
+  "@pinBackspaceSemantics": {
+    "description": "Screen reader label of the PIN pad's delete key."
+  },
+  "backButtonSemantics": "Back Button. Takes Back To Previous Page.",
+  "@backButtonSemantics": {
+    "description": "Screen reader label of the back arrow."
+  },
+  "datePickerFrom": "From...",
+  "datePickerTo": "To...",
+  "commonOk": "Ok",
+  "torOff": "Tor off",
+  "qrScanTitle": "Scan QR code",
+  "qrScanNoCamera": "No camera found. Use Select file to scan a QR code from an image.",
+  "qrScanSelectFile": "Select file",
+  "qrScanNoFileSelected": "No file selected",
+  "qrScanFileError": "Error selecting file.",
+  "qrScanDecodeFailed": "Failed to decode image.",
+  "qrScanNoCode": "No QR code found in the image.",
+  "qrScanProcessError": "Error processing the image. Please try again.",
+  "qrScanFlashlight": "Flashlight",
+  "commonClose": "Close",
+  "detailWillAppearHere": "{title} will appear here",
+  "@detailWillAppearHere": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "emojiSelect": "Select emoji",
+  "walletNameEmpty": "Empty wallet name not allowed.",
+  "walletRenamed": "Wallet renamed",
+  "walletNameExists": "Wallet named \"{name}\" already exists",
+  "@walletNameExists": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "favoritesRemove": "Remove from favorites",
+  "favoritesAdd": "Add to favorites",
+  "mnemonicAccountNote": "This wallet is account {account} of its recovery phrase. Restoring the phrase in Astronaut brings back every account with history, and Add account brings back the others.",
+  "@mnemonicAccountNote": {
+    "description": "\"Add account\" is the name of a button.",
+    "placeholders": {
+      "account": {
+        "type": "int"
+      }
+    }
+  },
+  "mnemonicPassphraseNote": "This wallet also has a passphrase. To restore it you need the passphrase as well as these words: the words alone open a different, empty wallet.",
+  "mnemonicShowPassphrase": "Show passphrase",
+  "commonConnect": "Connect",
+  "nodeConnectFailed": "Could not connect to node",
+  "commonDetails": "Details",
+  "commonConnected": "Connected",
+  "commonDisconnected": "Disconnected",
+  "nodeOptions": "Node options",
+  "memoHint": "Sent privately with the payment",
+  "memoBytes": "{bytes} / {max} bytes",
+  "@memoBytes": {
+    "placeholders": {
+      "bytes": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "torSettingsSemantics": "Tor Settings Button. Takes To Tor Settings Page.",
+  "walletOpening": "Opening {name}",
+  "@walletOpening": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "walletOpen": "Open wallet",
+  "commonMore": "More",
+  "commonButton": "Button",
+  "@commonButton": {
+    "description": "Screen reader label of a button without its own."
+  },
+  "kerriganNamesTitle": "Names",
+  "@kerriganNamesTitle": {
+    "description": "The Kerrigan Name screens' title: Kerrigan names (domain-like names such as john.krgn)."
+  },
+  "kerriganNamesMyNames": "My Names",
+  "kerriganNamesMyBalance": "My Balance",
+  "kerriganNamesMyTransactions": "My Transactions",
+  "kerriganNamesMarketplace": "Marketplace",
+  "kerriganNamesAbout": "About Kerrigan Name",
+  "kerriganNamesMenu": "Names menu",
+  "kerriganNamesInfoHowTitle": "How it works",
+  "kerriganNamesInfoHow1": "Get your own name, like john.krgn, and share it to get paid instead of a long address.",
+  "kerriganNamesInfoHow2": "Your names are yours: keep them, sell them on the marketplace or give them to someone else. Only you can change them.",
+  "kerriganNamesInfoBenefitsTitle": "Benefits",
+  "kerriganNamesInfoBenefits1": "No renewal fees. Once registered, a name is yours for good.",
+  "kerriganNamesInfoBenefits2": "Names are stored on-chain, where nobody can alter or remove them.",
+  "kerriganNamesInfoBenefits3": "Private by design: a name says nothing about your finances.",
+  "kerriganNamesInfoControlTitle": "Control",
+  "kerriganNamesInfoControl1": "Point your name to a new address at any time. People keep paying john.krgn and never need to know.",
+  "kerriganNamesInfoControl2": "Hand a name to a new owner. That takes a signature with your key, so only you can do it.",
+  "kerriganNamesInfoControl3": "List names on the marketplace and earn from popular ones.",
+  "kerriganNamesInfoQuestionTitle": "Have a question?",
+  "kerriganNamesInfoTelegram": "Join us on Telegram",
+  "kerriganNamesInfoDocs": "Read the docs",
+  "kerriganNamesInfoSlogan": "Let's support privacy and make it simpler.",
+  "commonPageOf": "{page} / {count}",
+  "@commonPageOf": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonFinish": "Finish",
+  "commonSkip": "Skip",
+  "commonNext": "Next",
+  "kerriganNamesStepCheck": "Check",
+  "kerriganNamesStepPay": "Pay",
+  "kerriganNamesStepDone": "Done!",
+  "kerriganNamesStatusSent": "Sent",
+  "kerriganNamesStatusCode": "Status {code}",
+  "@kerriganNamesStatusCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "commonTryAgain": "Try again",
+  "commonSomethingWentWrong": "Something went wrong",
+  "commonSomethingWentWrongError": "Something went wrong: {error}",
+  "@commonSomethingWentWrongError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "commonCopiedWhat": "{what} copied",
+  "@commonCopiedWhat": {
+    "description": "A short note after copying, e.g. \"Address copied\". {what} is a noun such as Address or Memo: phrase it so it works for any of them.",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesInvalidName": "Use letters, numbers and single hyphens (not at the start or end), up to {max} characters with the zone.",
+  "@kerriganNamesInvalidName": {
+    "description": "The zone is the ending of a name: .krgn, .private, .secure or .safe.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "kerriganNamesUnreachable": "Couldn't reach Kerrigan.name. Please try again.",
+  "kerriganNamesBuyName": "Buy name",
+  "kerriganNamesBuyConfirm": "Do you want to buy {name} for {amount}?",
+  "@kerriganNamesBuyConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesBuy": "Buy",
+  "kerriganNamesUnlistTitle": "Unlist from sale",
+  "kerriganNamesUnlistConfirm": "Take {name} off the marketplace?",
+  "@kerriganNamesUnlistConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesUnlist": "Unlist",
+  "kerriganNamesZone": "Zone",
+  "kerriganNamesZoneSample": "name",
+  "@kerriganNamesZoneSample": {
+    "description": "Placeholder in the zone list while the name field is empty: \"name.krgn\". Lowercase, letters a-z only if possible."
+  },
+  "kerriganNamesAvailableFor": "is available for {amount}",
+  "@kerriganNamesAvailableFor": {
+    "description": "Shown on its own line under a name, e.g. \"my-shop.krgn\" / \"is available for 10 KRGN\".",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesGetItNow": "Get it now",
+  "kerriganNamesListedFor": "is listed on the marketplace for {amount}",
+  "@kerriganNamesListedFor": {
+    "description": "Shown on its own line under a name.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesUnlistItNow": "Unlist it now",
+  "kerriganNamesBuyItNow": "Buy it now",
+  "kerriganNamesTaken": "{name} is already taken.",
+  "@kerriganNamesTaken": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesGetYourName": "Get your <b>Kerrigan name</b>",
+  "@kerriganNamesGetYourName": {
+    "description": "The words between <b> and </b> show in color."
+  },
+  "kerriganNamesIntro": "Register an easy name for your Kerrigan address, and getting paid is as simple as sharing it.",
+  "kerriganNamesHowDoesItWork": "How does it work?",
+  "kerriganNamesRegisterYourName": "Register your name",
+  "kerriganNamesEnterName": "Enter the name you want",
+  "kerriganNamesChecking": "Checking…",
+  "kerriganNamesCheck": "Check",
+  "kerriganNamesInFlight": "Your payment for this name is being processed.",
+  "kerriganNamesFollowIt": "Follow it",
+  "kerriganNamesFlowRegister": "Register {name}",
+  "@kerriganNamesFlowRegister": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesFlowBuy": "Buy {name}",
+  "@kerriganNamesFlowBuy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesFlowChangeDestination": "Change destination",
+  "@kerriganNamesFlowChangeDestination": {
+    "description": "The destination is the address a name points to: payments to the name go there."
+  },
+  "kerriganNamesFlowChangeOwner": "Change owner",
+  "kerriganNamesFlowList": "List on the marketplace",
+  "kerriganNamesFlowChangePrice": "Change sell price",
+  "kerriganNamesFlowUnlist": "Unlist {name}",
+  "@kerriganNamesFlowUnlist": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesSigning": "Signing",
+  "kerriganNamesMemoTooLong": "This doesn't fit in a payment memo. Choose a shorter name.",
+  "kerriganNamesSigningFailed": "Signing failed",
+  "kerriganNamesChooseAddress": "Choose an address",
+  "kerriganNamesAlreadyPointsHere": "{name} already points to this address.",
+  "@kerriganNamesAlreadyPointsHere": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesInvalidShieldAddress": "That isn't a valid shield address. Check it for typos.",
+  "kerriganNamesShieldOnly": "A name can only point to a shield address. It starts with \"ps1\".",
+  "kerriganNamesOwnKey": "That's your own key: the name is yours.",
+  "kerriganNamesInvalidPublicKey": "That isn't a valid public key. It's 64 characters, 0-9 and a-f.",
+  "kerriganNamesInvalidPrice": "Enter a price above 0 and up to {max}, with up to {decimals, plural, =1{1 decimal} other{{decimals} decimals}}.",
+  "@kerriganNamesInvalidPrice": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      },
+      "decimals": {
+        "type": "int"
+      }
+    }
+  },
+  "kerriganNamesInvalidPriceWhole": "Enter a price above 0 and up to {max}, without decimals.",
+  "@kerriganNamesInvalidPriceWhole": {
+    "placeholders": {
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesWherePoint": "Where should {name} point?",
+  "@kerriganNamesWherePoint": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesWherePointText": "Choose one of your shield addresses, or enter another one. Anyone who pays {name} pays this address, and you can change it later.",
+  "@kerriganNamesWherePointText": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesNewDestination": "Choose the new destination",
+  "kerriganNamesNewDestinationText": "Payments to {name} will go to this address. People keep paying the name and never need to know.",
+  "@kerriganNamesNewDestinationText": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesWhoOwns": "Who will own {name}?",
+  "@kerriganNamesWhoOwns": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesWhoOwnsText": "Paste the public key of the new owner. They find it in My Names, in Astronaut or on Kerrigan.name.",
+  "kerriganNamesSetPrice": "Set the price for {name}",
+  "@kerriganNamesSetPrice": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesSetNewPrice": "Set a new price for {name}",
+  "@kerriganNamesSetNewPrice": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesSetPriceText": "Anyone can buy the name for this price on the marketplace. The price then goes to your Kerrigan.name balance (My Balance), to withdraw to your wallet.",
+  "kerriganNamesCostRegistration": "Registration: {amount}, plus the network fee.",
+  "@kerriganNamesCostRegistration": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesCostPrice": "Price: {amount}, plus the network fee.",
+  "@kerriganNamesCostPrice": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesCostChange": "This change costs {amount}, plus the network fee.",
+  "@kerriganNamesCostChange": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesMyAddresses": "My addresses",
+  "kerriganNamesAnotherAddress": "Another address",
+  "kerriganNamesShieldAddress": "Shield address",
+  "commonPaste": "Paste",
+  "kerriganNamesCurrentDestination": "current destination",
+  "@kerriganNamesCurrentDestination": {
+    "description": "A tag next to the address the name points to now, in a list of addresses."
+  },
+  "kerriganNamesNewOwnerKey": "New owner's public key",
+  "kerriganNamesNewOwnerWarning": "The new owner gets {name} and full control of it. Only they can give it back.",
+  "@kerriganNamesNewOwnerWarning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesPrice": "Price",
+  "kerriganNamesListedNow": "Listed for {amount} now",
+  "@kerriganNamesListedNow": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesNoteRegister": "Kerrigan.name: register {name}",
+  "@kerriganNamesNoteRegister": {
+    "description": "A note saved with the payment in the wallet's history.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesNoteBuy": "Kerrigan.name: buy {name}",
+  "@kerriganNamesNoteBuy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesNoteDestination": "Kerrigan.name: new destination for {name}",
+  "@kerriganNamesNoteDestination": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesNoteOwner": "Kerrigan.name: new owner for {name}",
+  "@kerriganNamesNoteOwner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesNoteList": "Kerrigan.name: list {name}",
+  "@kerriganNamesNoteList": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesNoteUnlist": "Kerrigan.name: unlist {name}",
+  "@kerriganNamesNoteUnlist": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesPayToRegister": "Pay to register {name}",
+  "@kerriganNamesPayToRegister": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesPayForChange": "Pay to process the change",
+  "kerriganNamesPaymentExplained": "Your wallet makes this payment to Kerrigan.name with the memo inside. The memo is the command, and Kerrigan.name acts on it once the payment is confirmed. Kerrigan.name publishes its viewing key, so anyone can read the memo, but there's nothing secret in it.",
+  "kerriganNamesToKerriganName": "To Kerrigan.name",
+  "commonAddress": "Address",
+  "commonAmount": "Amount",
+  "kerriganNamesShieldedMemo": "Shielded memo",
+  "commonMemo": "Memo",
+  "kerriganNamesAddedForYou": "Added for you",
+  "kerriganNamesFeeOnTop": "The network fee comes on top: Kerrigan.name needs the exact amount, and refunds a payment that differs.",
+  "kerriganNamesCreateTransaction": "Create transaction",
+  "kerriganNamesBalanceUpdated": "Balance updated: {amount}",
+  "@kerriganNamesBalanceUpdated": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesLoadBalanceFailed": "Couldn't load the balance. {error}",
+  "@kerriganNamesLoadBalanceFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesWithdraw": "Withdraw",
+  "kerriganNamesWithdrawConfirm": "Withdraw {amount} to {address}? You'll get about {net} after the service fee ({fee}%).",
+  "@kerriganNamesWithdrawConfirm": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "address": {
+        "type": "String"
+      },
+      "net": {
+        "type": "String"
+      },
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesAskingPayout": "Asking Kerrigan.name to pay out",
+  "kerriganNamesWithdrawalFailedText": "The withdrawal failed",
+  "kerriganNamesWithdrawalFailed": "Withdrawal failed",
+  "kerriganNamesWithdrawDone": "Done! About {amount} is on its way to your wallet.",
+  "@kerriganNamesWithdrawDone": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesYourBalance": "Your balance",
+  "commonUnavailable": "Unavailable",
+  "commonRefresh": "Refresh",
+  "kerriganNamesBalanceExplained": "Payments Kerrigan.name couldn't use come back here, and so does the price of a name you sell. Withdraw them to your wallet whenever you like.",
+  "kerriganNamesWithdrawTo": "Withdraw to",
+  "kerriganNamesYouGetAbout": "You'll get about {amount} after the service fee ({fee}%).",
+  "@kerriganNamesYouGetAbout": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesMinimumWithdrawal": "The minimum withdrawal is {amount}. Your balance stays here until it reaches that.",
+  "@kerriganNamesMinimumWithdrawal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesLoadNamesFailed": "Couldn't load the names. {error}",
+  "@kerriganNamesLoadNamesFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesYours": "Yours",
+  "kerriganNamesChangePrice": "Change price",
+  "kerriganNamesMarketplaceIntro": "Find and buy Kerrigan names from other users.",
+  "kerriganNamesSearchOnSale": "Search names on sale",
+  "kerriganNamesNoMatch": "No names match your search.",
+  "kerriganNamesNoneOnSale": "There are no names for sale right now.",
+  "kerriganNamesSellMyNames": "Sell my names",
+  "kerriganNamesLoadMyNamesFailed": "Couldn't load your names. {error}",
+  "@kerriganNamesLoadMyNamesFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesListedForShort": "Listed for {amount}",
+  "@kerriganNamesListedForShort": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesActionUnlistNote": "Take it off the marketplace",
+  "kerriganNamesActionDestinationNote": "Point it to another shield address",
+  "kerriganNamesActionOwnerNote": "Give it to someone else's public key",
+  "kerriganNamesActionList": "List on marketplace",
+  "kerriganNamesActionListNote": "Put it up for sale",
+  "commonPublicKey": "Public key",
+  "kerriganNamesYourPublicKey": "Your public key",
+  "kerriganNamesPublicKeyExplained": "Your names belong to this key. It comes from your recovery phrase: open Kerrigan.name with the same phrase and you'll find the same names. Share it with anyone who wants to give you a name.",
+  "kerriganNamesOnSale": "On sale: {amount}",
+  "@kerriganNamesOnSale": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesActive": "Active",
+  "kerriganNamesPointsTo": "Points to {address}",
+  "@kerriganNamesPointsTo": {
+    "description": "{address} is an address's name in the wallet, or the address itself.",
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesPointsElsewhere": "Points to an address not on this wallet's list",
+  "kerriganNamesManage": "Manage",
+  "kerriganNamesMyNamesIntro": "Manage where your names point and who owns them.",
+  "kerriganNamesSearchMine": "Search your names",
+  "kerriganNamesNoneYet": "You haven't registered a Kerrigan name yet.",
+  "kerriganNamesRegisterFirst": "Register your first name",
+  "kerriganNamesDoneBuy": "You've bought {name}!",
+  "@kerriganNamesDoneBuy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesDoneDestination": "{name} now points to its new address!",
+  "@kerriganNamesDoneDestination": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesDoneOwner": "{name} now belongs to its new owner!",
+  "@kerriganNamesDoneOwner": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesDoneList": "{name} is listed on the marketplace!",
+  "@kerriganNamesDoneList": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesDoneUnlist": "{name} is off the marketplace!",
+  "@kerriganNamesDoneUnlist": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesDoneRegister": "You've registered {name}!",
+  "@kerriganNamesDoneRegister": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesMinutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
+  "@kerriganNamesMinutes": {
+    "description": "Part of {time} in \"It starts in about {time}.\", before the seconds: use the form that fits there.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kerriganNamesSeconds": "{count, plural, =1{1 second} other{{count} seconds}}",
+  "@kerriganNamesSeconds": {
+    "description": "Part of {time} in \"It starts in about {time}.\", after the minutes: use the form that fits there.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kerriganNamesLookingForPayment": "Looking for your payment…",
+  "kerriganNamesLookingForPaymentText": "Waiting for your payment to reach the network.",
+  "kerriganNamesWaitingConfirmation": "Waiting for confirmation",
+  "kerriganNamesWaitingConfirmationText": "Your transaction is on the network.",
+  "kerriganNamesConfirmed": "Confirmed {count}/{needed}",
+  "@kerriganNamesConfirmed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "needed": {
+        "type": "int"
+      }
+    }
+  },
+  "kerriganNamesWaitingPaymentConfirmations": "Waiting for the payment's confirmations.",
+  "kerriganNamesWaitingRefundConfirmations": "Waiting for the refund's confirmations.",
+  "kerriganNamesWaitingProof": "Waiting for the ZK proof…",
+  "kerriganNamesProofStartsIn": "It starts in about {time}.",
+  "@kerriganNamesProofStartsIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesProofAboutToStart": "It's about to start.",
+  "kerriganNamesCreatingProof": "Creating the ZK proof…",
+  "kerriganNamesCreatingProofText": "Checking the cryptographic proofs.",
+  "kerriganNamesSubmittingProof": "Submitting the ZK proof…",
+  "kerriganNamesAlmostDone": "Almost done.",
+  "kerriganNamesCongrats": "Congrats!",
+  "kerriganNamesPaymentRefunded": "Payment refunded",
+  "kerriganNamesPaymentRefundedText": "Something in the payment was wrong, or someone else got the name first. The amount is back in your Kerrigan.name balance (My Balance).",
+  "kerriganNamesPaymentUnsuccessful": "Payment unsuccessful",
+  "kerriganNamesPaymentUnsuccessfulText": "The transaction seems to be orphaned because of Kerrigan network issues.",
+  "kerriganNamesTxRejected": "Transaction not accepted",
+  "kerriganNamesTxRejectedText": "Kerrigan.name rejected the transaction because it doesn't follow the protocol rules.",
+  "kerriganNamesNextCheckIn": "Next check in {seconds}s",
+  "@kerriganNamesNextCheckIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "kerriganNamesOfflineRetry": "Couldn't reach Kerrigan.name. Trying again at the next check.",
+  "kerriganNamesCanClose": "You can close this screen: nothing stops. Follow the payment in My Transactions and tap it there to come back here.",
+  "commonTransactionId": "Transaction ID",
+  "kerriganNamesTransactionShort": "Transaction {id}",
+  "@kerriganNamesTransactionShort": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "commonDone": "Done",
+  "kerriganNamesLoadTransactionsFailed": "Couldn't load the transactions. {error}",
+  "@kerriganNamesLoadTransactionsFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesTransactionMemo": "Transaction memo",
+  "kerriganNamesIncoming": "Incoming",
+  "@kerriganNamesIncoming": {
+    "description": "Tab: the user's payments to Kerrigan.name."
+  },
+  "kerriganNamesRefunds": "Refunds",
+  "@kerriganNamesRefunds": {
+    "description": "Tab: withdrawals from the Kerrigan.name balance."
+  },
+  "kerriganNamesConfirmations": "{progress} confirmations",
+  "@kerriganNamesConfirmations": {
+    "description": "{progress} is like 2/3: confirmations so far and needed.",
+    "placeholders": {
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesShowMemo": "Show memo",
+  "kerriganNamesSentWaiting": "Sent. Waiting for Kerrigan.name to see it.",
+  "kerriganNamesFeePercent": "Fee {fee}%",
+  "@kerriganNamesFeePercent": {
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesRefundsIntro": "Your withdrawals from My Balance.",
+  "kerriganNamesIncomingIntro": "Your payments to Kerrigan.name. Tap one in progress to follow it.",
+  "kerriganNamesNoWithdrawals": "No withdrawals yet.",
+  "kerriganNamesNoPayments": "No payments to Kerrigan.name yet.",
+  "kerriganNamesTxConfirmingPayment": "Confirming payment",
+  "kerriganNamesTxPendingProof": "Waiting for the proof",
+  "kerriganNamesTxQueuedProof": "Proof queued",
+  "kerriganNamesTxProcessingProof": "Creating the proof",
+  "kerriganNamesTxSubmittingProof": "Submitting the proof",
+  "kerriganNamesTxOrphaned": "Orphaned",
+  "kerriganNamesTxPendingRefund": "Refund pending",
+  "kerriganNamesTxRefunded": "Refunded",
+  "kerriganNamesTxRejectedLabel": "Rejected",
+  "kerriganNamesRefundWaiting": "Waiting",
+  "kerriganNamesRefundQueued": "Queued",
+  "kerriganNamesRefundPaid": "Paid",
+  "kerriganNamesRefundError": "Error",
+  "kerriganNamesUnreachableError": "Couldn't reach Kerrigan.name ({error})",
+  "@kerriganNamesUnreachableError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesRefused": "Kerrigan.name refused the request",
+  "kerriganNamesBadAnswerHttp": "Kerrigan.name sent an answer the app doesn't understand (HTTP {status})",
+  "@kerriganNamesBadAnswerHttp": {
+    "placeholders": {
+      "status": {
+        "type": "int"
+      }
+    }
+  },
+  "kerriganNamesBadAnswer": "Kerrigan.name sent an answer the app doesn't understand",
+  "kerriganNamesClockOff": "Kerrigan.name turned the request down because this device's clock is off. Set the right time and try again.",
+  "kerriganNamesWrongNetwork": "Kerrigan.name answered for {got}, not {expected}",
+  "@kerriganNamesWrongNetwork": {
+    "placeholders": {
+      "got": {
+        "type": "String"
+      },
+      "expected": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesNotValidName": "{name} isn't a valid Kerrigan name",
+  "@kerriganNamesNotValidName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNamesWithdrawUnexpected": "The withdrawal failed: Kerrigan.name sent an unexpected answer",
+  "sendInvalidAddress": "Invalid address",
+  "sendNameInvalid": "Names use letters, digits and single hyphens, like alice.krgn",
+  "sendEnterAddress": "Enter {ticker} address",
+  "@sendEnterAddress": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "sendEnterAddressOrName": "Enter {ticker} address or .krgn name",
+  "@sendEnterAddressOrName": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "kerriganNameErrorUnreachable": "Couldn't reach the Kerrigan.name server.",
+  "kerriganNameErrorIndexer": "The Kerrigan.name server sent an answer Astronaut can't use.",
+  "kerriganNameErrorChainUnavailable": "Too few BNB Smart Chain servers answered to check the name. Try again later.",
+  "kerriganNameErrorChainDisagreement": "BNB Smart Chain servers gave different answers about the Kerrigan.name registry, so names can't be checked right now.",
+  "kerriganNameErrorEpoch": "The Kerrigan.name registry has changed its rules or rolled back. This version of Astronaut won't send to names until it's updated.",
+  "kerriganNameErrorUnanchored": "The Kerrigan.name server answered from a registry state that was never published on BNB Smart Chain. This can mean the server is misbehaving.",
+  "kerriganNameErrorBadRecord": "The record the Kerrigan.name server sent doesn't match the registry on chain.",
+  "kerriganNameErrorUnavailable": "Checking names isn't available here.",
+  "sendNameIsContact": "{name} is also a contact",
+  "@sendNameIsContact": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sendNameIsContactText": "To pay your contact, pick it from the address book. To pay the name registered on Kerrigan.name, rename the contact first, so the two can't be mixed up.",
+  "sendNameNotCaughtUp": "Kerrigan.name still hasn't caught up with the registry on chain. Try again later.",
+  "sendNameCheckFailed": "Something went wrong while checking {name}.",
+  "@sendNameCheckFailed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sendNameChecking": "Checking {name}",
+  "@sendNameChecking": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sendNameWaiting": "Waiting for Kerrigan.name",
+  "sendNameNotFound": "Name not found",
+  "sendNameCantSend": "Can't send to {name}",
+  "@sendNameCantSend": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sendNameCheckingText": "Looking up the address and checking it against the Kerrigan.name registry on BNB Smart Chain.",
+  "sendNameWaitingMissing": "Kerrigan.name doesn't know {name} yet, and it is still processing the latest registry update. If the name was registered in the last few minutes, wait here; otherwise check the spelling.",
+  "@sendNameWaitingMissing": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sendNameWaitingText": "Kerrigan.name is still processing the latest registry update, so its answer for {name} may be out of date. This usually takes a few minutes; Astronaut continues once it's done.",
+  "@sendNameWaitingText": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sendNameNotRegistered": "{name} isn't registered on Kerrigan.name. Check the spelling.",
+  "@sendNameNotRegistered": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sendProposalFeeBurnt": "Proposal fee, burnt (proposal {proposal})",
+  "@sendProposalFeeBurnt": {
+    "placeholders": {
+      "proposal": {
+        "type": "String"
+      }
+    }
+  },
+  "sendNameChecked": "Checked against the Kerrigan.name registry on BNB Smart Chain",
+  "sendChangeTo": "Change: {amount} to",
+  "@sendChangeTo": {
+    "description": "Followed by an address on the next line.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "sendForeignChange": "This change address isn't one of this wallet's, so the change goes to whoever owns it.",
+  "sendNameMismatch": "This payment doesn't match the address {name} points to.",
+  "@sendNameMismatch": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sendNameRecheckFailed": "Couldn't check {name} again before sending. {error}",
+  "@sendNameRecheckFailed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "sendNameChanged": "{name} now points to a different address than the one shown. Go back and preview the payment again to see the new address.",
+  "@sendNameChanged": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sendNameBehind": "Kerrigan.name is processing a registry update, so {name} can't be checked right now. Try again in a few minutes.",
+  "@sendNameBehind": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sendNameGone": "{name} is no longer registered on Kerrigan.name.",
+  "@sendNameGone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sendNotSent": "Not sent",
+  "sendBroadcastFailed": "Broadcast transaction failed",
+  "sendConfirmTransaction": "Confirm transaction",
+  "sendConfirmUnitTransaction": "Confirm {unit} transaction",
+  "@sendConfirmUnitTransaction": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "sendUnit": "Send {unit}",
+  "@sendUnit": {
+    "description": "{unit} is a coin's ticker, like KRGN.",
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "sendRecipient": "Recipient",
+  "sendTransactionFee": "Transaction fee",
+  "sendNote": "Note",
+  "sendSendTo": "Send to",
+  "sendNoteOptional": "Note (optional)",
+  "sendTypeSomething": "Type something...",
+  "sendTotalAmountToSend": "Total amount to send",
+  "sendTotalAmount": "Total amount",
+  "commonSend": "Send",
+  "sendInvalidPassphrase": "Invalid passphrase",
+  "sendAuthReason": "Authenticate to send transaction",
+  "sendConfirmTransactionTitle": "Confirm Transaction",
+  "commonCalculating": "Calculating",
+  "@commonCalculating": {
+    "description": "Shown with 0 to 3 dots added while it lasts."
+  },
+  "sendConfirmSendAll": "Confirm send all",
+  "sendConfirmSendAllText": "You are about to send your entire balance. Would you like to continue?",
+  "commonYes": "Yes",
+  "sendTransactionFailed": "Transaction failed",
+  "sendAllSelected": "Send all selected",
+  "sendAllTicker": "Send all {ticker}",
+  "@sendAllTicker": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceShielded": "Shielded balance",
+  "balanceTransparent": "Transparent balance",
+  "balanceAvailable": "Available balance",
+  "sendClearAddressSemantics": "Clear Button. Clears The Address Field Input.",
+  "sendPasteAddressSemantics": "Paste Button. Pastes From Clipboard To Address Field Input.",
+  "sendAddressBookSemantics": "Address Book Button. Opens Address Book For Address Field.",
+  "sendScanQrSemantics": "Scan QR Button. Opens Camera For Scanning QR Code.",
+  "sendSendFrom": "Send from",
+  "sendSubtractFee": "Subtract fee from amount",
+  "sendChangeAddress": "Change address",
+  "sendAutomatic": "Automatic",
+  "coinControlTitle": "Coin control",
+  "sendSelectCoins": "Select coins",
+  "sendSelectedCoins": "Selected coins ({count})",
+  "@sendSelectedCoins": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sendShieldedMemoOptional": "Shielded memo (optional)",
+  "sendNoteHint": "Only in your history, never sent",
+  "sendNetworkFeeEstimated": "Network fee (estimated)",
+  "sendPreview": "Preview",
+  "sendGeneratingTransaction": "Generating transaction",
+  "balanceSelect": "Select balance",
+  "addressShieldN": "Shield #{index}",
+  "@addressShieldN": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "addressChangeN": "Change #{index}",
+  "@addressChangeN": {
+    "description": "An address's default name: a change address, number {index}.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "addressReceivingN": "Receiving #{index}",
+  "@addressReceivingN": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "sendNotShieldAddress": "Not a Kerrigan shield address",
+  "sendNotTransparentAddress": "Not a transparent Kerrigan address",
+  "sendAutomaticShieldChange": "This wallet's shield change address",
+  "sendAutomaticNewChange": "A new change address of this wallet",
+  "sendOtherShieldAddress": "Other shield address",
+  "sendOtherTransparentAddress": "Other transparent address",
+  "sendForeignChangeWarning": "This address isn't one of this wallet's. The change would go to whoever owns it.",
+  "sendUseThisAddress": "Use this address",
+  "sendPayFrom": "Pay from",
+  "sendNotesToSpend": "Notes to spend",
+  "sendCoinsToSpend": "Coins to spend",
+  "sendChosenAutomatically": "Chosen automatically",
+  "sendCoinsSelected": "{count} selected · {total}",
+  "@sendCoinsSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "commonReset": "Reset",
+  "commonChoose": "Choose",
+  "sendAutomaticNewChangeShort": "Automatic (a new change address)",
+  "commonChange": "Change",
+  "@commonChange": {
+    "description": "A button: change (edit) a setting."
+  },
+  "addressCreateNew": "Create a new address",
+  "addressSearchHint": "Search by address or label",
+  "addressNoMatch": "No addresses match",
+  "sendSendingTransaction": "Sending transaction",
+  "feeTimeHours": "{hours, plural, =1{~1 hour} other{~{hours} hours}}",
+  "@feeTimeHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "feeTimeMinutes": "~{minutes} minutes",
+  "@feeTimeMinutes": {
+    "description": "{minutes} can be 1, 2 or 2.5 and so on: an abbreviation such as \"min\" is fine.",
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      }
+    }
+  },
+  "feeRate": "Fee rate",
+  "feeTimeOneMinute": "~1 minute",
+  "govCreateProposal": "Create proposal",
+  "govProposalName": "Name",
+  "govProposalLink": "Link to the description",
+  "govAmountTicker": "Amount ({ticker})",
+  "@govAmountTicker": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "govFeeBurnt": "Fee (burnt)",
+  "govSelectedCoins": "Selected coins",
+  "govPayAndPublish": "Pay {fee} and publish",
+  "@govPayAndPublish": {
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "govNotEnoughForFee": "Not enough {ticker} for the fee",
+  "@govNotEnoughForFee": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "govFilterAll": "All",
+  "govFilterPassing": "Passing",
+  "govFilterNotPassing": "Not passing",
+  "govFilterWaiting": "Waiting",
+  "govNonePassing": "No passing proposals.",
+  "govNoneNotPassing": "No not passing proposals.",
+  "govTitle": "Governance",
+  "govFailed": "Failed",
+  "govYourProposal": "Your proposal",
+  "commonRemove": "Remove",
+  "govFeeSent": "Fee sent; waiting for it to be mined",
+  "govFeeConfirming": "Fee confirming: {count} of {needed}. Then Astronaut submits it (keep the wallet syncing).",
+  "@govFeeConfirming": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "needed": {
+        "type": "int"
+      }
+    }
+  },
+  "govSubmitting": "Submitting to the network…",
+  "govLoadFailed": "Couldn't load the proposals",
+  "govNodeNoData": "The node you are connected to doesn't offer governance data. Try another Kerrigan node in the network settings.",
+  "govYesCount": "{count} Yes",
+  "@govYesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "govNoCount": "{count} No",
+  "@govNoCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "govYes": "Yes",
+  "@govYes": {
+    "description": "A vote for a proposal."
+  },
+  "govNo": "No",
+  "@govNo": {
+    "description": "A vote against a proposal."
+  },
+  "govShowAll": "Show all {count}",
+  "@govShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "govNotVotedCount": "{count} not voted",
+  "@govNotVotedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "govNotVoted": "Not voted",
+  "govVotedAgo": "Voted {time} ago",
+  "@govVotedAgo": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "govVotedAgoCanChange": "Voted {time} ago · can change in ~{wait}",
+  "@govVotedAgoCanChange": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "govSearchMasternodes": "Search by alias or IP",
+  "govNoMasternodeMatch": "No masternode matches \"{query}\".",
+  "@govNoMasternodeMatch": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "govYourMasternodes": "Your masternodes",
+  "govNotWebLink": "Not a web link: {url}",
+  "@govNotWebLink": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "govOpenLink": "Open link?",
+  "govOpenLinkText": "The proposal's author set this link. Check it before you trust what it shows.",
+  "commonOpen": "Open",
+  "govProposal": "Proposal",
+  "govInvalid": "Invalid: {reason}",
+  "@govInvalid": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "govUnknownReason": "unknown reason",
+  "govVotes": "Votes",
+  "govAbstained": "{count} abstained",
+  "@govAbstained": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "govVotingNeedsMasternode": "Voting takes a masternode. This wallet has none; add one under Masternodes.",
+  "govVotesLoadFailed": "Couldn't load your votes",
+  "govPaymentAddress": "Payment address",
+  "govOpenInExplorer": "Open in the block explorer",
+  "govProposalHash": "Proposal hash",
+  "govFeeTransaction": "Fee transaction",
+  "govVoteNo": "Vote No",
+  "govVoteYes": "Vote Yes",
+  "govAlreadyVotedYes": "Already voted Yes",
+  "govAlreadyVotedNo": "Already voted No",
+  "govCanChangeIn": "Can change its vote in ~{time}",
+  "@govCanChangeIn": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "govSelectedOf": "{count} of {total} selected",
+  "@govSelectedOf": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "commonSelectNone": "Select none",
+  "commonSelectAll": "Select all",
+  "govAcceptedOf": "{count} of {total} accepted",
+  "@govAcceptedOf": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "govFailedCount": "{count} failed",
+  "@govFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "govVoting": "Voting… {count} of {total}",
+  "@govVoting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "govSelectMasternode": "Select a masternode",
+  "govVoteYesWith": "Vote Yes with {count} {count, plural, =1{masternode} other{masternodes}}",
+  "@govVoteYesWith": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "govVoteNoWith": "Vote No with {count} {count, plural, =1{masternode} other{masternodes}}",
+  "@govVoteNoWith": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "govSigningSending": "Signing and sending…",
+  "govVoteAccepted": "Vote accepted",
+  "mnCreateNote": "Create masternode {alias}",
+  "@mnCreateNote": {
+    "description": "A note saved with the collateral payment in the wallet's history.",
+    "placeholders": {
+      "alias": {
+        "type": "String"
+      }
+    }
+  },
+  "mnAddExisting": "Add existing masternode",
+  "mnCreate": "Create masternode",
+  "mnAlias": "Masternode alias",
+  "mnAliasHint": "e.g. MN1",
+  "mnCollateral": "Collateral",
+  "mnSendToNewAddress": "Send {amount} to a new address",
+  "@mnSendToNewAddress": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "mnAddressLabelExample": "Address label (optional), e.g. {alias} collateral",
+  "@mnAddressLabelExample": {
+    "placeholders": {
+      "alias": {
+        "type": "String"
+      }
+    }
+  },
+  "mnAddressLabelOptional": "Address label (optional)",
+  "mnSendToMyAddress": "Send {amount} to one of my addresses",
+  "@mnSendToMyAddress": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "mnAdd": "Add masternode",
+  "mnSendCollateral": "Send collateral",
+  "commonHide": "Hide",
+  "mnCollateralTx": "Collateral transaction",
+  "mnOutputIndex": "Output index",
+  "mnHostTitle": "Host on masternode.space",
+  "mnCopyAll": "Copy all",
+  "mnHostingCopied": "Hosting details copied",
+  "mnOpenMasternodeSpace": "Open masternode.space",
+  "mnRemoveTitle": "Remove masternode?",
+  "mnMasternode": "Masternode",
+  "mnStatus": "Status",
+  "mnServerIpExample": "Server IP, e.g. 203.0.113.5",
+  "mnCollateralAddress": "Collateral address",
+  "mnEasiest": "Easiest: host it on masternode.space",
+  "mnShowWhatNeeded": "Show what masternode.space needs",
+  "mnRemove": "Remove masternode",
+  "mnTitle": "Masternodes",
+  "mnNoneYet": "No masternodes yet",
+  "mnNoneYetText": "A masternode locks a collateral of {amount} in this wallet and earns rewards while a server runs it. The collateral stays yours and is frozen so it can't be spent by accident. A BroodNode locks {broodAmount} and votes with four times the weight.",
+  "@mnNoneYetText": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "broodAmount": {
+        "type": "String"
+      }
+    },
+    "description": "{amount}: a masternode's collateral, {broodAmount}: a BroodNode's, both with the ticker. BroodNode is a name: keep it as is."
+  },
+  "mnEnabled": "Enabled",
+  "mnEarned": "Earned",
+  "mnServer": "Server",
+  "mnNotSet": "Not set",
+  "mnLastPaid": "Last paid",
+  "durationAgo": "{time} ago",
+  "@durationAgo": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mnNotYet": "Not yet",
+  "durationSeconds": "{count} s",
+  "@durationSeconds": {
+    "description": "Short units: seconds, minutes, hours and days, e.g. \"3 d 4 h\".",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMinutes": "{count} min",
+  "@durationMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHours": "{count} h",
+  "@durationHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationDays": "{count} d",
+  "@durationDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mnStatusUnknown": "Unknown",
+  "mnStatusEnabled": "Enabled",
+  "accountsAddedOne": "This recovery phrase has another account with history. Astronaut added it as a separate wallet, {names}, which is still syncing.",
+  "@accountsAddedOne": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsAddedMany": "This recovery phrase has other accounts with history. Astronaut added them as separate wallets, which are still syncing: {names}.",
+  "@accountsAddedMany": {
+    "description": "{names} is a list of wallet names in quotes.",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsAddTitle": "Add account {account}?",
+  "@accountsAddTitle": {
+    "placeholders": {
+      "account": {
+        "type": "int"
+      }
+    }
+  },
+  "accountsAddText": "Account {account} of this recovery phrase becomes a separate wallet, “{name}”, with its own addresses and balance. Any coins it already holds show up once it has synced.",
+  "@accountsAddText": {
+    "placeholders": {
+      "account": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsAdd": "Add account",
+  "accountsAdding": "Adding account {account}",
+  "@accountsAdding": {
+    "placeholders": {
+      "account": {
+        "type": "int"
+      }
+    }
+  },
+  "accountsAddFailed": "Couldn't add the account: {error}",
+  "@accountsAddFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "accountsAdded": "Added “{name}”. It's syncing now.",
+  "@accountsAdded": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "receiveSaved": "{path} saved!",
+  "@receiveSaved": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "receiveQrShareText": "Receive URI QR Code",
+  "receiveNoLabel": "No label",
+  "receiveEditLabel": "Edit label",
+  "receiveCopyAddress": "Copy address",
+  "receiveShowQr": "Show QR code",
+  "commonShare": "Share",
+  "commonSave": "Save",
+  "receiveAddressQr": "Address QR code",
+  "receiveAddressDetails": "Address details",
+  "receiveViewQr": "View QR code",
+  "receiveTransactionHistory": "Transaction history",
+  "receiveLabel": "Label",
+  "receiveDerivationPath": "Derivation path",
+  "receiveDiversifier": "Diversifier",
+  "@receiveDiversifier": {
+    "description": "A technical value of a shield address."
+  },
+  "receiveIndex": "Index",
+  "receiveType": "Type",
+  "receiveSubType": "Sub type",
+  "receiveTransactions": "Transactions",
+  "receiveTags": "Tags",
+  "receiveTagsPlaceholder": "Tags will appear here",
+  "receiveAddressLabel": "Address label",
+  "receiveWalletAddresses": "Wallet addresses",
+  "receiveInvalidAmount": "Invalid amount",
+  "receiveNewQr": "New QR code",
+  "receiveGenerateQr": "Generate QR code",
+  "receiveQrWillAppearMemo": "The new QR code with your address, amount and shielded memo will appear in the pop up window.",
+  "receiveQrWillAppear": "The new QR code with your address and amount will appear in the pop up window.",
+  "receiveQrWillAppearNote": "The new QR code with your address, amount and note will appear in the pop up window.",
+  "receiveAmountOptional": "Amount (Optional)",
+  "receiveMemoOptional": "Shielded memo (Optional)",
+  "receiveNoteOptional": "Note (Optional)",
+  "receiveGeneratingAddress": "Generating address",
+  "receiveTransparentAddress": "Transparent address",
+  "receiveTransparentAddresses": "Transparent addresses",
+  "receiveShieldAddress": "Shield address",
+  "receiveShieldAddresses": "Shield addresses",
+  "receiveTypeAddress": "{type} address",
+  "@receiveTypeAddress": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "receiveTypeAddresses": "{type} addresses",
+  "@receiveTypeAddresses": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "receiveNoAddressYet": "[No address yet]",
+  "receiveLoadingShield": "[Loading shield address]",
+  "receiveTicker": "Receive {ticker}",
+  "@receiveTicker": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "receiveAddressListSemantics": "Address List Pop-up Button. Opens A Pop-up For Address List Button.",
+  "receiveAddressList": "Address list",
+  "receiveAddressType": "Address type",
+  "receiveYourAddress": "Your {ticker} address",
+  "@receiveYourAddress": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "receiveGenerateNew": "Generate new address",
+  "receiveAdvancedOptions": "Advanced options",
+  "walletTransactionsPlaceholder": "Transactions will appear here",
+  "walletBalance": "Wallet balance",
+  "balanceTotal": "Total balance",
+  "balanceAvailableTransparent": "Available transparent balance",
+  "balanceFullTransparent": "Full transparent balance",
+  "balanceAvailableShielded": "Available shielded balance",
+  "balanceFullShielded": "Full shielded balance",
+  "walletRefreshSemantics": "Refresh Button. Refreshes The Values In Summary.",
+  "walletViewOnly": "(View only)",
+  "txEditNote": "Edit note",
+  "txFilterTitle": "Transactions filter",
+  "txFilterTitleDesktop": "Transaction filter",
+  "txSent": "Sent",
+  "txReceived": "Received",
+  "txTrades": "Trades",
+  "txDate": "Date",
+  "txEnterAmount": "Enter {ticker} amount...",
+  "@txEnterAmount": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "txKeyword": "Keyword",
+  "txTypeKeyword": "Type keyword...",
+  "txFilter": "Filter",
+  "txFromDate": "From {date}",
+  "@txFromDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "txToDate": "To {date}",
+  "@txToDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "txReceivingAddress": "Receiving address",
+  "txReceivingAddresses": "Receiving addresses",
+  "txSentTo": "Sent to",
+  "txDetails": "Transaction details",
+  "txOnChainNote": "On chain note",
+  "txPending": "Pending",
+  "txBlockHeight": "Block height",
+  "txConfirmations": "Confirmations",
+  "txSubType": "Tx sub type",
+  "txShielded": "Shielded",
+  "txNewCoins": "New coins",
+  "@txNewCoins": {
+    "description": "The input of a block reward: newly created coins, no address."
+  },
+  "txChange": "Change",
+  "@txChange": {
+    "description": "A tag on a transaction output: change that came back to the wallet."
+  },
+  "txInputs": "Inputs",
+  "txOutputs": "Outputs",
+  "txOpenInExplorer": "Open in block explorer",
+  "walletAnonymizing": "Anonymizing balance",
+  "walletNoFundsToPrivatize": "No funds available to privatize!",
+  "walletPrivatizeSubmitted": "Privatize transaction submitted",
+  "walletPrivatizeFailed": "Privatize all failed",
+  "walletReason": "Reason: {reason}",
+  "@walletReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "walletNetworkSemantics": "Network Button. Takes To Network Status Page.",
+  "walletAddressBookSemantics": "Address Book Button. Takes To Address Book.",
+  "walletSettingsSemantics": "Settings Button. Takes To Wallet Settings Page.",
+  "walletAttention": "Attention!",
+  "walletPrivatizeConfirm": "You're about to privatize all of your public funds.",
+  "walletPrivatizeFunds": "Privatize funds",
+  "walletSeeAll": "See all",
+  "commonReceive": "Receive",
+  "addressBookTitle": "Address book",
+  "addressBookFavorites": "Favorites",
+  "addressBookFavoritesEmpty": "Your favorite contacts will appear here",
+  "addressBookAllContacts": "All contacts",
+  "addressBookNoContactsFound": "No contacts found",
+  "addressBookNoContacts": "No contacts yet",
+  "addressBookNoContactsText": "Save the people you pay often, then pick them when you send.",
+  "addressBookAddContact": "Add contact",
+  "contactDetails": "Contact details",
+  "contactDeleteTitle": "Delete {name}?",
+  "@contactDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "contactDeleteText": "Contact will be deleted permanently!",
+  "commonDelete": "Delete",
+  "contactDeleted": "{name} deleted",
+  "@contactDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "contactAddresses": "Addresses",
+  "commonAddNew": "Add new",
+  "commonNoTransactionsFound": "No transactions found",
+  "contactNoCoinAddresses": "No {coin} addresses found",
+  "@contactNoCoinAddresses": {
+    "placeholders": {
+      "coin": {
+        "type": "String"
+      }
+    }
+  },
+  "contactAddNewAddress": "Add new address",
+  "contactNew": "New contact",
+  "contactEdit": "Edit contact",
+  "contactEnterName": "Enter contact name",
+  "contactAddressN": "Address {number}",
+  "@contactAddressN": {
+    "description": "The contact's first, second… address.",
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "contactAddAnother": "+ Add another address",
+  "contactPasteAddress": "Paste address",
+  "addressKindShielded": "Shielded",
+  "@addressKindShielded": {
+    "description": "A kind of address (shielded or transparent), shown as \"Shielded (KRGN)\"."
+  },
+  "addressKindTransparent": "Transparent",
+  "@addressKindTransparent": {
+    "description": "A kind of address (shielded or transparent), shown as \"Transparent (KRGN)\"."
+  },
+  "commonConfirmationsCount": "{count, plural, =1{1 confirmation} other{{count} confirmations}}",
+  "@commonConfirmationsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonUnselectAll": "Unselect all",
+  "coinControlQuantity": "Quantity",
+  "@coinControlQuantity": {
+    "description": "How many coins (outputs) are selected."
+  },
+  "coinControlBytes": "Bytes",
+  "@coinControlBytes": {
+    "description": "The size of the transaction in bytes."
+  },
+  "coinControlFee": "Fee",
+  "coinControlAfterFee": "After fee",
+  "coinControlInsufficient": "Insufficient",
+  "@coinControlInsufficient": {
+    "description": "The change when the selected coins don't cover the amount."
+  },
+  "coinControlSortedAscending": "Sorted ascending. Tap for descending.",
+  "coinControlSortedDescending": "Sorted descending. Tap for ascending.",
+  "coinControlTransparent": "Transparent",
+  "@coinControlTransparent": {
+    "description": "A switch: show transparent outputs."
+  },
+  "coinControlShield": "Shield",
+  "@coinControlShield": {
+    "description": "A switch: show shield notes."
+  },
+  "coinControlExplainNotes": "Choose which shield notes a send uses, and freeze the ones you want to keep. Tap a note's circle to select it.",
+  "coinControlExplainOutputs": "Choose which outputs a send uses, and freeze the ones you want to keep. Tap an output's circle to select it.",
+  "coinControlAvailableOutputs": "Available outputs",
+  "coinControlFrozenOutputs": "Frozen outputs",
+  "coinControlShowAllOutputs": "Show all outputs",
+  "coinControlOutputs": "{count, plural, =1{1 output} other{{count} outputs}}",
+  "@coinControlOutputs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "coinControlSelected": "{count, plural, other{{count} selected}}",
+  "@coinControlSelected": {
+    "description": "How many coins are selected; followed by their total amount.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "coinControlUnfreeze": "Unfreeze",
+  "coinControlFreeze": "Freeze",
+  "@coinControlFreeze": {
+    "description": "Freeze coins: keep them from being spent."
+  },
+  "coinControlSelectedAmount": "Selected amount",
+  "coinControlAmountToSend": "Amount to send",
+  "coinControlUseCoins": "Use coins",
+  "coinControlOutputDetails": "Output details",
+  "coinControlFrozen": "Frozen",
+  "coinControlAvailable": "Available",
+  "coinControlUnconfirmed": "Unconfirmed",
+  "coinControlFreezeReason": "Freeze reason",
+  "coinControlEditFreezeReason": "Edit freeze reason",
+  "coinControlSortByConfirmations": "Sort by confirmations",
+  "coinControlSortByAddress": "Sort by address",
+  "coinControlSortByAmount": "Sort by amount",
+  "appEmptyWallets": "Create your first Kerrigan wallet",
+  "appTagline": "Your privacy. Your keys. Your KRGN.",
+  "@appTagline": {
+    "description": "The app's slogan."
+  },
+  "appAlreadyRunning": "{app} is already running. Close the other window and try again.",
+  "@appAlreadyRunning": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "introRestoreBackup": "Restore from {app} backup",
+  "@introRestoreBackup": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "introTermsLink": "Terms of service",
+  "@introTermsLink": {
+    "description": "A link inside introAgreeOne/introAgreeTwo: use the form that fits there."
+  },
+  "introPrivacyLink": "Privacy policy",
+  "@introPrivacyLink": {
+    "description": "A link inside introAgreeOne/introAgreeTwo: use the form that fits there."
+  },
+  "introAgreeOne": "By using {app}, you agree to the {link}",
+  "@introAgreeOne": {
+    "description": "{link} is introTermsLink or introPrivacyLink.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "introAgreeTwo": "By using {app}, you agree to the {first} and {second}",
+  "@introAgreeTwo": {
+    "description": "{first} is introTermsLink, {second} introPrivacyLink.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      },
+      "first": {
+        "type": "String"
+      },
+      "second": {
+        "type": "String"
+      }
+    }
+  },
+  "introGetStarted": "Get started",
+  "introCreateNew": "Create new {app}",
+  "@introCreateNew": {
+    "description": "Desktop: set up the app with a new password.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "privacyChooseExperience": "Choose your {app} experience",
+  "@privacyChooseExperience": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "privacyChangeLater": "You can change it later in Settings",
+  "privacyEasyText": "CoinGecko enabled: (24 hour price change shown in-app, total wallet value shown in USD or other currency).",
+  "privacyEasyRecommended": "Recommended for most crypto users.",
+  "privacyIncognitoText": "CoinGecko disabled (price changes not shown, no wallet value shown in other currencies).",
+  "privacyIncognitoRecommended": "Recommended for the privacy conscious.",
+  "privacyEasy": "Easy Crypto",
+  "@privacyEasy": {
+    "description": "A mode of the app: prices from CoinGecko on."
+  },
+  "privacyRecommended": "Recommended",
+  "privacyIncognito": "Incognito",
+  "@privacyIncognito": {
+    "description": "A mode of the app: no calls to price services."
+  },
+  "privacyConscious": "Privacy conscious",
+  "pinUnlockReason": "Authenticate to unlock {app}",
+  "@pinUnlockReason": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "pinUnlockTitle": "Unlock {app}",
+  "@pinUnlockTitle": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "homeTapBackToExit": "Tap back again to exit",
+  "homeSettingsSemantics": "Settings Button. Takes To Settings Page.",
+  "paymentLinkNoAddress": "The payment link has no valid Kerrigan address",
+  "paymentLinkNoWallet": "No {coin} wallet to pay from",
+  "@paymentLinkNoWallet": {
+    "placeholders": {
+      "coin": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentLinkCloseWallet": "Close the open wallet first",
+  "paymentPayTo": "Pay to {name}",
+  "@paymentPayTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "paymentPayFrom": "Pay from",
+  "@paymentPayFrom": {
+    "description": "Title of a list of wallets to pay from."
+  },
+  "walletsFavorites": "Favorite wallets",
+  "walletsDragToReorder": "Drag to change wallet order.",
+  "pinCreate": "Create a PIN",
+  "pinProtects": "This PIN protects access to your wallet.",
+  "pinTooShort": "PIN not long enough!",
+  "pinConfirm": "Confirm PIN",
+  "commonSkipCaps": "SKIP",
+  "@commonSkipCaps": {
+    "description": "Skip button of the system's fingerprint prompt, in capitals where the language has them."
+  },
+  "pinFingerprintReason": "You can use your fingerprint to unlock the wallet and confirm transactions.",
+  "pinFingerprintTitle": "Enable fingerprint authentication",
+  "pinSaveFailed": "Couldn't save the PIN. Try again.",
+  "pinMismatch": "PIN codes do not match. Try again.",
+  "pinSaving": "Saving your PIN…",
+  "pinWrong": "Wrong PIN. Try again.",
+  "pinEnter": "Enter PIN",
+  "pinWrongPassword": "Wrong password",
+  "pinLoadingWallets": "Loading wallets...",
+  "pinUseBiometrics": "Use biometrics",
+  "pinLockedSeconds": "{count, plural, =1{Too many wrong PINs. Try again in 1 second.} other{Too many wrong PINs. Try again in {count} seconds.}}",
+  "@pinLockedSeconds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pinLockedMinutes": "{count, plural, =1{Too many wrong PINs. Try again in 1 minute.} other{Too many wrong PINs. Try again in {count} minutes.}}",
+  "@pinLockedMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "walletsOfCoin": "{coin} ({ticker}) wallets",
+  "@walletsOfCoin": {
+    "placeholders": {
+      "coin": {
+        "type": "String"
+      },
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "walletsAddWallet": "Add Wallet",
+  "walletsAddFavorite": "Add a favorite",
+  "walletsCount": "{count, plural, =1{1 wallet} other{{count} wallets}}",
+  "@walletsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "walletsAll": "All wallets",
+  "addWalletTitle": "Add wallet",
+  "addWalletSelectCurrency": "Select wallet currency",
+  "addWalletCreateOrRestore": "Create a new wallet or restore an existing wallet from seed.",
+  "addWalletOfCoin": "Add {coin} wallet",
+  "@addWalletOfCoin": {
+    "placeholders": {
+      "coin": {
+        "type": "String"
+      }
+    }
+  },
+  "addWalletCreateNew": "Create new wallet",
+  "addWalletRestore": "Restore wallet",
+  "addWalletNameYour": "Name your {coin} wallet",
+  "@addWalletNameYour": {
+    "placeholders": {
+      "coin": {
+        "type": "String"
+      }
+    }
+  },
+  "addWalletEnterLabel": "Enter a label for your wallet (e.g. Savings)",
+  "addWalletEnterName": "Enter wallet name",
+  "addWalletRandomNameSemantics": "Generate Random Wallet Name Button. Generates A Random Name For Wallet.",
+  "addWalletClearNameSemantics": "Clear Wallet Name Field Button. Clears the wallet name field.",
+  "addWalletRollDice": "Roll the dice to pick a random name.",
+  "addWalletOptions": "Wallet options",
+  "addWalletWordSeed": "{count} word seed",
+  "@addWalletWordSeed": {
+    "description": "A recovery phrase length to choose: 12, 18 or 24 words.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addWalletPassphraseText": "You may add a BIP39 passphrase. This is optional. You will need BOTH your seed and your passphrase to recover the wallet.",
+  "addWalletPassphrase": "BIP39 passphrase",
+  "addWalletCopySemantics": "Copy Button. Copies The Recovery Phrase To Clipboard.",
+  "addWalletRecoveryPhraseTitle": "Recovery Phrase",
+  "addWalletWriteDown": "Please write down your recovery phrase in the correct order and save it to keep your funds secure. You will also be asked to verify the words on the next screen.",
+  "commonCopyToClipboard": "Copy to clipboard",
+  "addWalletSavedPhrase": "I saved my recovery phrase",
+  "addWalletGenerating": "Generating...",
+  "addWalletCreateError": "Create Wallet Error",
+  "commonUnknownError": "Unknown error",
+  "addWalletExplainSemantics": "Question Button. Opens A Dialog For Recovery Phrase Explanation.",
+  "addWalletWarningDesktop": "On the next screen you will see {count} words that make up your recovery phrase.\n\nPlease write it down. Keep it safe and never share it with anyone. Your recovery phrase is the only way you can access your funds if you forget your PIN, lose your phone, etc.\n\n{app} does not keep nor is able to restore your recover phrase. Only you have access to your wallet.",
+  "@addWalletWarningDesktop": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "addWalletImportant": "Important",
+  "newWalletGiven": "On the next screen you will be given <b>{count} words</b>. They are your <b>recovery phrase</b>.",
+  "@newWalletGiven": {
+    "description": "Keep the <b> tags around the words to highlight.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addWalletWriteThemDown": "Write them down.",
+  "addWalletKeepSafe": "Keep them safe.",
+  "addWalletDontShow": "Do not show them to anyone.",
+  "addWalletUnderstand": "I understand that {app} does not keep my recovery phrase and cannot restore it. If I lose it, I will not be able to access my funds.",
+  "@addWalletUnderstand": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "addWalletViewPhrase": "View recovery phrase",
+  "explainTitle": "Recovery phrase explained",
+  "explainCarAnalogy": "The car analogy.",
+  "explainCar": "You can drive your car when your have your car keys. If you lose your car keys, you can’t drive you car. If someone steals your car keys, they can steal your car. If someone copies your car keys, they can also steal your car.",
+  "explainCrypto": "Cryptocurrency works the same way. These recovery phrase words we’re about to show you are like the car keys in the metaphor above.",
+  "explainLose": "If you lose these words, you can’t access your money. If someone steals these words, they can access and steal your money. If someone copies these words, they can access and steal your money.",
+  "explainNobody": "If your funds are lost or stolen because of you don’t write down your recovery phrase or keep it safe, then NOBODY, NOT EVEN US, can help you recover your money.",
+  "restoreMayTakeWhileLines": "Restoring your wallet may take a while.\nPlease do not exit this screen once the process is started.",
+  "restoreAction": "Restore",
+  "@restoreAction": {
+    "description": "A button: start restoring the wallet."
+  },
+  "restoreAreYouReady": "Are you ready?",
+  "restoreMayTakeWhile": "Restoring your wallet may take a while. Please do not exit this screen once the process is started.",
+  "restoreOptions": "Restore options",
+  "restoreSeed": "Seed",
+  "@restoreSeed": {
+    "description": "A switch: restore from the recovery phrase."
+  },
+  "restoreViewOnly": "View Only",
+  "@restoreViewOnly": {
+    "description": "A switch: restore a watch-only wallet from a public key."
+  },
+  "restoreChooseLength": "Choose recovery phrase length",
+  "restoreWords": "{count} words",
+  "@restoreWords": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonAdvanced": "Advanced",
+  "restorePassphraseText": "If the recovery phrase you are about to restore was created with an optional BIP39 passphrase you can enter it here.",
+  "restoreNotXpub": "That isn't a {coin} extended public key.",
+  "@restoreNotXpub": {
+    "placeholders": {
+      "coin": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreUseAccountXpub": "Use the extended public key of the account ({path}).",
+  "@restoreUseAccountXpub": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreXpubEmpty": "Extended public key is empty",
+  "restoreEnterViewOnly": "Enter view only details",
+  "restoreXpub": "Extended public key",
+  "restoreInvalidSeed": "Invalid seed phrase!",
+  "restoreScanSemantics": "View QR Code Button. Opens Camera To Scan QR Code For Restoring Wallet.",
+  "restorePasteSemantics": "Paste Button. Pastes From Clipboard For Restoring Wallet.",
+  "restoreRecoveryPhrase": "Recovery phrase",
+  "restoreEnterPhrase": "Enter your {count}-word recovery phrase.",
+  "@restoreEnterPhrase": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "restoreCheckSpelling": "Please check spelling",
+  "restorePhraseLength": "Phrase length",
+  "restoreFailed": "Restore failed",
+  "restoreSucceeded": "Wallet restored",
+  "restoreAccessNow": "You may access your wallet now.",
+  "restoreRestoringEllipsis": "Restoring wallet...",
+  "restoreDontExitLines": "Restoring your wallet may take a while.\nPlease do not exit this screen.",
+  "restoreRestoring": "Restoring wallet",
+  "restoreDontExit": "This may take a while. Please do not exit this screen.",
+  "verifyPassphraseMismatch": "Passphrase does not match",
+  "verifyMnemonicPassphrase": "Verify mnemonic passphrase",
+  "verifyPassphrase": "Verify BIP39 passphrase",
+  "verifyEnterPassphrase": "Enter your BIP39 passphrase",
+  "verifyAction": "Verify",
+  "verifyCorrect": "Correct! Your wallet is set up.",
+  "verifyIncorrect": "Incorrect. Please try again.",
+  "verifyTitle": "Verify recovery phrase",
+  "verifySelectWord": "Select word number",
+  "@verifySelectWord": {
+    "description": "Followed by the number of the word to pick."
+  },
+  "verifyTapWord": "Tap word number",
+  "@verifyTapWord": {
+    "description": "Followed by the number of the word to pick."
+  },
+  "settingsAbout": "About",
+  "aboutVersion": "Version",
+  "aboutBuildNumber": "Build number",
+  "aboutBuildCommit": "Build commit",
+  "aboutBuildSignature": "Build signature",
+  "aboutWebsite": "Website",
+  "settingsLogging": "Logging",
+  "advancedShowTestnet": "Show testnet coins",
+  "advancedEnableCoinControl": "Enable coin control",
+  "advancedExperience": "{app} Experience",
+  "@advancedExperience": {
+    "description": "The privacy mode setting: Easy crypto or Incognito.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "advancedEasyCrypto": "Easy crypto",
+  "@advancedEasyCrypto": {
+    "description": "A mode of the app: prices from CoinGecko on."
+  },
+  "explorerManage": "Manage block explorers",
+  "explorerOfCoin": "{coin} block explorer",
+  "@explorerOfCoin": {
+    "placeholders": {
+      "coin": {
+        "type": "String"
+      }
+    }
+  },
+  "explorerChange": "Change block explorer",
+  "unitsTitle": "Units",
+  "@unitsTitle": {
+    "description": "Coin units such as KRGN and mKRGN."
+  },
+  "logsChooseLocation": "Choose Log Save location",
+  "logsShareText": "{app} logs",
+  "@logsShareText": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "logsPreparing": "Preparing logs...",
+  "logsSave": "Save logs",
+  "logsSaved": "Logs saved",
+  "logsExporting": "Exporting logs...",
+  "logsExportFailed": "Failed to export logs",
+  "logsLocation": "Log files location",
+  "logsSaveTo": "Save to...",
+  "logsRestartNote": "NOTE: {app} must be restarted in order for changes to take effect.",
+  "@logsRestartNote": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "logsShare": "Share logs",
+  "logsSaveToFile": "Save logs to a file",
+  "logsSelectLocation": "Select log save location",
+  "logsCannotUseLocation": "Cannot use chosen location",
+  "logsChangePathFailed": "Failed to change logs path",
+  "unitsCoinUnits": "Coin units",
+  "unitsEdit": "Edit {coin} units",
+  "@unitsEdit": {
+    "placeholders": {
+      "coin": {
+        "type": "String"
+      }
+    }
+  },
+  "unitsMaxPrecision": "Maximum precision",
+  "explorerEditText": "Edit your block explorer above. Keep in mind that every block explorer has a slightly different URL scheme.\n\nPaste in your block explorer of choice, then put [TXID] where the transaction ID should go, and {app} will fill in the transaction ID there.",
+  "@explorerEditText": {
+    "description": "Keep [TXID] as it is.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppearance": "Appearance",
+  "settingsTheme": "Theme",
+  "appearanceSounds": "Sound effects",
+  "appearanceSoundsText": "Play sounds, e.g. while a transaction is sent",
+  "themeSystem": "System default",
+  "themeSystemText": "Follow the device's light or dark mode",
+  "themeLight": "Light",
+  "themeLightText": "Always light",
+  "themeDark": "Dark",
+  "themeDarkText": "Always dark",
+  "settingsCurrency": "Currency",
+  "deleteAccountConfirm": "Delete all wallets and settings?",
+  "deleteAccountDeleting": "Deleting everything",
+  "deleteAccountPartly": "Some of it couldn't be deleted. Try again.",
+  "settingsDeleteAccount": "Delete account",
+  "deleteAccountText": "{app} has no account: everything stays on this phone. Deleting it removes all of it: every wallet with its keys, the address book, your PIN and your settings. Nothing is kept on any server.\n\nMake sure you have the recovery phrase of every wallet first: without it, its funds are lost.",
+  "@deleteAccountText": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "commonConfirm": "Confirm",
+  "settingsTitle": "Settings",
+  "settingsBackupRestore": "{app} backup & restore",
+  "@settingsBackupRestore": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsBackupAuthReason": "Authenticate to access {app} backup & restore settings",
+  "@settingsBackupAuthReason": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsBackupAuthTitle": "{app} backup",
+  "@settingsBackupAuthTitle": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsSecurity": "Security",
+  "settingsTor": "Tor settings",
+  "settingsManageNodes": "Manage nodes",
+  "settingsSyncing": "Syncing preferences",
+  "settingsStartup": "Startup",
+  "settingsSupport": "Support",
+  "settingsDevOptions": "Dev options",
+  "settingsResetLogLocation": "Reset log location",
+  "nodeUnreachableTitle": "Server currently unreachable",
+  "nodeSaveAnyway": "Save this node anyway?",
+  "nodeEdit": "Edit node",
+  "nodeAdd": "Add node",
+  "nodeAddNew": "Add new node",
+  "nodeTestConnection": "Test connection",
+  "nodePingSuccess": "Server ping success",
+  "nodeUnreachable": "Server unreachable",
+  "nodeName": "Node name",
+  "nodeIpAddress": "IP address",
+  "nodePort": "Port",
+  "nodeUseSsl": "Use SSL",
+  "nodeOnlyTor": "Only over Tor",
+  "nodeOnlyWithoutTor": "Only without Tor",
+  "nodeBoth": "Both",
+  "@nodeBoth": {
+    "description": "Connect to the node both over Tor and without it."
+  },
+  "nodesOfCoin": "{coin} nodes",
+  "@nodesOfCoin": {
+    "placeholders": {
+      "coin": {
+        "type": "String"
+      }
+    }
+  },
+  "nodesCount": "{count, plural, =1{1 node} other{{count} nodes}}",
+  "@nodesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nodesDefault": "Default",
+  "@nodesDefault": {
+    "description": "The node list holds only the default node."
+  },
+  "nodeDetails": "Node details",
+  "nodeDelete": "Delete node",
+  "autoLockTitle": "Auto lock settings",
+  "autoLockEnable": "Lock automatically",
+  "autoLockMinutes": "Minutes",
+  "pinCreateNew": "Create new PIN",
+  "pinIsDuress": "That's your duress PIN. Pick a different one.",
+  "pinConfirmNew": "Confirm new PIN",
+  "pinNewSet": "New PIN is set up",
+  "duressCreate": "Create duress PIN",
+  "@duressCreate": {
+    "description": "A duress PIN unlocks the app showing only some wallets, for when someone forces you to unlock it."
+  },
+  "duressIsMainPin": "That's your PIN. Pick a different duress PIN.",
+  "duressConfirm": "Confirm duress PIN",
+  "duressSet": "Duress PIN is set up",
+  "duressEnable": "Enable duress PIN",
+  "duressEnableText": "When unlocking the app with a duress PIN, only wallets marked as visible in duress mode will be loaded and shown. Be aware that providing a duress PIN instead of your real PIN to law enforcement, border agents, or other authorities may be considered deception and could carry legal consequences depending on your jurisdiction. Use with care and according to your threat model.",
+  "duressAuthReason": "Authenticate to create duress PIN",
+  "duressDisable": "Disable duress PIN",
+  "duressDisableText": "Your duress PIN will be deleted. To turn this on again, you'll create a new one.",
+  "pinChangeAuthReason": "Authenticate to change PIN",
+  "pinChange": "Change PIN",
+  "securityBiometrics": "Enable biometric authentication",
+  "securityRandomizePad": "Randomize PIN pad",
+  "securityAutoAcceptPin": "Auto-accept correct PIN",
+  "securityCover": "Cover in background",
+  "@securityCover": {
+    "description": "Hide the app's content in the app switcher."
+  },
+  "securityNoScreenshots": "Disable screenshots",
+  "securityDuressPin": "Duress PIN",
+  "securityBiometricsDuress": "Biometrics opens duress",
+  "@securityBiometricsDuress": {
+    "description": "Unlocking with biometrics opens the app in duress mode."
+  },
+  "autoLockAuthReason": "Authenticate to change auto lock settings",
+  "startupTitle": "Startup preferences",
+  "startupHomeScreen": "Home screen",
+  "startupAppHomeScreen": "{app} home screen",
+  "@startupAppHomeScreen": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "startupSpecificWallet": "Specific wallet",
+  "startupSpecificWalletText": "Select a specific wallet to load into on startup",
+  "startupSelectWallet": "Select wallet...",
+  "startupSelectTitle": "Select startup wallet",
+  "startupSelectText": "Select a wallet to load into immediately on startup",
+  "syncingTitle": "Syncing",
+  "syncingCurrentOnly": "Sync only currently open wallet",
+  "syncingCurrentOnlyText": "Sync only the wallet that you are using",
+  "syncingAll": "Sync all wallets at startup",
+  "syncingAllText": "All of your wallets will start syncing when you open the app",
+  "syncingSelected": "Sync only selected wallets at startup",
+  "syncingSelectedText": "Only the wallets you select will start syncing when you open the app",
+  "syncingSelectWallets": "Select wallets to sync",
+  "syncingSelectWalletsEllipsis": "Select wallets...",
+  "syncingChooseWallets": "Choose the wallets to sync automatically at startup",
+  "torWhatIs": "What is Tor?",
+  "torWhatIsText": "Short for \"The Onion Router\", is an open-source software that enables internet communication to remain anonymous by routing internet traffic through a series of layered nodes, to obscure the origin and destination of data.",
+  "torOnlyText": "With Tor on, the app connects only through Tor. If Tor stops working, the app stops connecting until it's back.",
+  "torConnectingTapToCancel": "Connecting (tap to cancel)",
+  "torStatus": "Tor status",
+  "torConnectCaps": "CONNECT",
+  "@torConnectCaps": {
+    "description": "A button, in capitals where the language has them."
+  },
+  "torStopCaps": "STOP",
+  "@torStopCaps": {
+    "description": "A button, in capitals where the language has them."
+  },
+  "torConnectingCaps": "CONNECTING",
+  "@torConnectingCaps": {
+    "description": "In capitals where the language has them."
+  },
+  "supportText": "If you need support or want to report a bug, ask the Kerrigan community on any of these channels!",
+  "supportEmail": "Email",
+  "supportScamTitle": "Important: Protect Yourself from Scammers!",
+  "supportScamOfficial": "All official support for <b>{app}</b> in <b>{channel}</b> is provided <b>ONLY</b> in public channels.",
+  "@supportScamOfficial": {
+    "description": "{channel} is Telegram, Discord and the like. Keep the <b> tags around the words to highlight.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      },
+      "channel": {
+        "type": "String"
+      }
+    }
+  },
+  "supportScamNoDms": "Never trust direct messages (DMs) from anyone claiming to be support staff.",
+  "supportScamNoShare": "Do not share personal information, wallet details, or private keys.",
+  "supportScamMoney": "If someone asks you to send them money or crypto, they are a scammer.",
+  "supportScamNever": "Our support staff will <b>*never*</b> contact you privately first. They will only help you in the public chat.",
+  "@supportScamNever": {
+    "description": "Keep the <b> tags around the words to highlight."
+  },
+  "supportIUnderstandCaps": "I UNDERSTAND",
+  "@supportIUnderstandCaps": {
+    "description": "A button, in capitals where the language has them."
+  },
+  "backupSecondsAgo": "{count, plural, =1{1 second ago} other{{count} seconds ago}}",
+  "@backupSecondsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupMinutesAgo": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+  "@backupMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupHoursAgo": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+  "@backupHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupDaysAgo": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "@backupDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupEnableAuto": "Enable Auto Backup",
+  "backupEnableAutoText": "To enable Auto Backup, you need to create a backup file.",
+  "commonBack": "Back",
+  "backupDisableAuto": "Disable Auto Backup",
+  "backupDisableAutoText": "You are turning off Auto Backup. You can turn it back on at any time. Your previous Auto Backup file will not be deleted. Remember to backup your wallets manually so you don't lose important information.",
+  "commonDisable": "Disable",
+  "backupAuto": "Auto Backup",
+  "backupAutoText": "Auto Backup is a custom {app} feature that offers a convenient backup of your data.\n\nTo ensure maximum security, we recommend using a unique password that you haven't used anywhere else on the internet before. Your password is not stored.",
+  "@backupAutoText": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "backupMoreInfo": "For more information, please see our website",
+  "@backupMoreInfo": {
+    "description": "Followed by the website's address."
+  },
+  "backupNow": "Back up now",
+  "backupBackedUp": "Backed up {when}",
+  "@backupBackedUp": {
+    "description": "{when} is backupSecondsAgo and the like, or a date.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "backupAutoFile": "Auto Backup file",
+  "backupSavedTo": "Saved to",
+  "backupPassphrase": "Passphrase",
+  "backupAutoFrequency": "Auto Backup frequency",
+  "backupEditAuto": "Edit Auto Backup",
+  "backupEncryptingInitial": "Encrypting initial backup",
+  "backupShouldntTakeLong": "This shouldn't take long",
+  "backupAutoEnabledSavedTo": "{app} Auto Backup enabled and saved to:",
+  "@backupAutoEnabledSavedTo": {
+    "description": "Followed by the file's path.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "backupEnableAutoFailed": "Failed to enable Auto Backup",
+  "backupCreateAuto": "Create Auto Backup",
+  "backupCreateFile": "Create your backup file",
+  "backupCreatePassphrase": "Create passphrase",
+  "backupConfirmPassphrase": "Confirm passphrase",
+  "backupCreate": "Create backup",
+  "backupEncrypting": "Encrypting backup",
+  "backupSavedToColon": "Backup saved to:",
+  "@backupSavedToColon": {
+    "description": "Followed by the file's path."
+  },
+  "backupAppSavedTo": "{app} backup saved to:",
+  "@backupAppSavedTo": {
+    "description": "Followed by the file's path.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "backupCreateFailed": "Backup creation failed",
+  "commonUnexpectedError": "Unexpected error",
+  "backupChooseLocation": "Choose file location",
+  "backupCreateAPassphrase": "Create a passphrase",
+  "restoreCancelProcess": "Cancel restore process",
+  "restoreCancelRevert": "Cancelling will revert any changes that may have been applied",
+  "restoreYesCancel": "Yes, cancel",
+  "restoreCancelProcessTitle": "Cancel Restore Process",
+  "restoreCancelText": "If you cancel, the restore will not complete, and the wallets will not appear in your {app}.",
+  "@restoreCancelText": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreKeepRestoring": "Keep restoring",
+  "restoreCancelAnyway": "Cancel anyway",
+  "backupUpdatingAuto": "Updating Auto Backup",
+  "backupAutoSavedTo": "{app} Auto Backup saved to:",
+  "@backupAutoSavedTo": {
+    "description": "Followed by the file's path.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "backupUpdateAutoFailed": "Failed to update Auto Backup",
+  "backupCreateYour": "Create your backup",
+  "backupEveryTenMinutes": "Every 10 minutes",
+  "backupEveryAppStartup": "Every app startup",
+  "backupEveryAppStart": "Every app start",
+  "backupAfterClosingWallet": "After closing a cryptocurrency wallet",
+  "backupNoDirectory": "Directory not chosen",
+  "backupDirectoryMissing": "Directory does not exist",
+  "backupPassphraseRequired": "A passphrase is required",
+  "backupLoadFile": "Load backup file",
+  "restoreFromFile": "Restore from file",
+  "commonEnterPassword": "Enter password",
+  "restoreDecrypting": "Decrypting {app} backup file",
+  "@restoreDecrypting": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreDecryptFailed": "Failed to decrypt backup file",
+  "restoreChooseFile": "Choose file...",
+  "restoreEnterPassphrase": "Enter passphrase",
+  "restoreFileMissing": "Backup file does not exist",
+  "restoreApp": "Restore {app}",
+  "@restoreApp": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "backupCreateManual": "Create manual backup",
+  "backupRestore": "Restore backup",
+  "restoreCancelling": "Cancelling restore. Please wait.",
+  "restoreRestoringApp": "Restoring {app}",
+  "@restoreRestoringApp": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "restorePreferences": "Preferences",
+  "restoreNodes": "Nodes",
+  "restoreWallets": "Wallets",
+  "commonOkCaps": "OK",
+  "restoreWalletFailedRetry": "Unable to restore. Tap icon to retry.",
+  "restoreShowPhrase": "Show recovery phrase",
+  "signTitle": "Sign / verify message",
+  "signTabSign": "Sign",
+  "signNoKey": "This wallet has no key for {address}",
+  "@signNoKey": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "signFailed": "Couldn't sign: {error}",
+  "@signFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "signNotAddress": "Not a {ticker} address",
+  "@signNotAddress": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "signOnlyRegular": "Only a regular {ticker} address (not a script or shielded one) can sign messages",
+  "@signOnlyRegular": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "signBadFormat": "The signature isn't in a valid format",
+  "signExplain": "Prove you own an address: anyone can check the signature against the address and the exact message. Signing doesn't spend anything. Only transparent addresses can sign.",
+  "signMessage": "Message",
+  "signMessageToSign": "Message to sign",
+  "signSigning": "Signing…",
+  "signAction": "Sign message",
+  "signSignature": "Signature",
+  "signCopy": "Copy signature",
+  "signCopied": "Signature copied",
+  "signVerifyExplain": "Check that a message was signed with an address's key. The message must match exactly, spaces and line breaks included.",
+  "signTickerAddress": "{ticker} address",
+  "@signTickerAddress": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "signSignedMessage": "Signed message",
+  "signVerifyAction": "Verify message",
+  "signValid": "Valid: this address signed this message.",
+  "signNotValid": "Not valid: this address didn't sign this message, or the message was changed.",
+  "walletKeys": "Wallet keys",
+  "@walletKeys": {
+    "description": "What a view-only wallet holds instead of a seed: its public keys."
+  },
+  "walletSeed": "Wallet seed",
+  "walletViewKeys": "View wallet keys",
+  "walletViewSeed": "View wallet seed",
+  "walletDeleteWarning": "You're about to permanently delete this wallet.\n\nAfter that, the only way to get to your funds is your recovery phrase.\n\n{app} doesn't keep a copy of it and can't restore your wallet.",
+  "@walletDeleteWarning": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "walletDeleteSaveFirst": "SAVE YOUR RECOVERY PHRASE FIRST.",
+  "walletSeedText": "Write down your recovery phrase and keep it safe. Never share it with anyone. It's the only way to get to your funds if you forget your PIN, lose your phone, and so on.\n\n{app} doesn't keep a copy and can't restore it for you. Only you have access to your wallet.",
+  "@walletSeedText": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "walletShowQr": "Show QR Code",
+  "walletSeedQr": "Recovery phrase QR code",
+  "netRescanBlockchain": "Rescan blockchain",
+  "netRescanText": "This can take a while. If you close the app before it finishes, the rescan starts over.",
+  "netRescan": "Rescan",
+  "netRescanning": "Rescanning blockchain",
+  "netRescanCompleted": "Rescan completed",
+  "netRescanFailed": "Rescan failed",
+  "netTitle": "Network",
+  "netBlockchainStatus": "Blockchain status",
+  "netResync": "Resync",
+  "netSynchronized": "Synchronized",
+  "netSynchronizing": "Synchronizing",
+  "@netSynchronizing": {
+    "description": "Shown with 0 to 3 dots after it, as an animation."
+  },
+  "netUnableToSync": "Unable to synchronize",
+  "netCheckConnection": "Please check your internet connection and make sure your current node is not having issues.",
+  "netCurrentHeight": "Current height",
+  "commonDisconnect": "Disconnect",
+  "commonConnecting": "Connecting...",
+  "walletViewRecoveryDataReason": "Authenticate to view recovery data",
+  "walletViewRecoveryData": "View recovery data",
+  "walletViewPhraseReason": "Authenticate to view recovery phrase",
+  "walletSettings": "Wallet settings",
+  "walletWillBeDeleted": "Thanks! Your wallet will be deleted.",
+  "walletBackupDataText": "Please write down your backup data. Keep it safe and never share it with anyone. Your backup data is the only way you can access your wallet if you forget your PIN, lose your phone, etc.\n\n{app} does not keep nor is able to restore your backup data. Only you have access to your wallet.",
+  "@walletBackupDataText": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "walletRename": "Rename wallet",
+  "walletName": "Wallet name",
+  "commonWarningExclaim": "Warning!",
+  "walletReuseWarning": "Reusing addresses reduces your privacy and security. Are you sure you want to reuse addresses by default?",
+  "walletReuseAddress": "Reuse receiving address",
+  "walletShowInDuress": "Show in duress",
+  "@walletShowInDuress": {
+    "description": "Show this wallet when the app is unlocked with the duress PIN."
+  },
+  "walletDeleteConfirm": "Do you want to delete {name}?",
+  "@walletDeleteConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "walletDeleteReason": "Authenticate to delete wallet",
+  "walletDelete": "Delete wallet",
+  "desktopAddressBook": "Address Book",
+  "@desktopAddressBook": {
+    "description": "Desktop: a menu item and its page's title."
+  },
+  "desktopMyWallets": "My Wallets",
+  "@desktopMyWallets": {
+    "description": "Desktop: a menu item and its page's title."
+  },
+  "desktopExit": "Exit",
+  "@desktopExit": {
+    "description": "Desktop menu: closes the app."
+  },
+  "desktopExitToMyWallets": "Exit to My Wallets",
+  "desktopMyWallet": "My wallet",
+  "@desktopMyWallet": {
+    "description": "Desktop: the wallet page's Send and Receive panel."
+  },
+  "addressBookContactsEmpty": "Your contacts will appear here",
+  "commonOptions": "Options",
+  "contactDelete": "Delete contact",
+  "coinControlChooseForSend": "Choose which outputs this send uses.",
+  "coinControlClearSelection": "Clear selection",
+  "coinControlClearSelectionCount": "Clear selection ({count})",
+  "@coinControlClearSelectionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonApply": "Apply",
+  "coinControlSortBy": "Sort by...",
+  "walletsAddNew": "Add new wallet",
+  "walletRecentActivity": "Recent activity",
+  "contactUseAddress": "Use address",
+  "walletWriteDownNext": "Please write down your recovery phrase in the correct order and save it to keep your funds secure. You will be shown your recovery phrase on the next screen.",
+  "walletDecryptionErrorText": "Could not retrieve wallet keys/mnemonic phrase/seed.\n\nAre you certain you would like to continue with wallet deletion?",
+  "walletDecryptionError": "Decryption error",
+  "sendEnterPasswordToSend": "Enter your wallet password to send {ticker}",
+  "@sendEnterPasswordToSend": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "commonEnterYourPassword": "Enter your password",
+  "receiveYourShieldAddress": "Your {ticker} shield address",
+  "@receiveYourShieldAddress": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "receiveCreateNewQr": "Create new QR code",
+  "sendNoteHintLong": "Just for you: kept in your history, never sent",
+  "@sendNoteHintLong": {
+    "description": "The hint of a send's private note."
+  },
+  "sendPreviewSend": "Preview send",
+  "featureCoinControlText": "Choose which outputs to spend and freeze the ones to keep",
+  "featureMasternodesText": "Create, register and follow your masternodes",
+  "featureGovernanceText": "Proposals and growth fund releases: follow them and vote with your masternodes",
+  "featureNamesText": "Register a name, and manage or sell your names",
+  "featurePrivatizeText": "Move your whole transparent balance to your shield balance",
+  "walletMoreFeatures": "More features",
+  "netUnableToSyncShort": "Unable to sync",
+  "walletWriteDownDesktop": "Write down your recovery phrase in the right order and keep it safe. It's the only way to get to your funds if this computer is lost or you forget your password.",
+  "passwordRequired": "A password is required",
+  "passwordMismatch": "Password does not match",
+  "commonInitializing": "Initializing...",
+  "commonErrorWith": "Error: {error}",
+  "@commonErrorWith": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordIsSetUp": "Your password is set up",
+  "passwordCreateTitle": "Create a password",
+  "passwordCreateText": "Protect your funds with a strong password",
+  "passwordCreate": "Create password",
+  "passwordConfirm": "Confirm password",
+  "passwordResetNewText": "To <b>create a new {app}</b>, we need to <b>delete your old wallets</b>. Make sure you have the recovery phrase of each one: without it, its funds are lost.\n\n{appName} closes when it's done. Open it again to start over.",
+  "@passwordResetNewText": {
+    "description": "The text between <b> and </b> is bold.",
+    "placeholders": {
+      "app": {
+        "type": "String"
+      },
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordResetRestoreText": "To <b>restore from backup</b>, we need to <b>delete your old wallets</b>. Make sure you have the recovery phrase of each one: without it, its funds are lost.\n\n{appName} closes when it's done. Open it again to restore your backup.",
+  "@passwordResetRestoreText": {
+    "description": "The text between <b> and </b> is bold.",
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordDeleteAndClose": "Delete and close",
+  "passwordDeletingFailed": "Deleting failed: {error}",
+  "@passwordDeletingFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordTakeMeBack": "Take me back!",
+  "passwordForgot": "Forgot password?",
+  "passwordVerifying": "Verifying password...",
+  "passwordInvalid": "Invalid password",
+  "passwordUnlockText": "Enter your wallet password to unlock {app}",
+  "@passwordUnlockText": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordUnlock": "Unlock",
+  "passwordForgotText": "{appName} doesn't keep your password, so it can't be recovered. Start over with a new password, or restore your wallets from a {app} backup file.",
+  "@passwordForgotText": {
+    "placeholders": {
+      "appName": {
+        "type": "String"
+      },
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreFromBackup": "Restore from backup",
+  "restoreUseBackupFile": "Use your {app} backup file to restore your wallets, address book, and wallet preferences.",
+  "@restoreUseBackupFile": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "commonCheckingEllipsis": "Checking...",
+  "settingsBackupAndRestore": "Backup and restore",
+  "advancedText": "Configure these settings only if you know what you are doing!",
+  "commonView": "View",
+  "backupManual": "Manual Backup",
+  "backupManualText": "Create manual backup to easily transfer your data between devices. You will create a backup file that can be later used in the Restore option. Use a strong password to encrypt your data.",
+  "backupAutoEnabled": "{app} Auto Backup enabled!",
+  "@backupAutoEnabled": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "currencySelect": "Select currency",
+  "currencyText": "Select a fiat currency to evaluate your crypto assets. We use CoinGecko conversion rates when displaying your balance and transaction amounts.",
+  "currencyChange": "Change currency",
+  "nodesSelectCoin": "Select a coin to see nodes",
+  "passwordNewMismatch": "The new passwords don't match",
+  "passwordChanged": "Password changed",
+  "passwordChangeFailed": "Couldn't change the password",
+  "passwordNotCurrent": "That's not your current password",
+  "passwordChangeTitle": "Change Password",
+  "passwordChangeText": "Protect your {app} with a strong password. {app} does not store your password, and is therefore NOT able to restore it. Keep your password safe and secure.",
+  "@passwordChangeText": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordCurrent": "Current password",
+  "passwordEnterCurrent": "Enter current password",
+  "passwordNew": "New password",
+  "passwordEnterNew": "Enter new password",
+  "passwordConfirmNew": "Confirm new password",
+  "commonUpdating": "Updating...",
+  "passwordSetUpNew": "Set up new password",
+  "autoLockAfter": "{count, plural, =1{Locks {app} after 1 minute of inactivity} other{Locks {app} after {count} minutes of inactivity}}",
+  "@autoLockAfter": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonOff": "Off",
+  "startupChooseText": "Choose what opens after you unlock {app}.",
+  "@startupChooseText": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "startupMyWalletsText": "The list of your wallets",
+  "startupOpenWallet": "Open this wallet",
+  "syncingText": "Set up your syncing preferences for all wallets in your {app}.",
+  "@syncingText": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "syncingChangePreferences": "Change preferences",
+  "torConnectTo": "Connect to Tor",
+  "torConnectingTo": "Connecting to Tor",
+  "torDisconnectFrom": "Disconnect from Tor",
+  "torOneClick": "Connect to the Tor Network with one click.",
+  "addressNonWallet": "Non wallet/unknown",
+  "commonUnknown": "Unknown",
+  "addressReceiving": "Receiving",
+  "txMasternodeReward": "Masternode reward",
+  "txReceiving": "Receiving",
+  "@txReceiving": {
+    "description": "An incoming transaction that isn't confirmed yet. Followed by \"(1/6)\": its confirmations."
+  },
+  "txSending": "Sending",
+  "@txSending": {
+    "description": "An outgoing transaction that isn't confirmed yet. Followed by \"(1/6)\": its confirmations."
+  },
+  "txSentToSelf": "Sent to self",
+  "txBlockReward": "Block reward",
+  "txShielding": "Shielding",
+  "txUnshielded": "Unshielded",
+  "txUnshielding": "Unshielding",
+  "txMasternodeRewards": "Masternode rewards",
+  "feeFast": "Fast",
+  "feeAverage": "Average",
+  "feeSlow": "Slow",
+  "feeCustom": "Custom",
+  "govStatusPassing": "Passing",
+  "@govStatusPassing": {
+    "description": "A proposal's status: it has enough net Yes votes now."
+  },
+  "govStatusNotPassing": "Not passing",
+  "passwordRules": "Use at least {count} characters, with upper- and lower-case letters, a number and a symbol.",
+  "@passwordRules": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passwordNeedUpper": "an upper-case letter",
+  "@passwordNeedUpper": {
+    "description": "Goes into \"add …\" (passwordAdd)."
+  },
+  "passwordNeedLower": "a lower-case letter",
+  "@passwordNeedLower": {
+    "description": "Goes into \"add …\" (passwordAdd)."
+  },
+  "passwordNeedNumber": "a number",
+  "@passwordNeedNumber": {
+    "description": "Goes into \"add …\" (passwordAdd)."
+  },
+  "passwordNeedSymbol": "a symbol",
+  "@passwordNeedSymbol": {
+    "description": "Goes into \"add …\" (passwordAdd)."
+  },
+  "passwordAdd": "add {things}",
+  "@passwordAdd": {
+    "description": "What a new password still needs, e.g. \"add a number and a symbol\". Starts a sentence when the password is long enough (its first letter is then capitalized), or follows \"Use at least 7 characters and\".",
+    "placeholders": {
+      "things": {
+        "type": "String"
+      }
+    }
+  },
+  "commonListAnd": "{list} and {last}",
+  "@commonListAnd": {
+    "description": "The end of a list, e.g. \"a number, a symbol and an upper-case letter\": list is the first items, joined with commonListComma.",
+    "placeholders": {
+      "list": {
+        "type": "String"
+      },
+      "last": {
+        "type": "String"
+      }
+    }
+  },
+  "commonListComma": "{list}, {item}",
+  "@commonListComma": {
+    "description": "Adds an item to a list, e.g. \"a number, a symbol\": list is the items so far. Use your language's list separator.",
+    "placeholders": {
+      "list": {
+        "type": "String"
+      },
+      "item": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordAddSentence": "{adding}.",
+  "@passwordAddSentence": {
+    "description": "passwordAdd as a sentence of its own, its first letter already capitalized. Use your language's full stop.",
+    "placeholders": {
+      "adding": {
+        "type": "String"
+      }
+    }
+  },
+  "passwordTooShort": "Use at least {count} characters.",
+  "@passwordTooShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passwordTooShortAnd": "Use at least {count} characters and {adding}.",
+  "@passwordTooShortAnd": {
+    "description": "adding is passwordAdd, e.g. \"add a number\".",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "adding": {
+        "type": "String"
+      }
+    }
+  },
+  "currencyName": "{code, select, AUD{Australian Dollar} AED{United Arab Emirates Dirham} ARS{Argentine Peso} BDT{Bangladeshi Taka} BHD{Bahraini Dinar} BMD{Bermudan Dollar} BRL{Brazilian Real} CAD{Canadian Dollar} CHF{Swiss Franc} CLP{Chilean Peso} CNY{Chinese Yuan} CZK{Czech Koruna} DKK{Danish Krone} EUR{Euro} GBP{Pound sterling} HKD{Hong Kong Dollar} HUF{Hungarian Forint} IDR{Indonesian Rupiah} ILS{Israeli New Shekel} INR{Indian Rupee} JPY{Japanese Yen} KRW{South Korean won} KWD{Kuwaiti Dinar} LKR{Sri Lankan Rupee} MMK{Myanmar Kyat} MXN{Mexican Peso} MYR{Malaysian Ringgit} NGN{Nigerian Naira} NOK{Norwegian Krone} NZD{New Zealand Dollar} PHP{Philippine peso} PKR{Pakistani Rupee} PLN{Polish złoty} RUB{Russian Ruble} SAR{Saudi Riyal} SEK{Swedish Krona} SGD{Singapore Dollar} THB{Thai Baht} TRY{Turkish lira} TWD{New Taiwan dollar} UAH{Ukrainian hryvnia} USD{United States Dollar} VEF{Venezuelan Bolívar} VND{Vietnamese dong} ZAR{South African Rand} XDR{Special Drawing Rights} XAG{Silver Ounce} XAU{Gold Ounce} other{{name}}}",
+  "@currencyName": {
+    "description": "A currency's name by its code. Other codes (cryptocurrencies) keep their English name.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "appIsAlreadyRunning": "{app} is already running.",
+  "@appIsAlreadyRunning": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "appCloseOtherWindow": "Close the other window and try again.",
+  "restoreAuthReason": "Authenticate to restore {app} backup",
+  "@restoreAuthReason": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreAuthTitle": "Restore {app} backup",
+  "@restoreAuthTitle": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "pinUnlockBiometricsReason": "Unlock your {app} using biometrics",
+  "@pinUnlockBiometricsReason": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "routeErrorTitle": "Navigation error",
+  "routeErrorText": "Error handling route, this is not supposed to happen. Try restarting the app.",
+  "cameraAccessNeeded": "Camera access needed",
+  "cameraAccessText": "Scanning QR codes needs the camera. Allow it in the settings?",
+  "cameraOpenSettings": "Open settings",
+  "cameraSettingsFailed": "Could not open app settings",
+  "cameraSettingsFailedText": "Open your phone's settings and allow the camera for {app} there.",
+  "@cameraSettingsFailedText": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "nodeTorMismatchTorOn": "Tor is on, but this wallet's node is set to be used without Tor, so the wallet won't sync. Change the node's settings, or turn Tor off.",
+  "nodeTorMismatchTorOff": "This wallet's node is set to be used only over Tor, and Tor is off, so the wallet won't sync. Change the node's settings, or turn Tor on.",
+  "accountsSuffix": "(account {account})",
+  "@accountsSuffix": {
+    "description": "Added to a wallet's name for its other accounts, e.g. \"Savings (account 2)\".",
+    "placeholders": {
+      "account": {
+        "type": "int"
+      }
+    }
+  },
+  "nodeUseWithoutTor": "This node is set to be used without Tor",
+  "@nodeUseWithoutTor": {
+    "description": "Why a node isn't used: Tor is on, and the node is set up for direct connections only."
+  },
+  "nodeUseOnlyOverTor": "This node is set to be used only over Tor",
+  "@nodeUseOnlyOverTor": {
+    "description": "Why a node isn't used: Tor is off, and the node is set up for Tor only."
+  },
+  "shieldNoTransparentFunds": "No transparent funds to shield",
+  "sendChangeMustBeTransparent": "Change must go to a transparent Kerrigan address",
+  "sendInvalidKerriganAddress": "Invalid Kerrigan address: {address}",
+  "@sendInvalidKerriganAddress": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "sendBelowDust": "Amount is below the dust limit",
+  "@sendBelowDust": {
+    "description": "\"Dust\": an amount so small the network refuses it."
+  },
+  "shieldNotAvailable": "Shield is not available",
+  "sendInsufficientBalance": "Insufficient balance",
+  "sendTooSmallForFee": "Amount is too small to pay the transaction fee",
+  "sendInsufficientForFee": "Insufficient funds to pay the transaction fee. Lower the amount or tick \"Subtract fee from amount\".",
+  "@sendInsufficientForFee": {
+    "description": "\"Subtract fee from amount\" is the checkbox on the send screen: use the same words as there."
+  },
+  "sendFeeEstimateTooLow": "Fee estimate too low ({fee} < {required}); please retry",
+  "@sendFeeEstimateTooLow": {
+    "description": "Amounts in satoshis.",
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      },
+      "required": {
+        "type": "String"
+      }
+    }
+  },
+  "sendWrongInputValue": "The server reported a wrong value for {output}; not signing",
+  "@sendWrongInputValue": {
+    "description": "{output}: a transaction ID and output number, \"txid:0\".",
+    "placeholders": {
+      "output": {
+        "type": "String"
+      }
+    }
+  },
+  "walletViewOnlyCannotSign": "View only wallets cannot sign",
+  "sendSigningDataMissing": "Failed to fetch signing data. Local db corrupt. Rescan wallet.",
+  "walletDeletePendingProposals": "Proposals still waiting to be submitted will be lost, along with the fees already paid for them.",
+  "receiveAddressGap": "You already have 20 unused addresses. Use one of them first: a wallet restored from the recovery phrase only looks 20 addresses past the last used one.",
+  "restoreCancelled": "Restore cancelled",
+  "shieldDownloadFailed": "Could not download {name}: {error}",
+  "@shieldDownloadFailed": {
+    "description": "{name}: a file of the shield prover, e.g. \"sapling-output.params\".",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "shieldTooSmallAfterFee": "After the fee, the amount is too small to send to a transparent address.",
+  "shieldSingleRecipient": "Shield transactions support a single recipient",
+  "shieldMemoTooLong": "Shielded memo is too long (max 512 bytes)",
+  "shieldChangeMustBeShield": "Change must go to a shield address",
+  "shieldInsufficient": "Insufficient shield balance",
+  "commonEnterAmount": "Enter an amount",
+  "govEnterName": "Enter a name",
+  "commonAtMostChars": "{count, plural, =1{At most 1 character} other{At most {count} characters}}",
+  "@commonAtMostChars": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "govEnterUrl": "Enter the link to the proposal's description",
+  "govInvalidUrl": "Not a valid web link (https://…)",
+  "govEnterPayAddress": "Enter the address to pay",
+  "govVoteNotAccepted": "The vote was not accepted",
+  "mnEnterAlias": "Enter a masternode alias",
+  "mnAliasChars": "Only letters, digits, \"_\", \"-\" and \".\"",
+  "mnAliasTaken": "Another masternode is already called \"{alias}\"",
+  "@mnAliasTaken": {
+    "placeholders": {
+      "alias": {
+        "type": "String"
+      }
+    }
+  },
+  "mnAliasRequired": "Masternode alias is required",
+  "mnCollateralNotFound": "Collateral output not found",
+  "mnInvalidIpv6": "Invalid IPv6 address",
+  "mnInvalidPort": "Invalid port",
+  "mnEnterIp": "Enter the server's IP address",
+  "mnMainnetPortOnly": "Port {port} is for mainnet masternodes only",
+  "@mnMainnetPortOnly": {
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "mnMustUsePort": "Masternodes must use port {port}",
+  "@mnMustUsePort": {
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "mnCollateralGone": "The collateral output is not in this wallet anymore",
+  "mnCollateralNotWallet": "The collateral address is not a wallet address",
+  "namesNotShieldAddress": "The Kerrigan.name address isn't a shield address",
+  "txWrongFromServer": "The server sent a wrong transaction for {txid}",
+  "@txWrongFromServer": {
+    "placeholders": {
+      "txid": {
+        "type": "String"
+      }
+    }
+  },
+  "bridgeNoAddressIndexShort": "This bridge has no address index (ADDR_INDEX)",
+  "bridgeNodeUnreachable": "The bridge's Kerrigan node is not reachable ({error})",
+  "@bridgeNodeUnreachable": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "bridgeWrongChain": "Bridge serves \"{chain}\", wallet expects {network}",
+  "@bridgeWrongChain": {
+    "description": "{chain} and {network}: network names such as \"main\" or \"test\".",
+    "placeholders": {
+      "chain": {
+        "type": "String"
+      },
+      "network": {
+        "type": "String"
+      }
+    }
+  },
+  "bridgeUnexpectedGenesis": "Unexpected genesis block {hash}",
+  "@bridgeUnexpectedGenesis": {
+    "placeholders": {
+      "hash": {
+        "type": "String"
+      }
+    }
+  },
+  "bridgeTorTurnedOn": "Tor was turned on",
+  "bridgeNoRoute": "This bridge has no /{route}: it runs without the address index (ADDR_INDEX)",
+  "@bridgeNoRoute": {
+    "description": "{route}: a part of the bridge's web address, e.g. \"address\".",
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "logsNoneFound": "No logs found in {path}",
+  "@logsNoneFound": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "txBlockRewards": "Block rewards",
+  "@txBlockRewards": {
+    "description": "A transaction filter: mining payouts."
+  },
+  "txMasternodesAndProposals": "Masternodes and proposals",
+  "@txMasternodesAndProposals": {
+    "description": "A transaction filter: masternode registrations and updates, and proposal fees."
+  },
+  "sendAutomaticPrivateChange": "Automatic (your private change address)",
+  "txProposalFee": "Proposal fee",
+  "@txProposalFee": {
+    "description": "A transaction: the fee burnt to publish a governance proposal."
+  },
+  "txMasternodeRegistered": "Masternode registered",
+  "txRegisteringMasternode": "Registering masternode",
+  "txMasternodeUpdated": "Masternode updated",
+  "txUpdatingMasternode": "Updating masternode",
+  "walletDeleteMasternodesComeBack": "The masternodes come back with the recovery phrase, but only once you add them again on the Masternodes screen. Until then their collateral isn't frozen, and a send could spend it and stop them.",
+  "mnType": "Type",
+  "@mnType": {
+    "description": "A masternode's type: Masternode or BroodNode."
+  },
+  "mnPaidAtBlock": "{time} (block {height})",
+  "@mnPaidAtBlock": {
+    "description": "{time}: how long ago, e.g. \"~2 h ago\".",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "height": {
+        "type": "int"
+      }
+    }
+  },
+  "durationJustNow": "Just now",
+  "walletViewOnlyNoKeys": "View only wallets have no keys",
+  "mnStatusUnregistered": "Not registered",
+  "@mnStatusUnregistered": {
+    "description": "A masternode's status: no registration on the blockchain yet."
+  },
+  "mnStatusRegistering": "Registering",
+  "@mnStatusRegistering": {
+    "description": "A masternode's status: its registration was sent, not mined yet."
+  },
+  "mnStatusNeedsServer": "Needs a server",
+  "@mnStatusNeedsServer": {
+    "description": "A masternode's status: registered, but no server set for it yet."
+  },
+  "mnStatusPoseBanned": "PoSe banned",
+  "@mnStatusPoseBanned": {
+    "description": "A masternode's status. PoSe = proof of service (keep \"PoSe\")."
+  },
+  "mnStatusRevoked": "Revoked",
+  "@mnStatusRevoked": {
+    "description": "A masternode's status: its operator stopped serving it."
+  },
+  "mnProviderFeeEmpty": "Masternode transactions pay a small fee from your transparent balance, which is empty. Move a little {ticker} (0.001 is plenty) to a transparent address of this wallet.",
+  "@mnProviderFeeEmpty": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "mnWaitCollateral": "Wait for the collateral to be confirmed",
+  "mnInvalidOperatorKey": "That is not a valid operator public key",
+  "mnBroodNodeIdentityKey": "A BroodNode registers with its server's identity key (kerrigan-cli gethmpidentity)",
+  "@mnBroodNodeIdentityKey": {
+    "description": "BroodNode is a name; keep \"kerrigan-cli gethmpidentity\" as is (a command)."
+  },
+  "mnRegisterFirst": "Register the masternode first",
+  "mnHostSetsServer": "Your host holds this masternode's operator key; they set its server",
+  "mnNoOwnerKey": "This wallet doesn't hold the masternode's owner key",
+  "govGrowthFundRelease": "Growth fund release",
+  "@govGrowthFundRelease": {
+    "description": "A governance object that, once passed, lets the escrowed growth fund pay its amount."
+  },
+  "govAbstain": "Abstain",
+  "@govAbstain": {
+    "description": "A masternode's vote: neither yes nor no."
+  },
+  "govStatusEnded": "Ended",
+  "@govStatusEnded": {
+    "description": "A proposal's status: its time is over."
+  },
+  "govStatusInvalid": "Invalid",
+  "@govStatusInvalid": {
+    "description": "A proposal's status: the network rejects it."
+  },
+  "govNoVotingKey": "Its voting key isn't in this wallet",
+  "govMnNotValid": "The network doesn't count this masternode as valid (set its server first)",
+  "govVotedTooRecently": "This masternode voted less than an hour ago",
+  "govNameCharsKerrigan": "Letters, digits, \"-\" and \"_\" only",
+  "govRegularAddress": "A regular transparent {ticker} address",
+  "@govRegularAddress": {
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "govChooseDuration": "Choose how long the vote runs",
+  "govAtMostAYear": "A proposal runs for at most a year",
+  "govObjectFeeNote": "{type} fee: {name}",
+  "@govObjectFeeNote": {
+    "description": "A transaction note. {type}: \"Proposal\" or \"Growth fund release\"; {name}: the proposal's name.",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "govNetOfNeed": "{net} of {need} net Yes",
+  "@govNetOfNeed": {
+    "description": "A proposal's votes: {net} = Yes minus No votes, {need} = net Yes votes it needs to pass.",
+    "placeholders": {
+      "net": {
+        "type": "int"
+      },
+      "need": {
+        "type": "int"
+      }
+    }
+  },
+  "govTabActive": "Active",
+  "@govTabActive": {
+    "description": "A tab: the proposals masternodes can vote on now."
+  },
+  "govTabEnded": "Ended",
+  "@govTabEnded": {
+    "description": "A tab: the proposals whose voting is over."
+  },
+  "govFilterGrowthFund": "Growth fund",
+  "@govFilterGrowthFund": {
+    "description": "A filter chip: only growth fund releases."
+  },
+  "govNoneNow": "No proposals right now.",
+  "govNoneGrowthFund": "No growth fund releases.",
+  "govNoneEnded": "No ended proposals the network still knows.",
+  "govIntroKerrigan": "Masternodes vote Yes or No on each proposal. Growth fund releases that pass unlock coins from the growth fund escrow.",
+  "govToPassKerrigan": "To pass: {votes} net Yes {votes, plural, =1{vote} other{votes}} (a tenth of the masternodes' voting weight)",
+  "@govToPassKerrigan": {
+    "placeholders": {
+      "votes": {
+        "type": "int"
+      }
+    }
+  },
+  "govMasternodesEnabled": "{count, plural, =1{1 masternode enabled} other{{count} masternodes enabled}} · a BroodNode's vote counts four times",
+  "@govMasternodesEnabled": {
+    "description": "BroodNode is a name: keep it as is.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "govStartsIn": "Starts in ~{time}",
+  "@govStartsIn": {
+    "description": "{time} is a short duration, e.g. \"3 d\".",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "govVotingEndsIn": "Voting ends in ~{time}",
+  "@govVotingEndsIn": {
+    "description": "{time} is a short duration, e.g. \"12 d\".",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "govEndedAgo": "Ended ~{time} ago",
+  "@govEndedAgo": {
+    "description": "{time} is a short duration, e.g. \"2 d\".",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "govYourGrowthFundRelease": "Your growth fund release",
+  "@govYourGrowthFundRelease": {
+    "description": "A tag on a growth fund release this wallet submitted."
+  },
+  "govRelease": "Release",
+  "@govRelease": {
+    "description": "Label above the amount a growth fund release pays out."
+  },
+  "govVotingPeriod": "Voting",
+  "@govVotingPeriod": {
+    "description": "Label above the dates a proposal can be voted on."
+  },
+  "govVotingOpen": "Open",
+  "@govVotingOpen": {
+    "description": "A growth fund release's voting period: no end date. An adjective, not the verb."
+  },
+  "govEscrowReleaseText": "If it passes, this amount may leave the growth fund escrow, once, to its payment address.",
+  "govPassesWithKerrigan": "Passes with {votes} net Yes {votes, plural, =1{vote} other{votes}}; a BroodNode's vote counts four times.",
+  "@govPassesWithKerrigan": {
+    "description": "BroodNode is a name: keep it as is.",
+    "placeholders": {
+      "votes": {
+        "type": "int"
+      }
+    }
+  },
+  "govAlreadyAbstained": "Already abstained",
+  "govVoteExplainedKerrigan": "Each masternode signs its vote with its voting key. A vote can be changed once an hour.",
+  "govAbstainWith": "Abstain with {count} {count, plural, =1{masternode} other{masternodes}}",
+  "@govAbstainWith": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationWeeks": "{count, plural, =1{1 week} other{{count} weeks}}",
+  "@durationWeeks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationMonths": "{count, plural, =1{1 month} other{{count} months}}",
+  "@durationMonths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "durationYears": "{count, plural, =1{1 year} other{{count} years}}",
+  "@durationYears": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "govCreateIntroKerrigan": "A proposal asks the masternodes to approve a payment. Publishing it burns a {fee} fee, which is not refunded. Describe it in public first (e.g. on Kerrigan's Discord) and link that here.",
+  "@govCreateIntroKerrigan": {
+    "description": "{fee} is an amount with its ticker, e.g. \"1 KRGN\". Kerrigan is the coin's name.",
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "govKind": "Kind",
+  "@govKind": {
+    "description": "Label above the choice: a proposal or a growth fund release."
+  },
+  "govEscrowReleaseHint": "If it passes, the amount may leave the growth fund escrow, once, to the address below.",
+  "govProposalHint": "Masternodes vote on it until its voting period ends.",
+  "govNameHintKerrigan": "e.g. exchange-listing-q1",
+  "@govNameHintKerrigan": {
+    "description": "An example proposal name: lowercase letters, digits and \"-\" only, no spaces."
+  },
+  "govNameHelperKerrigan": "Letters, digits, \"-\" and \"_\"",
+  "govPaymentGoesTo": "Payment goes to",
+  "govUseMyAddress": "Use one of my addresses",
+  "govPayAnotherAddress": "Pay another address",
+  "govVotingRunsFor": "Voting runs for",
+  "govAfterFeeKerrigan": "After the fee has {count} confirmations ({minutes, plural, =1{about 1 minute} other{about {minutes} minutes}}) Astronaut submits the proposal by itself; keep the wallet syncing until then.",
+  "@govAfterFeeKerrigan": {
+    "description": "Astronaut is the app's name.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "mnLookupFailed": "Couldn't look up the network's masternodes: {error}",
+  "@mnLookupFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "mnNoExistingFound": "No masternode registration or unused collateral among this wallet's coins. A collateral is one output of exactly {amount} or {broodAmount}.",
+  "@mnNoExistingFound": {
+    "description": "{amount}: a regular masternode's collateral, {broodAmount}: a BroodNode's; both with the ticker, e.g. \"10,000 KRGN\".",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "broodAmount": {
+        "type": "String"
+      }
+    }
+  },
+  "mnRegisteredType": "Registered {type}",
+  "@mnRegisteredType": {
+    "description": "{type}: \"Masternode\" or \"BroodNode\". A masternode already registered on the network, found in this wallet.",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "mnUnusedCollateral": "Unused collateral · {amount}",
+  "@mnUnusedCollateral": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "mnKeysNotInWallet": "its owner and voting keys aren't in this wallet",
+  "@mnKeysNotInWallet": {
+    "description": "Follows a \"txid:output\" reference after a \" · \", so it starts in lower case."
+  },
+  "mnAddExistingIntroKerrigan": "For a masternode whose collateral is already in this wallet, e.g. after restoring it. Nothing is sent: Astronaut lists it and freezes its collateral.",
+  "@mnAddExistingIntroKerrigan": {
+    "description": "Astronaut is the app's name."
+  },
+  "mnOrCollateral": "Masternode or collateral",
+  "mnRegularText": "Earns masternode rewards and votes on proposals.",
+  "mnBroodNodeText": "Votes with four times the weight. On a server that also mines, it reaches the top Hivemind sealing tier. It registers with its server's identity key.",
+  "@mnBroodNodeText": {
+    "description": "Hivemind is the name of Kerrigan's mining and sealing system: keep it as is."
+  },
+  "mnCreateNextKerrigan": "Next, on the masternode's page, you register it on the network with its server's address: on your own server, or hosted on masternode.space. Registering pays a tiny fee from your transparent balance; paying the collateral from the shield keeps 0.001 {ticker} transparent for it when you have none.",
+  "@mnCreateNextKerrigan": {
+    "description": "masternode.space is a website: keep it as is.",
+    "placeholders": {
+      "ticker": {
+        "type": "String"
+      }
+    }
+  },
+  "mnBuildFailed": "Couldn't build the transaction",
+  "mnNetworkFee": "Network fee: {fee}",
+  "@mnNetworkFee": {
+    "placeholders": {
+      "fee": {
+        "type": "String"
+      }
+    }
+  },
+  "mnAuthReason": "Authenticate to send the masternode transaction",
+  "mnNotAuthorised": "Not authorised",
+  "mnSendFailed": "Couldn't send the transaction",
+  "mnPasteOperatorKey": "Paste a valid operator public key (96 hex characters)",
+  "mnPreparingRegistration": "Preparing the registration",
+  "mnRegisterTitle": "Register {alias}?",
+  "@mnRegisterTitle": {
+    "description": "{alias}: the masternode's name, e.g. \"MN1\".",
+    "placeholders": {
+      "alias": {
+        "type": "String"
+      }
+    }
+  },
+  "mnRegisterNoServer": "The masternode goes on the network without a server; it earns nothing until its server is set.",
+  "mnRegisterWithServer": "The masternode goes on the network with server {server}.",
+  "@mnRegisterWithServer": {
+    "description": "{server}: an IP address and port, e.g. \"203.0.113.5:7120\".",
+    "placeholders": {
+      "server": {
+        "type": "String"
+      }
+    }
+  },
+  "mnRegistrationSent": "Registration sent. The masternode is listed once the transaction is in a block.",
+  "mnPreparingUpdate": "Preparing the update",
+  "mnSetServerTitle": "Set the server",
+  "mnServedBy": "{alias} will be served by {server}.",
+  "@mnServedBy": {
+    "description": "{alias}: the masternode's name; {server}: an IP address and port.",
+    "placeholders": {
+      "alias": {
+        "type": "String"
+      },
+      "server": {
+        "type": "String"
+      }
+    }
+  },
+  "mnUpdateSent": "Update sent. It takes effect once in a block.",
+  "mnPreparingChange": "Preparing the change",
+  "mnChangeOperatorTitle": "Change the operator key",
+  "mnChangeOperatorOwn": "The masternode stops until its server is set again with the new key (do it here once this change is in a block).",
+  "mnChangeOperatorHost": "The masternode stops until its server is set again with the new key (your host does that).",
+  "mnChangeSent": "Change sent. Set the server once it is in a block.",
+  "mnShowOperatorKey": "Show operator key",
+  "mnShowOperatorKeyReason": "Unlock to show the masternode's operator secret key",
+  "mnNotOperatorKey": "Not an operator public key (96 hex characters)",
+  "mnOperatorSecretForHost": "Masternode key (operator secret)",
+  "@mnOperatorSecretForHost": {
+    "description": "What masternode.space calls the operator secret key."
+  },
+  "mnHostTextKerrigan": "Give masternode.space these values when you add the masternode there. Your collateral never leaves this wallet. They tell you the server's IP address: enter it on this page to register the masternode (or to update its server).",
+  "@mnHostTextKerrigan": {
+    "description": "masternode.space is a website: keep it as is."
+  },
+  "mnHostTextHostKey": "Give masternode.space the collateral transaction and output index. Ask them for the server's IP address and its operator public key, then register the masternode on this page with \"{button}\".",
+  "@mnHostTextHostKey": {
+    "description": "{button}: the \"My host gave me an operator key\" button.",
+    "placeholders": {
+      "button": {
+        "type": "String"
+      }
+    }
+  },
+  "mnRemoveTextKerrigan": "Astronaut forgets this masternode and unfreezes its collateral, so it can be spent. Spending the collateral ends the masternode on the network.",
+  "@mnRemoveTextKerrigan": {
+    "description": "Astronaut is the app's name."
+  },
+  "mnRegisterSection": "Register on the network",
+  "mnRegisterSectionText": "Registering puts the masternode on the network with its server's address and the operator key the server runs with. Get the server ready first (see below); you may also register now without a server and set it later.",
+  "mnOperatorFromHost": "Operator key from my host",
+  "mnOperatorFromWallet": "Operator key made by this wallet",
+  "mnMakeOneHere": "Make one here",
+  "@mnMakeOneHere": {
+    "description": "A button: make the operator key in this wallet instead."
+  },
+  "mnHostGaveKey": "My host gave me an operator key",
+  "@mnHostGaveKey": {
+    "description": "A button."
+  },
+  "mnBroodNodeRegisterText": "A BroodNode registers with its server's identity key: run \"kerrigan-cli gethmpidentity\" on the server and paste the identity here.",
+  "@mnBroodNodeRegisterText": {
+    "description": "BroodNode is a name; keep \"kerrigan-cli gethmpidentity\" as is (a command)."
+  },
+  "mnOperatorKeyHint": "Operator public key (96 hex characters)",
+  "mnOperatorWalletText": "The server runs with this wallet's operator secret key (shown below). Restoring this wallet brings it back.",
+  "mnRegister": "Register masternode",
+  "mnServerRevive": "Enter the server's address to revive the masternode. The server must run Kerrigan Core with this masternode's operator secret key.",
+  "mnServerStart": "Enter the server's address to start the masternode. The server must run Kerrigan Core with this masternode's operator secret key.",
+  "mnServerMoved": "Moved to another server? Enter its address.",
+  "mnHostSetsServerNote": "Your host holds this masternode's operator key and sets its server.",
+  "mnSetServer": "Set server",
+  "mnUpdateServer": "Update server",
+  "mnOperator": "Operator",
+  "@mnOperator": {
+    "description": "A section title: the masternode's operator (who runs its server)."
+  },
+  "mnOperatorText": "Moving to another host, or a key that leaked? Give the masternode a new operator key.",
+  "mnChangeOperator": "Change operator key",
+  "@mnChangeOperator": {
+    "description": "A button."
+  },
+  "mnRegisteredLastPaid": "Registered at block {height} · Last paid: {time}",
+  "@mnRegisteredLastPaid": {
+    "description": "{time}: e.g. \"~2 h ago\", \"Just now\" or \"Not yet\".",
+    "placeholders": {
+      "height": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mnPosePenalty": "PoSe penalty {penalty}",
+  "@mnPosePenalty": {
+    "description": "PoSe = proof of service (keep \"PoSe\").",
+    "placeholders": {
+      "penalty": {
+        "type": "int"
+      }
+    }
+  },
+  "mnRevokedText": "Its operator stopped serving it. Give it a new operator key below.",
+  "mnEasiestTextKerrigan": "masternode.space runs the server for you: no server to rent, set up or keep online. Your collateral stays in this wallet.",
+  "@mnEasiestTextKerrigan": {
+    "description": "masternode.space is a website: keep it as is."
+  },
+  "mnOwnServer": "Or run it on your own server",
+  "mnOwnServerBroodNode": "Install Kerrigan Core on the server and open port {port}. Register with the identity \"kerrigan-cli gethmpidentity\" prints there, following Kerrigan's BroodNode guide for the server's settings.",
+  "@mnOwnServerBroodNode": {
+    "description": "Kerrigan Core is the coin's node software; keep \"kerrigan-cli gethmpidentity\" as is.",
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "mnOwnServerText": "Install Kerrigan Core on the server, put these lines in its kerrigan.conf, open port {port} and restart kerrigand. Then register the masternode (or set its server) above.",
+  "@mnOwnServerText": {
+    "description": "Keep kerrigan.conf and kerrigand as they are (a file and a program).",
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "mnOwnServerTextReplaceIp": "Install Kerrigan Core on the server, put these lines in its kerrigan.conf (replace YOUR_SERVER_IP with its public IP), open port {port} and restart kerrigand. Then register the masternode (or set its server) above.",
+  "@mnOwnServerTextReplaceIp": {
+    "description": "Keep kerrigan.conf, YOUR_SERVER_IP and kerrigand as they are.",
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "mnOperatorFromHostText": "This masternode's operator key comes from its host. To run it yourself, give it a new operator key made by this wallet (\"{button}\").",
+  "@mnOperatorFromHostText": {
+    "description": "{button}: the \"Change operator key\" button.",
+    "placeholders": {
+      "button": {
+        "type": "String"
+      }
+    }
+  },
+  "mnPayoutAddress": "Payout address",
+  "mnRegistrationTx": "Registration transaction",
+  "mnOwnerAddress": "Owner address",
+  "mnVotingAddress": "Voting address",
+  "mnOperatorPublicKey": "Operator public key",
+  "mnOperatorSecretKey": "Operator secret key",
+  "mnNewOperatorKey": "New operator key",
+  "mnMakeNewOperator": "Make a new one in this wallet",
+  "mnMakeNewOperatorText": "For your own server: put its secret in kerrigan.conf.",
+  "mnUseHostKey": "Use my host's key",
+  "mnPasteIdentity": "Paste the identity \"kerrigan-cli gethmpidentity\" prints on the BroodNode's server.",
+  "@mnPasteIdentity": {
+    "description": "BroodNode is a name; keep \"kerrigan-cli gethmpidentity\" as is."
+  },
+  "sendTooManyInputs": "This needs more coins than fit in one transaction (at most {count}). Combine them first: send up to {amount} to one of your own addresses, then try again.",
+  "@sendTooManyInputs": {
+    "description": "{amount} has its ticker, e.g. \"1,234.5 KRGN\".",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "sendSubtractFeeOneRecipient": "Subtracting the fee needs a single recipient",
+  "sendShieldOnly": "This payment can only be made from the shield"
+}

@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 
 import 'package:socks5_proxy/socks_client.dart';
 
 import '../../../app_config.dart';
+import '../../../l10n/l10n.dart';
 import '../../../models/node_model.dart';
 import '../../../services/tor_service.dart';
 import '../../../utilities/local_network_access.dart';
@@ -88,25 +90,24 @@ class KerriganBridgeClient {
     } on KerriganBridgeException catch (e) {
       // Without the index, `/status` falls through to the RPC proxy.
       if (e.statusCode == 403 || e.statusCode == 404) {
-        return "This bridge has no address index (ADDR_INDEX)";
+        return l10n.bridgeNoAddressIndexShort;
       }
       rethrow;
     }
     final chain = (status["backend"] as Map?)?["chain"] as String?;
-    if (chain == null) return "This bridge has no address index (ADDR_INDEX)";
+    if (chain == null) return l10n.bridgeNoAddressIndexShort;
     try {
       await getBlockCount();
     } catch (e) {
-      return "The bridge's Kerrigan node is not reachable ($e)";
+      return l10n.bridgeNodeUnreachable("$e");
     }
     // Kerrigan Core's chain names match the shield library's networks.
     if (chain != coin.shieldNetwork) {
-      return "This bridge serves the \"$chain\" chain, not "
-          "${coin.prettyName} (\"${coin.shieldNetwork}\")";
+      return l10n.bridgeWrongChain(chain, coin.shieldNetwork);
     }
     final genesis = await blockHash(0);
     if (!coin.acceptedGenesisHashes.contains(genesis)) {
-      return "Unexpected genesis block $genesis";
+      return l10n.bridgeUnexpectedGenesis(genesis);
     }
     return null;
   }
@@ -128,7 +129,7 @@ class KerriganBridgeClient {
   /// must not go on without it.
   static void _refuseDirectUnderTor() {
     if (AppConfig.hasFeature(AppFeature.tor) && Prefs.instance.useTor) {
-      throw KerriganBridgeException("Tor was turned on");
+      throw KerriganBridgeException(l10n.bridgeTorTurnedOn);
     }
   }
 
@@ -208,7 +209,7 @@ class KerriganBridgeClient {
           request!.add(bytes);
         }
         final response = await request!.close();
-        final text = await response.transform(utf8.decoder).join();
+        final text = await _readText(response);
         _lastActivity = DateTime.now();
         return (code: response.statusCode, body: text);
       }().timeout(timeout);
@@ -219,6 +220,25 @@ class KerriganBridgeClient {
       // Its text names the URL, which may hold the wallet's xpub.
       throw HttpException(redactXpubs(e.message));
     }
+  }
+
+  /// The most a reply can be, far more than any (a page of 1000
+  /// transactions is a few MB): a server that never stops sending would
+  /// otherwise use up the memory.
+  static const _maxReplyBytes = 64 * 1024 * 1024;
+
+  static Future<String> _readText(HttpClientResponse response) async {
+    if (response.contentLength > _maxReplyBytes) {
+      throw KerriganBridgeException("reply too large");
+    }
+    final bytes = BytesBuilder(copy: false);
+    await for (final chunk in response) {
+      bytes.add(chunk);
+      if (bytes.length > _maxReplyBytes) {
+        throw KerriganBridgeException("reply too large");
+      }
+    }
+    return utf8.decode(bytes.takeBytes());
   }
 
   /// [text] without extended public keys: error messages end up in the
@@ -246,11 +266,7 @@ class KerriganBridgeClient {
     if (response.code == 404 && response.body.trim().isEmpty) {
       // No such route: the bridge runs without the address index.
       final route = path.split("/").firstWhere((e) => e.isNotEmpty);
-      throw KerriganBridgeException(
-        "This bridge has no /$route: it runs without the address index "
-        "(ADDR_INDEX)",
-        statusCode: 404,
-      );
+      throw KerriganBridgeException(l10n.bridgeNoRoute(route), statusCode: 404);
     }
     if (response.code != 200) {
       throw KerriganBridgeException(
@@ -568,9 +584,9 @@ class KerriganBridgeClient {
     yield* response.timeout(_timeout);
   }
 
-  /// Download [url] into [file], reporting `(received, total)`.
-  /// Download [url] to [file]; more than [maxBytes] is refused (a server
-  /// that never stops sending would fill the disk).
+  /// Download [url] to [file], reporting `(received, total)`; more than
+  /// [maxBytes] is refused (a server that never stops sending would fill
+  /// the disk).
   static Future<void> downloadToFile(
     Uri url,
     File file, {
@@ -585,7 +601,8 @@ class KerriganBridgeClient {
     final client = _newHttpClient(proxy);
     final tmp = File("${file.path}.part");
     try {
-      final response = await (await client.getUrl(url)).close();
+      final request = await client.getUrl(url).timeout(_timeout);
+      final response = await request.close().timeout(_timeout);
       if (response.statusCode != 200) {
         throw KerriganBridgeException(
           "download failed: $url",

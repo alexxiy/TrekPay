@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../route_generator.dart';
 import '../../themes/stack_colors.dart';
@@ -26,13 +27,13 @@ import '../send_view/sub_widgets/kerrigan_funding_card.dart';
 import 'kerrigan_governance_view.dart';
 
 /// How long masternodes can vote on a new proposal.
-const _kDurations = <(String, Duration)>[
-  ("1 week", Duration(days: 7)),
-  ("2 weeks", Duration(days: 14)),
-  ("1 month", Duration(days: 30)),
-  ("3 months", Duration(days: 91)),
-  ("6 months", Duration(days: 182)),
-  ("1 year", Duration(days: 365)),
+List<(String, Duration)> get _durations => [
+  (l10n.durationWeeks(1), const Duration(days: 7)),
+  (l10n.durationWeeks(2), const Duration(days: 14)),
+  (l10n.durationMonths(1), const Duration(days: 30)),
+  (l10n.durationMonths(3), const Duration(days: 91)),
+  (l10n.durationMonths(6), const Duration(days: 182)),
+  (l10n.durationYears(1), const Duration(days: 365)),
 ];
 
 /// Ask the masternodes to approve a payment: a proposal, or a release
@@ -67,7 +68,7 @@ class _KerriganCreateProposalViewState
   String? _payee;
   bool _payOther = false;
   KerriganFunding _funding = kKerriganAutoFunding;
-  Duration _duration = _kDurations[2].$2;
+  Duration _duration = _durations[2].$2;
 
   /// Show errors only for fields the user touched (or after "Pay").
   final _touched = <TextEditingController>{};
@@ -301,7 +302,7 @@ class _KerriganCreateProposalViewState
         backgroundColor: colors.background,
         appBar: PageAppBar(
           title: Text(
-            "Create proposal",
+            l10n.govCreateProposal,
             style: STextStyles.navBarTitle(context),
           ),
         ),
@@ -314,15 +315,12 @@ class _KerriganCreateProposalViewState
                   children: [
                     RoundedWhiteContainer(
                       child: Text(
-                        "A proposal asks the masternodes to approve a payment. "
-                        "Publishing it burns a ${fmt.format(fee)} fee, which "
-                        "is not refunded. Describe it in public first (e.g. "
-                        "on Kerrigan's Discord) and link that here.",
+                        l10n.govCreateIntroKerrigan(fmt.format(fee)),
                         style: secondary,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text("Kind", style: label),
+                    Text(l10n.govKind, style: label),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
@@ -339,25 +337,23 @@ class _KerriganCreateProposalViewState
                     const SizedBox(height: 6),
                     Text(
                       escrow
-                          ? "If it passes, the amount may leave the growth "
-                                "fund escrow, once, to the address below."
-                          : "Masternodes vote on it until its voting period "
-                                "ends.",
+                          ? l10n.govEscrowReleaseHint
+                          : l10n.govProposalHint,
                       style: secondary,
                     ),
                     const SizedBox(height: 16),
-                    Text("Name", style: label),
+                    Text(l10n.govProposalName, style: label),
                     const SizedBox(height: 8),
                     _field(
                       controller: _name,
                       focus: _nameFocus,
-                      hint: "e.g. exchange-listing-q1",
-                      helper: "Letters, digits, \"-\" and \"_\"",
+                      hint: l10n.govNameHintKerrigan,
+                      helper: l10n.govNameHelperKerrigan,
                       maxLength: kKerriganProposalNameMax,
                       plain: true,
                     ),
                     const SizedBox(height: 12),
-                    Text("Link to the description", style: label),
+                    Text(l10n.govProposalLink, style: label),
                     const SizedBox(height: 8),
                     _field(
                       controller: _url,
@@ -369,11 +365,11 @@ class _KerriganCreateProposalViewState
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(child: Text("Payment goes to", style: label)),
+                        Expanded(child: Text(l10n.govPaymentGoesTo, style: label)),
                         CustomTextButton(
                           text: _payOther
-                              ? "Use one of my addresses"
-                              : "Pay another address",
+                              ? l10n.govUseMyAddress
+                              : l10n.govPayAnotherAddress,
                           onTap: () => setState(() => _payOther = !_payOther),
                         ),
                       ],
@@ -383,7 +379,7 @@ class _KerriganCreateProposalViewState
                       _field(
                         controller: _otherPayee,
                         focus: _otherPayeeFocus,
-                        hint: "${coin.ticker} address",
+                        hint: l10n.signTickerAddress(coin.ticker),
                         plain: true,
                       )
                     else
@@ -393,12 +389,12 @@ class _KerriganCreateProposalViewState
                         onChanged: (a) => setState(() => _payee = a),
                       ),
                     const SizedBox(height: 12),
-                    Text("Amount", style: label),
+                    Text(l10n.commonAmount, style: label),
                     const SizedBox(height: 8),
                     _field(
                       controller: _amount,
                       focus: _amountFocus,
-                      hint: "Amount (${coin.ticker})",
+                      hint: l10n.govAmountTicker(coin.ticker),
                       plain: true,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -409,13 +405,13 @@ class _KerriganCreateProposalViewState
                     ),
                     if (!escrow) ...[
                       const SizedBox(height: 16),
-                      Text("Voting runs for", style: label),
+                      Text(l10n.govVotingRunsFor, style: label),
                       const SizedBox(height: 8),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
                         children: [
-                          for (final (text, d) in _kDurations)
+                          for (final (text, d) in _durations)
                             _chip(
                               text,
                               _duration == d,
@@ -436,22 +432,23 @@ class _KerriganCreateProposalViewState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _summary("Fee (burnt)", fmt.format(fee)),
+                          _summary(l10n.govFeeBurnt, fmt.format(fee)),
                           _summary(
                             _funding.coins.isNotEmpty
-                                ? "Selected coins"
+                                ? l10n.govSelectedCoins
                                 : _funding.fromShield
-                                ? "Shielded balance"
-                                : "Transparent balance",
+                                ? l10n.balanceShielded
+                                : l10n.balanceTransparent,
                             fmt.format(balance),
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            "After the fee has "
-                            "$kKerriganProposalFeeConfirmations confirmations "
-                            "(about ${kKerriganProposalFeeConfirmations * coin.targetBlockTimeSeconds ~/ 60} "
-                            "minutes) Astronaut submits the proposal by "
-                            "itself; keep the wallet syncing until then.",
+                            l10n.govAfterFeeKerrigan(
+                              kKerriganProposalFeeConfirmations,
+                              kKerriganProposalFeeConfirmations *
+                                  coin.targetBlockTimeSeconds ~/
+                                  60,
+                            ),
                             style: secondary,
                           ),
                         ],
@@ -464,8 +461,8 @@ class _KerriganCreateProposalViewState
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: PrimaryButton(
                   label: enoughFunds
-                      ? "Pay ${fmt.format(fee)} and publish"
-                      : "Not enough ${coin.ticker} for the fee",
+                      ? l10n.govPayAndPublish(fmt.format(fee))
+                      : l10n.govNotEnoughForFee(coin.ticker),
                   enabled: enoughFunds,
                   onPressed: _pay,
                 ),

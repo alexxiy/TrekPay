@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../notifications/show_flush_bar.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../services/kerrigan_name/kerrigan_names_protocol.dart';
@@ -79,7 +80,7 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
         unawaited(
           showFloatingFlushBar(
             type: FlushBarType.info,
-            message: "Balance updated: $amount",
+            message: l10n.kerriganNamesBalanceUpdated(amount),
             context: context,
           ),
         );
@@ -87,7 +88,7 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
     } catch (e) {
       if (mounted) {
         setState(
-          () => _error = "Couldn't load the balance. ${kerriganNamesError(e)}",
+          () => _error = l10n.kerriganNamesLoadBalanceFailed(kerriganNamesError(e)),
         );
       }
     } finally {
@@ -116,19 +117,20 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
     final net = _net(balance.balance, balance.feePercent);
     final ok = await kerriganNamesConfirm(
       context,
-      title: "Withdraw",
-      message:
-          "Withdraw ${kerriganNamesAmount(balance.balance, ref, wallet)} to "
-          "${kerriganAddressTitle(widget.walletId, address)}? You'll get about "
-          "${kerriganNamesAmount(net, ref, wallet)} after the service fee "
-          "(${_fee(balance.feePercent)}%).",
-      action: "Withdraw",
+      title: l10n.kerriganNamesWithdraw,
+      message: l10n.kerriganNamesWithdrawConfirm(
+        kerriganNamesAmount(balance.balance, ref, wallet),
+        kerriganAddressTitle(widget.walletId, address),
+        kerriganNamesAmount(net, ref, wallet),
+        _fee(balance.feePercent),
+      ),
+      action: l10n.kerriganNamesWithdraw,
     );
     if (!ok || !mounted) return;
     Exception? error;
     final done = await showLoading<bool>(
       context: context,
-      message: "Asking Kerrigan.name to pay out",
+      message: l10n.kerriganNamesAskingPayout,
       onException: (e) => error = e,
       whileFutureAlt: () async {
         final identity = await wallet.namesIdentity();
@@ -156,17 +158,15 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
     if (done != true) {
       await showKerriganNamesError(
         context,
-        error ?? "The withdrawal failed",
-        title: "Withdrawal failed",
+        error ?? l10n.kerriganNamesWithdrawalFailedText,
+        title: l10n.kerriganNamesWithdrawalFailed,
       );
       return;
     }
     unawaited(
       showFloatingFlushBar(
         type: FlushBarType.success,
-        message:
-            "Done! About ${kerriganNamesAmount(net, ref, wallet)} is on its way to "
-            "your wallet.",
+        message: l10n.kerriganNamesWithdrawDone(kerriganNamesAmount(net, ref, wallet)),
         context: context,
       ),
     );
@@ -206,7 +206,7 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
         backgroundColor: colors.background,
         appBar: KerriganNamesAppBar(
           walletId: widget.walletId,
-          title: "My Balance",
+          title: l10n.kerriganNamesMyBalance,
           section: KerriganNamesSection.balance,
         ),
         body: SafeArea(
@@ -226,7 +226,10 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text("Your balance", style: secondary),
+                                  Text(
+                                    l10n.kerriganNamesYourBalance,
+                                    style: secondary,
+                                  ),
                                   const SizedBox(height: 6),
                                   Text(
                                     balance != null
@@ -236,7 +239,7 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
                                             wallet,
                                           )
                                         : _error != null
-                                        ? "Unavailable"
+                                        ? l10n.commonUnavailable
                                         : "…",
                                     style: STextStyles.pageTitleH1(context),
                                   ),
@@ -244,7 +247,7 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
                               ),
                             ),
                             IconButton(
-                              tooltip: "Refresh",
+                              tooltip: l10n.commonRefresh,
                               onPressed: _loading
                                   ? null
                                   : () => _load(announce: true),
@@ -274,9 +277,7 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
                       ],
                       const SizedBox(height: 12),
                       Text(
-                        "Payments Kerrigan.name couldn't use come back here, and "
-                        "so does the price of a name you sell. Withdraw them "
-                        "to your wallet whenever you like.",
+                        l10n.kerriganNamesBalanceExplained,
                         style: STextStyles.itemSubtitle(context),
                       ),
                       const SizedBox(height: 20),
@@ -288,7 +289,7 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text(
-                                "Withdraw to",
+                                l10n.kerriganNamesWithdrawTo,
                                 style: STextStyles.smallMed12(context),
                               ),
                               const SizedBox(height: 8),
@@ -296,14 +297,16 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
                                 walletId: widget.walletId,
                                 value: _address,
                                 shield: true,
-                                placeholder: "Choose an address",
+                                placeholder: l10n.kerriganNamesChooseAddress,
                                 onChanged: (a) => setState(() => _address = a),
                               ),
                               if (canWithdraw) ...[
                                 const SizedBox(height: 10),
                                 Text(
-                                  "You'll get about $net after the service "
-                                  "fee (${_fee(balance.feePercent)}%).",
+                                  l10n.kerriganNamesYouGetAbout(
+                                    net!,
+                                    _fee(balance.feePercent),
+                                  ),
                                   style: secondary,
                                 ),
                               ],
@@ -314,8 +317,7 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
                       if (belowMinimum) ...[
                         const SizedBox(height: 10),
                         Text(
-                          "The minimum withdrawal is $minimum. Your balance "
-                          "stays here until it reaches that.",
+                          l10n.kerriganNamesMinimumWithdrawal(minimum!),
                           style: secondary,
                         ),
                       ],
@@ -326,7 +328,7 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: PrimaryButton(
-                  label: "Withdraw",
+                  label: l10n.kerriganNamesWithdraw,
                   enabled: canWithdraw && _address != null && !_loading,
                   onPressed: _withdraw,
                 ),

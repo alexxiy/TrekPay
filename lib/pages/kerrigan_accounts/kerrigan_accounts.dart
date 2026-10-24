@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../notifications/show_flush_bar.dart';
 import '../../providers/global/secure_store_provider.dart';
 import '../../providers/providers.dart';
@@ -34,8 +35,14 @@ int kerriganNextAccount(Iterable<int> taken) {
 /// Name of account [account] of the wallet named [base], e.g. "Savings
 /// (account 2)", and not one of [taken].
 String kerriganAccountWalletName(String base, int account, Set<String> taken) {
-  final root = base.replaceFirst(RegExp(r" \(account \d+\)( \d+)?$"), "");
-  final name = "$root (account $account)";
+  // The suffix in English or the app's language (the base may have been
+  // named in another one), e.g. "(account 2)".
+  final suffix = {
+    "(account 0)",
+    l10n.accountsSuffix(0),
+  }.map((s) => RegExp.escape(s).replaceFirst("0", r"\d+")).join("|");
+  final root = base.replaceFirst(RegExp(" (?:$suffix)( \\d+)?\$"), "");
+  final name = "$root ${l10n.accountsSuffix(account)}";
   if (!taken.contains(name)) return name;
   for (var i = 2; ; i++) {
     if (!taken.contains("$name $i")) return "$name $i";
@@ -169,11 +176,8 @@ String? kerriganAddedAccountsMessage(List<String> added) {
   if (added.isEmpty) return null;
   final names = added.map((n) => "“$n”").join(", ");
   return added.length == 1
-      ? "This recovery phrase has another account with history. Astronaut "
-            "added it as a separate wallet, $names, which is still syncing."
-      : "This recovery phrase has other accounts with history. Astronaut "
-            "added them as separate wallets, which are still syncing: "
-            "$names.";
+      ? l10n.accountsAddedOne(names)
+      : l10n.accountsAddedMany(names);
 }
 
 /// "Add account" of a Kerrigan wallet's menu: asks, then adds the phrase's
@@ -194,17 +198,14 @@ Future<void> showKerriganAddAccountDialog(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (context) => StackDialog(
-      title: "Add account $account?",
-      message:
-          "Account $account of this recovery phrase becomes a separate "
-          "wallet, “$name”, with its own addresses and balance. Any coins "
-          "it already holds show up once it has synced.",
+      title: l10n.accountsAddTitle(account),
+      message: l10n.accountsAddText(account, name),
       leftButton: SecondaryButton(
-        label: "Cancel",
+        label: l10n.commonCancel,
         onPressed: () => Navigator.of(context).pop(false),
       ),
       rightButton: PrimaryButton(
-        label: "Add account",
+        label: l10n.accountsAdd,
         onPressed: () => Navigator.of(context).pop(true),
       ),
     ),
@@ -220,7 +221,7 @@ Future<void> showKerriganAddAccountDialog(
       name: name,
     ),
     context: context,
-    message: "Adding account $account",
+    message: l10n.accountsAdding(account),
     onException: (e) => error = e,
   );
   if (!context.mounted) return;
@@ -228,9 +229,10 @@ Future<void> showKerriganAddAccountDialog(
     showFloatingFlushBar(
       type: added == null ? FlushBarType.warning : FlushBarType.success,
       message: added == null
-          ? "Couldn't add the account: "
-                "${error.toString().replaceFirst("Exception: ", "")}"
-          : "Added “$name”. It's syncing now.",
+          ? l10n.accountsAddFailed(
+              error.toString().replaceFirst("Exception: ", ""),
+            )
+          : l10n.accountsAdded(name),
       context: context,
     ),
   );

@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../../services/kerrigan_name/kerrigan_names_registrar.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/text_styles.dart';
+import '../../utilities/util.dart';
 import '../../widgets/desktop/secondary_button.dart';
 import 'kerrigan_names_common.dart';
 import 'kerrigan_names_status_view.dart';
@@ -107,7 +109,7 @@ class KerriganNamesInFlightNote extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            "Your payment for this name is being processed.",
+            l10n.kerriganNamesInFlight,
             style: STextStyles.w500_12(context)
                 .copyWith(color: colors.textSubtitle1),
           ),
@@ -115,8 +117,8 @@ class KerriganNamesInFlightNote extends StatelessWidget {
         const SizedBox(width: 8),
         IntrinsicWidth(
           child: SecondaryButton(
-            label: "Follow it",
-            buttonHeight: ButtonHeight.s,
+            label: l10n.kerriganNamesFollowIt,
+            buttonHeight: Util.isDesktop ? ButtonHeight.s : null,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             onPressed: () => Navigator.of(context)
                 .pushNamed(KerriganNamesStatusView.routeName, arguments: tracked),

@@ -22,16 +22,20 @@ final _kProposalName = RegExp(r"^[-_a-zA-Z0-9]+$");
 /// Governance object types (Kerrigan Core `GovernanceObject`).
 enum KerriganProposalType {
   /// A proposal: masternodes vote on a payment or decision.
-  proposal(1, "Proposal"),
+  proposal(1),
 
   /// A growth fund release: passing it lets the escrowed growth fund pay
   /// its amount to its address.
-  escrowRelease(3, "Growth fund release");
+  escrowRelease(3);
 
-  const KerriganProposalType(this.code, this.label);
+  const KerriganProposalType(this.code);
 
   final int code;
-  final String label;
+
+  String get label => switch (this) {
+    proposal => l10n.govProposal,
+    escrowRelease => l10n.govGrowthFundRelease,
+  };
 
   static KerriganProposalType? of(int code) =>
       values.where((e) => e.code == code).firstOrNull;
@@ -39,14 +43,19 @@ enum KerriganProposalType {
 
 /// A masternode's vote (`vote_outcome_enum_t`).
 enum KerriganVote {
-  yes(1, "Yes"),
-  no(2, "No"),
-  abstain(3, "Abstain");
+  yes(1),
+  no(2),
+  abstain(3);
 
-  const KerriganVote(this.code, this.label);
+  const KerriganVote(this.code);
 
   final int code;
-  final String label;
+
+  String get label => switch (this) {
+    yes => l10n.govYes,
+    no => l10n.govNo,
+    abstain => l10n.govAbstain,
+  };
 
   static KerriganVote? parse(String s) =>
       values.where((e) => e.name == s.trim().toLowerCase()).firstOrNull;
@@ -54,20 +63,23 @@ enum KerriganVote {
 
 enum KerriganProposalStatus {
   /// Enough net Yes votes now.
-  passing("Passing"),
+  passing,
 
   /// Too few net Yes votes.
-  notPassing("Not passing"),
+  notPassing,
 
   /// Its time is over.
-  ended("Ended"),
+  ended,
 
   /// The network rejects it (e.g. a bad fee or data).
-  invalid("Invalid");
+  invalid;
 
-  const KerriganProposalStatus(this.label);
-
-  final String label;
+  String get label => switch (this) {
+    passing => l10n.govStatusPassing,
+    notPassing => l10n.govStatusNotPassing,
+    ended => l10n.govStatusEnded,
+    invalid => l10n.govStatusInvalid,
+  };
 }
 
 /// A governance object on the network (`gobject list`).
@@ -504,8 +516,8 @@ extension KerriganGovernanceWallet on KerriganWallet {
 
   /// Why [mn] can't vote, or null when it can.
   String? votingProblem(KerriganMasternode mn) {
-    if (!mn.isRegistered) return "Not registered";
-    if (mn.keyIndex == null) return "Its voting key isn't in this wallet";
+    if (!mn.isRegistered) return l10n.mnStatusUnregistered;
+    if (mn.keyIndex == null) return l10n.govNoVotingKey;
     return null;
   }
 
@@ -601,56 +613,55 @@ extension KerriganGovernanceWallet on KerriganWallet {
         .replaceFirst(RegExp(r"^Error voting\s*:\s*"), "")
         .trim();
     if (e.contains("Failure to find masternode")) {
-      return "The network doesn't count this masternode as valid (set its "
-          "server first)";
+      return l10n.govMnNotValid;
     }
     if (e.contains("voting too often")) {
-      return "This masternode voted less than an hour ago";
+      return l10n.govVotedTooRecently;
     }
-    return e.isEmpty ? "The vote was not accepted" : e;
+    return e.isEmpty ? l10n.govVoteNotAccepted : e;
   }
 
   // ---------------------------------------------------------------------------
   // Creating
 
   String? proposalNameError(String name) {
-    if (name.isEmpty) return "Enter a name";
+    if (name.isEmpty) return l10n.govEnterName;
     if (name.length > kKerriganProposalNameMax) {
-      return "At most $kKerriganProposalNameMax characters";
+      return l10n.commonAtMostChars(kKerriganProposalNameMax);
     }
     if (!_kProposalName.hasMatch(name)) {
-      return "Letters, digits, \"-\" and \"_\" only";
+      return l10n.govNameCharsKerrigan;
     }
     return null;
   }
 
   String? proposalUrlError(String url) {
-    if (url.isEmpty) return "Enter the link to the proposal's description";
+    if (url.isEmpty) return l10n.govEnterUrl;
     final uri = Uri.tryParse(url);
     if (url.length < 4 ||
         url.contains(RegExp(r"\s")) ||
         uri == null ||
         !(uri.scheme == "https" || uri.scheme == "http") ||
         uri.host.isEmpty) {
-      return "Not a valid web link (https://…)";
+      return l10n.govInvalidUrl;
     }
     return null;
   }
 
   String? proposalAmountError(Amount? amount) {
-    if (amount == null || amount.raw <= BigInt.zero) return "Enter an amount";
+    if (amount == null || amount.raw <= BigInt.zero) return l10n.commonEnterAmount;
     return null;
   }
 
   String? proposalAddressError(String address) {
-    if (address.isEmpty) return "Enter the address to pay";
+    if (address.isEmpty) return l10n.govEnterPayAddress;
     try {
       if (coinlib.Address.fromString(address, cryptoCurrency.networkParams)
           is coinlib.P2PKHAddress) {
         return null;
       }
     } catch (_) {}
-    return "A regular transparent ${cryptoCurrency.ticker} address";
+    return l10n.govRegularAddress(cryptoCurrency.ticker);
   }
 
   /// The fee transaction of a new governance object: 1 KRGN burnt in an
@@ -674,10 +685,10 @@ extension KerriganGovernanceWallet on KerriganWallet {
     if (error != null) throw Exception(error);
     if (type == KerriganProposalType.proposal) {
       if (startEpoch == null || endEpoch == null || endEpoch <= startEpoch) {
-        throw Exception("Choose how long the vote runs");
+        throw Exception(l10n.govChooseDuration);
       }
       if (endEpoch - startEpoch > kKerriganProposalMaxSeconds) {
-        throw Exception("A proposal runs for at most a year");
+        throw Exception(l10n.govAtMostAYear);
       }
     }
     final dataHex = kerriganProposalDataHex(
@@ -693,7 +704,7 @@ extension KerriganGovernanceWallet on KerriganWallet {
     final hash = kerriganProposalHash(dataHex: dataHex, time: time);
     final txData = await prepareSend(
       txData: TxData(
-        note: "${type.label} fee: $name",
+        note: l10n.govObjectFeeNote(type.label, name),
         noteOnChain: "",
         utxos: kerriganFundingInputs(funding),
         otherData: jsonEncode(kerriganFundingOtherData(funding)),

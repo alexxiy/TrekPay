@@ -11,6 +11,7 @@ import 'package:decimal/decimal.dart';
 import 'package:isar_community/isar.dart';
 import 'package:mutex/mutex.dart';
 
+import '../../../l10n/l10n.dart';
 import '../../../models/balance.dart';
 import '../../../models/input.dart';
 import '../../../models/isar/models/blockchain_data/v2/input_v2.dart';
@@ -180,9 +181,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     // As the warning on opening the wallet says: such a node isn't used.
     if (prefs.useTor ? !node.torEnabled : !node.clearnetEnabled) {
       throw KerriganBridgeException(
-        prefs.useTor
-            ? "This node is set to be used without Tor"
-            : "This node is set to be used only over Tor",
+        prefs.useTor ? l10n.nodeUseWithoutTor : l10n.nodeUseOnlyOverTor,
       );
     }
     final key = "${node.host}|${node.port}|${node.useSSL}|${prefs.useTor}";
@@ -1278,7 +1277,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     final amount = info.cachedBalance.spendable;
     if (amount <=
         Amount.zeroWith(fractionDigits: cryptoCurrency.fractionDigits)) {
-      throw Exception("No transparent funds to shield");
+      throw Exception(l10n.shieldNoTransparentFunds);
     }
     final prepared = await prepareSend(
       txData: TxData(
@@ -1527,7 +1526,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
               as String?;
     if (custom != null && custom.isNotEmpty) {
       if (!cryptoCurrency.isTransparentAddress(custom)) {
-        throw Exception("Change must go to a transparent Kerrigan address");
+        throw Exception(l10n.sendChangeMustBeTransparent);
       }
       return custom;
     }
@@ -1562,9 +1561,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       fractionDigits: cryptoCurrency.fractionDigits,
     );
     final ticker = cryptoCurrency.ticker;
-    return "This needs more coins than fit in one transaction (at most "
-        "$maxInputs). Combine them first: send up to ${most.decimal} $ticker "
-        "to one of your own addresses, then try again.";
+    return l10n.sendTooManyInputs(maxInputs, "${most.decimal} $ticker");
   }
 
   @override
@@ -1576,7 +1573,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     final fromShield = _otherDataFlag(txData, kKerriganFromShield);
     final subtractFee = _otherDataFlag(txData, kKerriganSubtractFee);
     if (subtractFee && recipients.length != 1) {
-      throw Exception("Subtracting the fee needs a single recipient");
+      throw Exception(l10n.sendSubtractFeeOneRecipient);
     }
     for (final r in recipients) {
       // A proposal fee: OP_RETURN with the object hash.
@@ -1587,15 +1584,15 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
         continue;
       }
       if (!cryptoCurrency.validateAddress(r.address)) {
-        throw Exception("Invalid Kerrigan address: ${r.address}");
+        throw Exception(l10n.sendInvalidKerriganAddress(r.address));
       }
       if (isShieldAddress(r.address)) continue;
       if (r.amount.raw < cryptoCurrency.dustLimit.raw) {
-        throw Exception("Amount is below the dust limit");
+        throw Exception(l10n.sendBelowDust);
       }
     }
     if (fromShield || recipients.any((r) => isShieldAddress(r.address))) {
-      if (!_shieldSupported) throw Exception("Shield is not available");
+      if (!_shieldSupported) throw Exception(l10n.shieldNotAvailable);
       return _prepareShieldSend(txData: txData, fromShield: fromShield);
     }
 
@@ -1631,7 +1628,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     final feeFromAmount = subtractFee;
 
     if (target > available) {
-      throw Exception("Insufficient balance");
+      throw Exception(l10n.sendInsufficientBalance);
     }
 
     // ---- choose inputs -----------------------------------------------------
@@ -1679,7 +1676,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       );
       final amount = target - sizeFee;
       if (amount < cryptoCurrency.dustLimit.raw) {
-        throw Exception("Amount is too small to pay the transaction fee");
+        throw Exception(l10n.sendTooSmallForFee);
       }
       outputs = [
         recipient.copyWith(
@@ -1716,10 +1713,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
         _estimateSize(inputs.length, [...addrs, "change"]) * feePerByte,
       );
       if (inSum < target + feeNoChange) {
-        throw Exception(
-          "Insufficient funds to pay the transaction fee. Lower the amount "
-          "or tick \"Subtract fee from amount\".",
-        );
+        throw Exception(l10n.sendInsufficientForFee);
       }
       final change = inSum - target - feeWithChange;
       outputs = [...recipients];
@@ -1754,7 +1748,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     // never broadcast below the relay minimum.
     final required = BigInt.from(built.size * cryptoCurrency.minFeePerByte);
     if (fee < required) {
-      throw Exception("Fee estimate too low ($fee < $required); please retry");
+      throw Exception(l10n.sendFeeEstimateTooLow("$fee", "$required"));
     }
 
     // Change to an address outside the wallet leaves it like the payment.
@@ -1803,10 +1797,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       final outputs = _prevOuts[u.txid]!;
       if (u.vout >= outputs.length ||
           outputs[u.vout].value != BigInt.from(u.value)) {
-        throw Exception(
-          "The server reported a wrong value for ${u.txid}:${u.vout}; "
-          "not signing",
-        );
+        throw Exception(l10n.sendWrongInputValue("${u.txid}:${u.vout}"));
       }
     }
   }
@@ -1821,16 +1812,14 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     coinlib.HDPrivateKey? root,
     bool verifyValues = true,
   }) async {
-    if (isViewOnly) throw Exception("View only wallets cannot sign");
+    if (isViewOnly) throw Exception(l10n.walletViewOnlyCannotSign);
     root ??= await getRootHDNode();
     if (verifyValues) await _verifyInputValues(utxos);
     final result = <StandardInput>[];
     for (final u in utxos) {
       final address = await mainDB.getAddress(walletId, u.address!);
       if (address?.derivationPath == null) {
-        throw Exception(
-          "Failed to fetch signing data. Local db corrupt. Rescan wallet.",
-        );
+        throw Exception(l10n.sendSigningDataMissing);
       }
       result.add(
         StandardInput(
@@ -2010,23 +1999,15 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
 String? kerriganDeleteWarning(Wallet wallet) {
   if (wallet is! KerriganWallet) return null;
   final warnings = [
-    if (wallet.masternodes.isNotEmpty)
-      "The masternodes come back with the recovery phrase, but only once "
-          "you add them again on the Masternodes screen. Until then their "
-          "collateral isn't frozen, and a send could spend it and stop "
-          "them.",
+    if (wallet.masternodes.isNotEmpty) l10n.walletDeleteMasternodesComeBack,
     if (wallet.pendingProposals.any((p) => p.error == null))
-      "Proposals still waiting to be submitted will be lost, along with "
-          "the fees already paid for them.",
+      l10n.walletDeletePendingProposals,
   ];
   return warnings.isEmpty ? null : warnings.join("\n\n");
 }
 
 /// Why "New address" gave none: see [KerriganWallet.generateNewTransparentAddress].
-const kerriganAddressGapMessage =
-    "You already have 20 unused addresses. Use one of them first: a wallet "
-    "restored from the recovery phrase only looks 20 addresses past the "
-    "last used one.";
+String get kerriganAddressGapMessage => l10n.receiveAddressGap;
 
 /// Chain (0 receiving, 1 change) and index of a bridge token path such as
 /// `m/44'/99888'/0'/0/5`; null for any other path.

@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../app_config.dart';
+import '../l10n/l10n.dart';
 import '../pages_desktop_specific/password/create_password_view.dart';
 import '../themes/stack_colors.dart';
 import '../utilities/assets.dart';
@@ -51,45 +52,66 @@ class _IntroViewState extends ConsumerState<IntroView> {
         body: SafeArea(
           child: Center(
             child: !isDesktop
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Spacer(flex: 2),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Image.asset(
-                          Assets.persona.welcome,
-                          width: 266,
-                          height: 266,
-                          fit: BoxFit.contain,
+                ? LayoutBuilder(
+                    // Scrolls when the screen is too short for it: a tablet
+                    // in landscape, a split screen window.
+                    builder: (context, constraints) => SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
+                        ),
+                        child: IntrinsicHeight(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const Spacer(flex: 2),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Image.asset(
+                                  Assets.persona.welcome,
+                                  width: 266,
+                                  height: 266,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                              const Spacer(flex: 1),
+                              AppNameText(isDesktop: isDesktop),
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 48,
+                                ),
+                                child: IntroAboutText(isDesktop: isDesktop),
+                              ),
+                              const Spacer(flex: 4),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                ),
+                                child: PrivacyAndTOSText(isDesktop: isDesktop),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: GetStartedButton(
+                                        isDesktop: isDesktop,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const Spacer(flex: 1),
-                      AppNameText(isDesktop: isDesktop),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 48),
-                        child: IntroAboutText(isDesktop: isDesktop),
-                      ),
-                      const Spacer(flex: 4),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32),
-                        child: PrivacyAndTOSText(isDesktop: isDesktop),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: GetStartedButton(isDesktop: isDesktop),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                    ),
                   )
                 : SizedBox(
                     width: 350,
@@ -112,7 +134,7 @@ class _IntroViewState extends ConsumerState<IntroView> {
                         if (isDesktop) const SizedBox(height: 20),
                         if (isDesktop)
                           SecondaryButton(
-                            label: "Restore from ${AppConfig.prefix} backup",
+                            label: l10n.introRestoreBackup(AppConfig.prefix),
                             onPressed: () {
                               // Stored now; the backup may bring its own.
                               Prefs.instance.externalCalls = true;
@@ -156,10 +178,17 @@ class IntroAboutText extends StatelessWidget {
 
   final bool isDesktop;
 
+  // Lines break between the short sentences ("Your privacy. Your keys." /
+  // "Your KRGN."), never inside one.
+  static String _breakBetweenSentences(String text) => text
+      .split(". ")
+      .map((sentence) => sentence.replaceAll(" ", "\u00a0"))
+      .join(". ");
+
   @override
   Widget build(BuildContext context) {
     return Text(
-      AppConfig.shortDescriptionText,
+      _breakBetweenSentences(AppConfig.shortDescriptionText),
       textAlign: TextAlign.center,
       style: !isDesktop
           ? STextStyles.subtitle(context)
@@ -188,33 +217,39 @@ class PrivacyAndTOSText extends StatelessWidget {
     final size = fontSize ?? (isDesktop ? 18.0 : 12.0);
     final links = [
       if (AppConfig.termsUrl.isNotEmpty)
-        ("Terms of service", AppConfig.termsUrl),
+        (l10n.introTermsLink, AppConfig.termsUrl),
       if (AppConfig.privacyUrl.isNotEmpty)
-        ("Privacy policy", AppConfig.privacyUrl),
+        (l10n.introPrivacyLink, AppConfig.privacyUrl),
     ];
     if (links.isEmpty) return const SizedBox.shrink();
     final textStyle = STextStyles.label(context)
         .copyWith(fontSize: size, color: textColor);
+    // The sentence with \u0000 and \u0001 where the links go.
+    final sentence = links.length == 1
+        ? l10n.introAgreeOne(AppConfig.appName, "\u0000")
+        : l10n.introAgreeTwo(AppConfig.appName, "\u0000", "\u0001");
+    final children = <InlineSpan>[];
+    var at = 0;
+    for (final m in RegExp("[\u0000\u0001]").allMatches(sentence)) {
+      final link = links[sentence.codeUnitAt(m.start)];
+      children.addAll([
+        TextSpan(text: sentence.substring(at, m.start)),
+        TextSpan(
+          text: link.$1,
+          style: STextStyles.richLink(context).copyWith(fontSize: size),
+          recognizer: TapGestureRecognizer()
+            ..onTap = () => launchUrl(
+              Uri.parse(link.$2),
+              mode: LaunchMode.externalApplication,
+            ),
+        ),
+      ]);
+      at = m.end;
+    }
+    children.add(TextSpan(text: sentence.substring(at)));
     return RichText(
       textAlign: TextAlign.center,
-      text: TextSpan(
-        style: textStyle,
-        children: [
-          TextSpan(text: "By using ${AppConfig.appName}, you agree to the "),
-          for (int i = 0; i < links.length; i++) ...[
-            if (i > 0) const TextSpan(text: " and "),
-            TextSpan(
-              text: links[i].$1,
-              style: STextStyles.richLink(context).copyWith(fontSize: size),
-              recognizer: TapGestureRecognizer()
-                ..onTap = () => launchUrl(
-                  Uri.parse(links[i].$2),
-                  mode: LaunchMode.externalApplication,
-                ),
-            ),
-          ],
-        ],
-      ),
+      text: TextSpan(style: textStyle, children: children),
     );
   }
 }
@@ -236,7 +271,10 @@ class GetStartedButton extends StatelessWidget {
               Navigator.of(context)
                   .pushNamed(StackPrivacyCalls.routeName, arguments: false);
             },
-            child: Text("Get started", style: STextStyles.button(context)),
+            child: Text(
+              l10n.introGetStarted,
+              style: STextStyles.button(context),
+            ),
           )
         : SizedBox(
             width: double.infinity,
@@ -252,7 +290,7 @@ class GetStartedButton extends StatelessWidget {
                     .pushNamed(StackPrivacyCalls.routeName, arguments: false);
               },
               child: Text(
-                "Create new ${AppConfig.prefix}",
+                l10n.introCreateNew(AppConfig.prefix),
                 style: STextStyles.button(context).copyWith(fontSize: 20),
               ),
             ),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../services/event_bus/events/global/wallet_sync_status_changed_event.dart';
 import '../../services/event_bus/global_event_bus.dart';
@@ -24,23 +25,35 @@ import 'kerrigan_governance_widgets.dart';
 import 'kerrigan_proposal_view.dart';
 
 enum _Tab {
-  active("Active"),
-  ended("Ended");
+  active,
+  ended;
 
-  const _Tab(this.label);
-
-  final String label;
+  String get label => switch (this) {
+    active => l10n.govTabActive,
+    ended => l10n.govTabEnded,
+  };
 }
 
 enum _Filter {
-  all("All"),
-  passing("Passing"),
-  notPassing("Not passing"),
-  growthFund("Growth fund");
+  all,
+  passing,
+  notPassing,
+  growthFund;
 
-  const _Filter(this.label);
+  String get label => switch (this) {
+    all => l10n.govFilterAll,
+    passing => l10n.govFilterPassing,
+    notPassing => l10n.govFilterNotPassing,
+    growthFund => l10n.govFilterGrowthFund,
+  };
 
-  final String label;
+  /// "No passing proposals." and so on.
+  String get none => switch (this) {
+    all => l10n.govNoneNow,
+    passing => l10n.govNonePassing,
+    notPassing => l10n.govNoneNotPassing,
+    growthFund => l10n.govNoneGrowthFund,
+  };
 
   bool shows(KerriganProposal p, KerriganProposalStatus s) => switch (this) {
     _Filter.all => true,
@@ -196,7 +209,7 @@ class _KerriganGovernanceViewState
       child: Scaffold(
         backgroundColor: colors.background,
         appBar: PageAppBar(
-          title: Text("Governance", style: STextStyles.navBarTitle(context)),
+          title: Text(l10n.govTitle, style: STextStyles.navBarTitle(context)),
         ),
         body: SafeArea(
           child: Column(
@@ -218,7 +231,7 @@ class _KerriganGovernanceViewState
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: PrimaryButton(
-                    label: "Create proposal",
+                    label: l10n.govCreateProposal,
                     onPressed: _create,
                   ),
                 ),
@@ -273,10 +286,10 @@ class _KerriganGovernanceViewState
               padding: const EdgeInsets.symmetric(vertical: 40),
               child: Text(
                 ended
-                    ? "No ended proposals the network still knows."
+                    ? l10n.govNoneEnded
                     : all.isEmpty
-                    ? "No proposals right now."
-                    : "No ${_filter.label.toLowerCase()} proposals.",
+                    ? l10n.govNoneNow
+                    : _filter.none,
                 textAlign: TextAlign.center,
                 style: STextStyles.itemSubtitle(context),
               ),
@@ -408,21 +421,11 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            "Masternodes vote Yes or No on each proposal. Growth fund "
-            "releases that pass unlock coins from the growth fund escrow.",
-            style: secondary,
-          ),
-          line(
-            Icons.how_to_vote_rounded,
-            "To pass: ${g.threshold} net Yes vote${g.threshold == 1 ? "" : "s"} "
-            "(a tenth of the masternodes' voting weight)",
-          ),
+          Text(l10n.govIntroKerrigan, style: secondary),
+          line(Icons.how_to_vote_rounded, l10n.govToPassKerrigan(g.threshold)),
           line(
             Icons.dns_rounded,
-            "${g.enabledMasternodes} masternode"
-            "${g.enabledMasternodes == 1 ? "" : "s"} enabled · a BroodNode's "
-            "vote counts four times",
+            l10n.govMasternodesEnabled(g.enabledMasternodes),
           ),
         ],
       ),
@@ -434,13 +437,13 @@ class _SummaryCard extends StatelessWidget {
 String kerriganProposalTiming(KerriganProposal p) {
   final now = DateTime.timestamp().millisecondsSinceEpoch ~/ 1000;
   final start = p.startEpoch, end = p.endEpoch;
-  if (end == null) return "Growth fund release";
+  if (end == null) return l10n.govGrowthFundRelease;
   if (start != null && start > now) {
-    return "Starts in ~${kerriganDuration(start - now)}";
+    return l10n.govStartsIn(kerriganDuration(start - now));
   }
   return end > now
-      ? "Voting ends in ~${kerriganDuration(end - now)}"
-      : "Ended ~${kerriganDuration(now - end)} ago";
+      ? l10n.govVotingEndsIn(kerriganDuration(end - now))
+      : l10n.govEndedAgo(kerriganDuration(now - end));
 }
 
 class _ProposalCard extends ConsumerWidget {
@@ -575,7 +578,13 @@ class _PendingCard extends ConsumerWidget {
                 child: Text(p.name, style: STextStyles.w600_14(context)),
               ),
               KerriganPill(
-                text: failed ? "Failed" : "Your ${p.type.label.toLowerCase()}",
+                text: failed
+                    ? l10n.govFailed
+                    : switch (p.type) {
+                        KerriganProposalType.proposal => l10n.govYourProposal,
+                        KerriganProposalType.escrowRelease =>
+                          l10n.govYourGrowthFundRelease,
+                      },
                 color: failed ? colors.textError : colors.accentColorBlue,
               ),
             ],
@@ -585,7 +594,7 @@ class _PendingCard extends ConsumerWidget {
             Text(p.error!, style: secondary.copyWith(color: colors.textError)),
             Align(
               alignment: Alignment.centerRight,
-              child: CustomTextButton(text: "Remove", onTap: onRemove),
+              child: CustomTextButton(text: l10n.commonRemove, onTap: onRemove),
             ),
           ] else
             FutureBuilder<int?>(
@@ -594,11 +603,10 @@ class _PendingCard extends ConsumerWidget {
                 final confs = snapshot.data;
                 const need = kKerriganProposalFeeConfirmations;
                 final text = confs == null
-                    ? "Fee sent; waiting for it to be mined"
+                    ? l10n.govFeeSent
                     : confs < need
-                    ? "Fee confirming: $confs of $need. Then Astronaut "
-                          "submits it (keep the wallet syncing)."
-                    : "Submitting to the network…";
+                    ? l10n.govFeeConfirming(confs, need)
+                    : l10n.govSubmitting;
                 return Row(
                   children: [
                     SizedBox(
@@ -642,22 +650,20 @@ class _LoadError extends StatelessWidget {
         Icon(Icons.cloud_off_rounded, size: 48, color: colors.textSubtitle2),
         const SizedBox(height: 16),
         Text(
-          "Couldn't load the proposals",
+          l10n.govLoadFailed,
           textAlign: TextAlign.center,
           style: STextStyles.pageTitleH2(context),
         ),
         const SizedBox(height: 8),
         Text(
           forbidden
-              ? "The node you are connected to doesn't offer governance "
-                    "data. Try another Kerrigan node in the network "
-                    "settings."
+              ? l10n.govNodeNoData
               : text,
           textAlign: TextAlign.center,
           style: STextStyles.itemSubtitle(context),
         ),
         const SizedBox(height: 24),
-        SecondaryButton(label: "Try again", onPressed: onRetry),
+        SecondaryButton(label: l10n.commonTryAgain, onPressed: onRetry),
       ],
     );
   }

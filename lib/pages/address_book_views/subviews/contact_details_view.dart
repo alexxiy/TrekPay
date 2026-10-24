@@ -16,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:isar_community/isar.dart';
 
+import '../../../l10n/l10n.dart';
 import '../../../notifications/show_flush_bar.dart';
 import '../../../providers/db/main_db_provider.dart';
 import '../../../providers/global/address_book_service_provider.dart';
@@ -121,7 +122,7 @@ class _ContactDetailsViewState extends ConsumerState<ContactDetailsView> {
             },
           ),
           title: Text(
-            "Contact details",
+            l10n.contactDetails,
             style: STextStyles.navBarTitle(context),
           ),
           actions: [
@@ -181,14 +182,14 @@ class _ContactDetailsViewState extends ConsumerState<ContactDetailsView> {
                       useSafeArea: true,
                       barrierDismissible: true,
                       builder: (_) => StackDialog(
-                        title: "Delete ${_contact.name}?",
-                        message: "Contact will be deleted permanently!",
+                        title: l10n.contactDeleteTitle(_contact.name),
+                        message: l10n.contactDeleteText,
                         leftButton: TextButton(
                           style: Theme.of(context)
                               .extension<StackColors>()!
                               .getSecondaryEnabledButtonStyle(context),
                           child: Text(
-                            "Cancel",
+                            l10n.commonCancel,
                             style: STextStyles.itemSubtitle12(context),
                           ),
                           onPressed: () {
@@ -200,7 +201,7 @@ class _ContactDetailsViewState extends ConsumerState<ContactDetailsView> {
                               .extension<StackColors>()!
                               .getPrimaryEnabledButtonStyle(context),
                           child: Text(
-                            "Delete",
+                            l10n.commonDelete,
                             style: STextStyles.button(context),
                           ),
                           onPressed: () {
@@ -211,7 +212,7 @@ class _ContactDetailsViewState extends ConsumerState<ContactDetailsView> {
                             Navigator.of(context).pop();
                             showFloatingFlushBar(
                               type: FlushBarType.success,
-                              message: "${_contact.name} deleted",
+                              message: l10n.contactDeleted(_contact.name),
                               context: context,
                             );
                           },
@@ -259,15 +260,18 @@ class _ContactDetailsViewState extends ConsumerState<ContactDetailsView> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
+                        // A long name wraps, then ends in "…", and leaves
+                        // room for Edit.
+                        Expanded(
                           child: Text(
                             _contact.name,
                             textAlign: TextAlign.left,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: STextStyles.pageTitleH2(context),
                           ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 12),
                         TextButton(
                           onPressed: () {
                             Navigator.of(context).pushNamed(
@@ -297,7 +301,7 @@ class _ContactDetailsViewState extends ConsumerState<ContactDetailsView> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  "Edit",
+                                  l10n.commonEdit,
                                   style: STextStyles.buttonSmall(context),
                                 ),
                               ],
@@ -311,11 +315,11 @@ class _ContactDetailsViewState extends ConsumerState<ContactDetailsView> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Addresses",
+                          l10n.contactAddresses,
                           style: STextStyles.itemSubtitle(context),
                         ),
                         CustomTextButton(
-                          text: "Add new",
+                          text: l10n.commonAddNew,
                           onTap: () {
                             Navigator.of(context).pushNamed(
                               AddNewContactAddressView.routeName,
@@ -368,7 +372,7 @@ class _ContactDetailsViewState extends ConsumerState<ContactDetailsView> {
                                       );
                                       showFloatingFlushBar(
                                         type: FlushBarType.info,
-                                        message: "Copied to clipboard",
+                                        message: l10n.commonCopiedToClipboard,
                                         iconAsset: Assets.svg.copy,
                                         context: context,
                                       );
@@ -398,13 +402,13 @@ class _ContactDetailsViewState extends ConsumerState<ContactDetailsView> {
                     if (_contact.addresses.isNotEmpty) ...[
                       const SizedBox(height: 24),
                       PrimaryButton(
-                        label: "Pay to ${_contact.name}",
+                        label: payContactLabel(_contact),
                         onPressed: () => payContact(context, ref, _contact),
                       ),
                     ],
                     const SizedBox(height: 24),
                     Text(
-                      "Transaction history",
+                      l10n.receiveTransactionHistory,
                       style: STextStyles.itemSubtitle(context),
                     ),
                     const SizedBox(height: 12),
@@ -435,7 +439,7 @@ class _ContactDetailsViewState extends ConsumerState<ContactDetailsView> {
                             return RoundedWhiteContainer(
                               child: Center(
                                 child: Text(
-                                  "No transactions found",
+                                  l10n.commonNoTransactionsFound,
                                   style: STextStyles.itemSubtitle(context),
                                 ),
                               ),

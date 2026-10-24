@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:tuple/tuple.dart';
 
 import '../../app_config.dart';
+import '../../l10n/l10n.dart';
 import '../../models/isar/models/contact_entry.dart';
 import '../../models/send_view_auto_fill_data.dart';
 import '../../notifications/show_flush_bar.dart';
@@ -78,7 +79,7 @@ _paymentLinkWallets(BuildContext context, WidgetRef ref, String link) {
       ? null
       : AppConfig.coins.where((c) => c.validateAddress(address)).firstOrNull;
   if (data == null || coin == null) {
-    warn("The payment link has no valid Kerrigan address");
+    warn(l10n.paymentLinkNoAddress);
     return null;
   }
 
@@ -89,7 +90,7 @@ _paymentLinkWallets(BuildContext context, WidgetRef ref, String link) {
         w,
   ];
   if (wallets.isEmpty) {
-    warn("No ${coin.prettyName} wallet to pay from");
+    warn(l10n.paymentLinkNoWallet(coin.prettyName));
     return null;
   }
   return (data: data, coin: coin, wallets: wallets);
@@ -136,7 +137,7 @@ Future<void> openPaymentLink(
     // keeps it syncing, per the syncing preferences.
     await nav.maybePop();
     if (ref.read(currentWalletIdProvider) != null) {
-      warn("Close the open wallet first");
+      warn(l10n.paymentLinkCloseWallet);
       return;
     }
   }
@@ -156,7 +157,7 @@ Future<void> openPaymentLink(
   await showLoading(
     whileFuture: wallet.init(),
     context: context,
-    message: "Opening ${wallet.info.name}",
+    message: l10n.walletOpening(wallet.info.name),
   );
   if (!context.mounted) return;
   unawaited(nav.pushNamed(WalletView.routeName, arguments: walletId));
@@ -215,6 +216,15 @@ Future<void> openPaymentLinkDesktop(
   );
 }
 
+/// "Pay to {name}" for a one-line button: a long contact name is cut, as
+/// the buttons don't wrap or shrink their label.
+String payContactLabel(ContactEntry contact) {
+  final name = contact.name.characters;
+  return l10n.paymentPayTo(
+    name.length > 20 ? "${name.take(19)}…" : contact.name,
+  );
+}
+
 /// Pay a contact: one of its addresses (asked when it has several) opens
 /// the send screen of a wallet that can pay it. On mobile with a wallet
 /// open, that's its send screen on top, as the contact's send button
@@ -240,7 +250,7 @@ Future<void> payContact(
       ? addresses.first
       : await _chooseOne<ContactAddressEntry>(
           context,
-          title: "Pay to ${contact.name}",
+          title: l10n.paymentPayTo(contact.name),
           desktop: Util.isDesktop,
           options: [
             for (final a in addresses)
@@ -249,8 +259,8 @@ Future<void> payContact(
                 detail: switch (a.coin) {
                   final Kerrigan kerrigan =>
                     kerrigan.isShieldAddress(a.address)
-                        ? "Shielded (${kerrigan.ticker})"
-                        : "Transparent (${kerrigan.ticker})",
+                        ? "${l10n.addressKindShielded} (${kerrigan.ticker})"
+                        : "${l10n.addressKindTransparent} (${kerrigan.ticker})",
                   final coin => coin.prettyName,
                 },
                 value: a,
@@ -284,7 +294,7 @@ Future<String?> _chooseWallet(
   required bool desktop,
 }) => _chooseOne<String>(
   context,
-  title: "Pay from",
+  title: l10n.paymentPayFrom,
   desktop: desktop,
   options: [
     for (final w in wallets)
@@ -331,9 +341,10 @@ Future<T?> _chooseOne<T>(
   if (desktop) {
     return showDialog<T>(
       context: context,
+      // Up to the screen's height; the options scroll beyond it.
       builder: (context) => DesktopDialog(
         maxWidth: 450,
-        maxHeight: double.infinity,
+        maxHeight: null,
         child: Padding(
           padding: const EdgeInsets.only(left: 32, bottom: 32),
           child: Column(
@@ -348,11 +359,19 @@ Future<T?> _chooseOne<T>(
                 ],
               ),
               const SizedBox(height: 12),
-              for (final o in options)
-                Padding(
-                  padding: const EdgeInsets.only(right: 32, bottom: 8),
-                  child: option(context, o),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.only(right: 32),
+                  children: [
+                    for (final o in options)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: option(context, o),
+                      ),
+                  ],
                 ),
+              ),
             ],
           ),
         ),
@@ -374,11 +393,18 @@ Future<T?> _chooseOne<T>(
           children: [
             Text(title, style: STextStyles.pageTitleH2(context)),
             const SizedBox(height: 16),
-            for (final o in options)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: option(context, o),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final o in options)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: option(context, o),
+                    ),
+                ],
               ),
+            ),
           ],
         ),
       ),

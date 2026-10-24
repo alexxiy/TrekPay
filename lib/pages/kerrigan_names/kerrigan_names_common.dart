@@ -7,6 +7,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../db/hive/db.dart';
+import '../../l10n/l10n.dart';
 import '../../notifications/show_flush_bar.dart';
 import '../../services/kerrigan_name/kerrigan_names_protocol.dart';
 import '../../services/kerrigan_name/kerrigan_names_registrar.dart';
@@ -202,22 +203,19 @@ const kKerriganNamesMarketplaceRoute = "/kerriganNamesMarketplace";
 
 /// The sections of the hamburger menu, in the web app's order.
 enum KerriganNamesSection {
-  myNames("My Names", KerriganNamesIcons.myNames, kKerriganNamesMyNamesRoute),
-  balance("My Balance", KerriganNamesIcons.balance, kKerriganNamesBalanceRoute),
-  transactions(
-    "My Transactions",
-    KerriganNamesIcons.transactions,
-    kKerriganNamesTransactionsRoute,
-  ),
-  marketplace(
-    "Marketplace",
-    KerriganNamesIcons.marketplace,
-    kKerriganNamesMarketplaceRoute,
-  );
+  myNames(KerriganNamesIcons.myNames, kKerriganNamesMyNamesRoute),
+  balance(KerriganNamesIcons.balance, kKerriganNamesBalanceRoute),
+  transactions(KerriganNamesIcons.transactions, kKerriganNamesTransactionsRoute),
+  marketplace(KerriganNamesIcons.marketplace, kKerriganNamesMarketplaceRoute);
 
-  const KerriganNamesSection(this.label, this.icon, this.routeName);
+  const KerriganNamesSection(this.icon, this.routeName);
 
-  final String label;
+  String get label => switch (this) {
+    myNames => l10n.kerriganNamesMyNames,
+    balance => l10n.kerriganNamesMyBalance,
+    transactions => l10n.kerriganNamesMyTransactions,
+    marketplace => l10n.kerriganNamesMarketplace,
+  };
   final String icon;
   final String routeName;
 }
@@ -230,12 +228,12 @@ class KerriganNamesAppBar extends StatelessWidget implements PreferredSizeWidget
   const KerriganNamesAppBar({
     super.key,
     required this.walletId,
-    this.title = "Names",
+    this.title,
     this.section,
   });
 
   final String walletId;
-  final String title;
+  final String? title;
   final KerriganNamesSection? section;
 
   @override
@@ -319,7 +317,7 @@ class KerriganNamesAppBar extends StatelessWidget implements PreferredSizeWidget
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              title,
+              title ?? l10n.kerriganNamesTitle,
               style: STextStyles.navBarTitle(context),
               overflow: TextOverflow.ellipsis,
             ),
@@ -329,7 +327,7 @@ class KerriganNamesAppBar extends StatelessWidget implements PreferredSizeWidget
       actions: [
         action(
           AppBarIconButton(
-            semanticsLabel: "About Kerrigan Name",
+            semanticsLabel: l10n.kerriganNamesAbout,
             size: 36,
             shadows: const [],
             color: colors.background,
@@ -348,7 +346,7 @@ class KerriganNamesAppBar extends StatelessWidget implements PreferredSizeWidget
         action(
           Builder(
             builder: (button) => AppBarIconButton(
-              semanticsLabel: "Names menu",
+              semanticsLabel: l10n.kerriganNamesMenu,
               size: 36,
               shadows: const [],
               color: colors.background,
@@ -420,60 +418,55 @@ typedef _Point = (IconData, String);
 class _InfoDialogState extends State<_InfoDialog> {
   int _slide = 0;
 
-  static const _slides = <(String, List<_Point>)>[
+  static List<(String, List<_Point>)> get _slides => [
     (
-      "How it works",
+      l10n.kerriganNamesInfoHowTitle,
       [
         (
           Icons.person_outline_rounded,
-          "Get your own name, like john.krgn, and share it to get paid "
-              "instead of a long address.",
+          l10n.kerriganNamesInfoHow1,
         ),
         (
           Icons.key_rounded,
-          "Your names are yours: keep them, sell them on the marketplace or "
-              "give them to someone else. Only you can change them.",
+          l10n.kerriganNamesInfoHow2,
         ),
       ],
     ),
     (
-      "Benefits",
+      l10n.kerriganNamesInfoBenefitsTitle,
       [
         (
           Icons.sell_outlined,
-          "No renewal fees. Once registered, a name is yours for good.",
+          l10n.kerriganNamesInfoBenefits1,
         ),
         (
           Icons.link_rounded,
-          "Names are stored on-chain, where nobody can alter or remove "
-              "them.",
+          l10n.kerriganNamesInfoBenefits2,
         ),
         (
           Icons.visibility_off_outlined,
-          "Private by design: a name says nothing about your finances.",
+          l10n.kerriganNamesInfoBenefits3,
         ),
       ],
     ),
     (
-      "Control",
+      l10n.kerriganNamesInfoControlTitle,
       [
         (
           Icons.swap_horiz_rounded,
-          "Point your name to a new address at any time. People keep "
-              "paying john.krgn and never need to know.",
+          l10n.kerriganNamesInfoControl1,
         ),
         (
           Icons.edit_outlined,
-          "Hand a name to a new owner. That takes a signature with your "
-              "key, so only you can do it.",
+          l10n.kerriganNamesInfoControl2,
         ),
         (
           Icons.shopping_bag_outlined,
-          "List names on the marketplace and earn from popular ones.",
+          l10n.kerriganNamesInfoControl3,
         ),
       ],
     ),
-    ("Have a question?", []),
+    (l10n.kerriganNamesInfoQuestionTitle, []),
   ];
 
   Widget _point(_Point p) {
@@ -531,10 +524,42 @@ class _InfoDialogState extends State<_InfoDialog> {
     );
   }
 
+  Widget _slideBody(int i) {
+    final (title, points) = _slides[i];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(title, style: STextStyles.pageTitleH2(context)),
+        const SizedBox(height: 14),
+        if (i < _slides.length - 1)
+          for (final p in points) _point(p)
+        else ...[
+          _link(
+            Icons.send_rounded,
+            l10n.kerriganNamesInfoTelegram,
+            kKerriganNamesTelegramUrl,
+          ),
+          _link(
+            Icons.menu_book_rounded,
+            l10n.kerriganNamesInfoDocs,
+            kKerriganNamesDocsUrl,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            l10n.kerriganNamesInfoSlogan,
+            textAlign: TextAlign.center,
+            style: STextStyles.itemSubtitle(context)
+                .copyWith(fontStyle: FontStyle.italic),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<StackColors>()!;
-    final (title, points) = _slides[_slide];
     final last = _slide == _slides.length - 1;
     return Dialog(
       backgroundColor: colors.popupBG,
@@ -555,37 +580,27 @@ class _InfoDialogState extends State<_InfoDialog> {
                   Text("Kerrigan Name", style: STextStyles.w600_16(context)),
                   const Spacer(),
                   Text(
-                    "${_slide + 1} / ${_slides.length}",
+                    l10n.commonPageOf(_slide + 1, _slides.length),
                     style: STextStyles.w500_12(context)
                         .copyWith(color: colors.textSubtitle1),
                   ),
                 ],
               ),
               const SizedBox(height: 18),
-              Text(title, style: STextStyles.pageTitleH2(context)),
-              const SizedBox(height: 14),
-              if (!last)
-                for (final p in points) _point(p)
-              else ...[
-                _link(
-                  Icons.send_rounded,
-                  "Join us on Telegram",
-                  kKerriganNamesTelegramUrl,
-                ),
-                _link(
-                  Icons.menu_book_rounded,
-                  "Read the docs",
-                  kKerriganNamesDocsUrl,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  "Let's support privacy and make it simpler.",
-                  textAlign: TextAlign.center,
-                  style: STextStyles.itemSubtitle(context)
-                      .copyWith(fontStyle: FontStyle.italic),
-                ),
-                const SizedBox(height: 8),
-              ],
+              // Every slide takes the tallest one's room, so the buttons
+              // stay under the finger while paging.
+              Stack(
+                children: [
+                  for (var i = 0; i < _slides.length; i++)
+                    Visibility(
+                      visible: i == _slide,
+                      maintainSize: true,
+                      maintainAnimation: true,
+                      maintainState: true,
+                      child: _slideBody(i),
+                    ),
+                ],
+              ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -608,7 +623,7 @@ class _InfoDialogState extends State<_InfoDialog> {
               const SizedBox(height: 16),
               if (last)
                 PrimaryButton(
-                  label: "Finish",
+                  label: l10n.commonFinish,
                   buttonHeight: Util.isDesktop ? ButtonHeight.m : null,
                   onPressed: () => Navigator.of(context).pop(),
                 )
@@ -617,7 +632,7 @@ class _InfoDialogState extends State<_InfoDialog> {
                   children: [
                     Expanded(
                       child: SecondaryButton(
-                        label: "Skip",
+                        label: l10n.commonSkip,
                         buttonHeight: Util.isDesktop ? ButtonHeight.m : null,
                         onPressed: () => Navigator.of(context).pop(),
                       ),
@@ -625,7 +640,7 @@ class _InfoDialogState extends State<_InfoDialog> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: PrimaryButton(
-                        label: "Next",
+                        label: l10n.commonNext,
                         buttonHeight: Util.isDesktop ? ButtonHeight.m : null,
                         onPressed: () => setState(() => _slide++),
                       ),
@@ -679,9 +694,9 @@ class KerriganNamesSteps extends StatelessWidget {
 
     return Row(
       children: [
-        item(KerriganNamesStep.check, KerriganNamesIcons.search, "Check"),
-        item(KerriganNamesStep.pay, KerriganNamesIcons.balance, "Pay"),
-        item(KerriganNamesStep.done, KerriganNamesIcons.done, "Done!"),
+        item(KerriganNamesStep.check, KerriganNamesIcons.search, l10n.kerriganNamesStepCheck),
+        item(KerriganNamesStep.pay, KerriganNamesIcons.balance, l10n.kerriganNamesStepPay),
+        item(KerriganNamesStep.done, KerriganNamesIcons.done, l10n.kerriganNamesStepDone),
       ],
     );
   }
@@ -696,6 +711,10 @@ const _zoneColors = {
   ".secure": Color(0xFF3B82F6),
   ".safe": Color(0xFF10B981),
 };
+
+/// [name] for running text: a word joiner after each hyphen keeps
+/// "my-shop.krgn" on one line instead of breaking it at the hyphen.
+String kerriganNamesUnbroken(String name) => name.replaceAll("-", "-\u2060");
 
 /// A name with its zone in the zone's colour: "alice" ".krgn".
 class KerriganNamesNameText extends StatelessWidget {
@@ -800,7 +819,7 @@ class KerriganNamesStatusPill extends StatelessWidget {
     final colors = Theme.of(context).extension<StackColors>()!;
     final s = status;
     return KerriganNamesPill(
-      text: s?.label ?? (raw == null ? "Sent" : "Status $raw"),
+      text: s?.label ?? (raw == null ? l10n.kerriganNamesStatusSent : l10n.kerriganNamesStatusCode("$raw")),
       color: kerriganNamesStatusColor(s, colors),
       icon: switch (s) {
         KerriganNamesTxStatus.done => KerriganNamesIcons.check,
@@ -1024,9 +1043,9 @@ class KerriganNamesListState extends StatelessWidget {
             if (onRetry != null) ...[
               const SizedBox(height: 12),
               SecondaryButton(
-                label: "Try again",
+                label: l10n.commonTryAgain,
                 width: 160,
-                buttonHeight: ButtonHeight.m,
+                buttonHeight: Util.isDesktop ? ButtonHeight.m : null,
                 onPressed: onRetry,
               ),
             ],
@@ -1079,7 +1098,7 @@ String kerriganNamesShortId(String id) => id.length > 12
 /// What went wrong, for the user: the registrar's own words when it
 /// refused, else the error.
 String kerriganNamesError(Object e) =>
-    e is KerriganNamesException ? e.message : "Something went wrong: $e";
+    e is KerriganNamesException ? e.message : l10n.commonSomethingWentWrongError(e.toString());
 
 Future<void> kerriganNamesCopy(
   BuildContext context,
@@ -1090,7 +1109,7 @@ Future<void> kerriganNamesCopy(
   if (context.mounted) {
     await showFloatingFlushBar(
       type: FlushBarType.info,
-      message: "$what copied",
+      message: l10n.commonCopiedWhat(what),
       iconAsset: Assets.svg.copy,
       context: context,
     );
@@ -1100,10 +1119,13 @@ Future<void> kerriganNamesCopy(
 Future<void> showKerriganNamesError(
   BuildContext context,
   Object error, {
-  String title = "Something went wrong",
-}) => showDialog<void>(
-  context: context,
-  builder: (_) => StackOkDialog(title: title, message: kerriganNamesError(error)),
+  String? title,
+  }) => showDialog<void>(
+    context: context,
+    builder: (_) => StackOkDialog(
+      title: title ?? l10n.commonSomethingWentWrong,
+      message: kerriganNamesError(error),
+    ),
 );
 
 /// Asks before [action]; true when the user goes ahead.
@@ -1123,7 +1145,7 @@ Future<bool> kerriganNamesConfirm(
         style: colors.getSecondaryEnabledButtonStyle(context),
         onPressed: () => Navigator.of(context).pop(false),
         child: Text(
-          "Cancel",
+          l10n.commonCancel,
           style: STextStyles.button(context)
               .copyWith(color: colors.accentColorDark),
         ),

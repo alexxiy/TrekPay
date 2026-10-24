@@ -2,12 +2,16 @@ part of '../kerrigan_wallet.dart';
 
 /// Masternode types (Kerrigan Core `MnType`).
 enum KerriganMasternodeType {
-  regular("Masternode", 10000),
-  broodNode("BroodNode", 40000);
+  regular(10000),
+  broodNode(40000);
 
-  const KerriganMasternodeType(this.label, this.collateralCoins);
+  const KerriganMasternodeType(this.collateralCoins);
 
-  final String label;
+  /// "BroodNode" is a name: the same in every language.
+  String get label => switch (this) {
+    regular => l10n.mnMasternode,
+    broodNode => "BroodNode",
+  };
 
   /// The exact collateral, in whole coins.
   final int collateralCoins;
@@ -140,33 +144,40 @@ class KerriganMasternode {
 /// Where a masternode stands on the network.
 enum KerriganMasternodeStatus {
   /// No registration on chain.
-  unregistered("Not registered"),
+  unregistered,
 
   /// Registration sent, not mined yet.
-  pending("Registering"),
+  pending,
 
   /// Registered without a server: banned until its server is set.
-  needsServer("Needs a server"),
+  needsServer,
 
   /// Registered and serving.
-  enabled("Enabled"),
+  enabled,
 
   /// Banned for not serving (proof of service); setting its server again
   /// revives it.
-  banned("PoSe banned"),
+  banned,
 
   /// Its operator stopped serving it; it needs a new operator key.
-  revoked("Revoked"),
+  revoked,
 
   /// The network couldn't be asked.
-  unknown("Unknown"),
+  unknown,
 
   /// Not loaded yet.
-  checking("Checking…");
+  checking;
 
-  const KerriganMasternodeStatus(this.label);
-
-  final String label;
+  String get label => switch (this) {
+    unregistered => l10n.mnStatusUnregistered,
+    pending => l10n.mnStatusRegistering,
+    needsServer => l10n.mnStatusNeedsServer,
+    enabled => l10n.mnStatusEnabled,
+    banned => l10n.mnStatusPoseBanned,
+    revoked => l10n.mnStatusRevoked,
+    unknown => l10n.mnStatusUnknown,
+    checking => l10n.kerriganNamesChecking,
+  };
 }
 
 /// A masternode as the network sees it (`protx info`).
@@ -298,14 +309,12 @@ extension KerriganMasternodes on KerriganWallet {
   /// Why [alias] can't name a new masternode, or null when it can.
   String? masternodeAliasError(String alias) {
     final a = alias.trim();
-    if (a.isEmpty) return "Enter a masternode alias";
+    if (a.isEmpty) return l10n.mnEnterAlias;
     if (!_aliasPattern.hasMatch(a)) {
-      return a.length > 32
-          ? "At most 32 characters"
-          : "Only letters, digits, \"_\", \"-\" and \".\"";
+      return a.length > 32 ? l10n.commonAtMostChars(32) : l10n.mnAliasChars;
     }
     if (isMasternodeAliasTaken(a)) {
-      return "Another masternode is already called \"$a\"";
+      return l10n.mnAliasTaken(a);
     }
     return null;
   }
@@ -328,11 +337,11 @@ extension KerriganMasternodes on KerriganWallet {
     int port = masternodePort;
     if (s.startsWith("[")) {
       final end = s.indexOf("]");
-      if (end < 0) throw const FormatException("Invalid IPv6 address");
+      if (end < 0) throw FormatException(l10n.mnInvalidIpv6);
       host = s.substring(1, end);
       final rest = s.substring(end + 1);
       if (rest.isNotEmpty) {
-        if (!rest.startsWith(":")) throw const FormatException("Invalid port");
+        if (!rest.startsWith(":")) throw FormatException(l10n.mnInvalidPort);
         port = _parsePort(rest.substring(1));
       }
     } else if (":".allMatches(s).length == 1) {
@@ -344,19 +353,17 @@ extension KerriganMasternodes on KerriganWallet {
     }
     final ip = InternetAddress.tryParse(host);
     if (ip == null) {
-      throw const FormatException("Enter the server's IP address");
+      throw FormatException(l10n.mnEnterIp);
     }
-    if (port <= 0 || port > 65535) throw const FormatException("Invalid port");
+    if (port <= 0 || port > 65535) throw FormatException(l10n.mnInvalidPort);
     // As Kerrigan Core checks it: mainnet masternodes run on 7120 and
     // other networks never do.
     if (_mainnet && port != kKerriganMasternodePortMain) {
-      throw const FormatException(
-        "Masternodes must use port $kKerriganMasternodePortMain",
-      );
+      throw FormatException(l10n.mnMustUsePort(kKerriganMasternodePortMain));
     }
     if (!_mainnet && port == kKerriganMasternodePortMain) {
-      throw const FormatException(
-        "Port $kKerriganMasternodePortMain is for mainnet masternodes only",
+      throw FormatException(
+        l10n.mnMainnetPortOnly(kKerriganMasternodePortMain),
       );
     }
     return ip.type == InternetAddressType.IPv6
@@ -366,7 +373,7 @@ extension KerriganMasternodes on KerriganWallet {
 
   static int _parsePort(String text) {
     final port = int.tryParse(text.trim());
-    if (port == null) throw const FormatException("Invalid port");
+    if (port == null) throw FormatException(l10n.mnInvalidPort);
     return port;
   }
 
@@ -382,7 +389,7 @@ extension KerriganMasternodes on KerriganWallet {
     int index, {
     coinlib.HDPrivateKey? root,
   }) async {
-    if (isViewOnly) throw Exception("View only wallets have no keys");
+    if (isViewOnly) throw Exception(l10n.walletViewOnlyNoKeys);
     return (root ?? await getRootHDNode()).derivePath(
       "m/9'/${cryptoCurrency.coinType}'/3'/$feature'/$index",
     );
@@ -539,7 +546,7 @@ extension KerriganMasternodes on KerriganWallet {
     String? proTxHash,
     String? service,
   }) async {
-    if (label.trim().isEmpty) throw Exception("Masternode alias is required");
+    if (label.trim().isEmpty) throw Exception(l10n.mnAliasRequired);
     final mn = KerriganMasternode(
       label: label.trim(),
       type: type,
@@ -626,8 +633,8 @@ extension KerriganMasternodes on KerriganWallet {
     required String address,
     required KerriganMasternodeType type,
     KerriganFunding funding = kKerriganAutoFunding,
-    String note = "Create masternode",
-  }) async {
+    String? note,
+    }) async {
     final other = kerriganFundingOtherData(funding);
     if (funding.fromShield &&
         (await providerFeeBalance()).raw <
@@ -645,7 +652,7 @@ extension KerriganMasternodes on KerriganWallet {
     return prepareSend(
       txData: TxData(
         // The confirm screen expects both notes set, like the send screen.
-        note: note,
+        note: note ?? l10n.mnCreate,
         noteOnChain: "",
         recipients: [
           TxRecipient(
@@ -682,7 +689,7 @@ extension KerriganMasternodes on KerriganWallet {
         }
       }
     }
-    throw Exception("Collateral output not found");
+    throw Exception(l10n.mnCollateralNotFound);
   }
 
   // ---------------------------------------------------------------------------
@@ -907,11 +914,7 @@ extension KerriganMasternodes on KerriganWallet {
       if (sum >= _kProviderFeeReserveSats || picked.length >= 5) break;
     }
     if (picked.isEmpty) {
-      throw Exception(
-        "Masternode transactions pay a small fee from your transparent "
-        "balance, which is empty. Move a little ${cryptoCurrency.ticker} "
-        "(0.001 is plenty) to a transparent address of this wallet.",
-      );
+      throw Exception(l10n.mnProviderFeeEmpty(cryptoCurrency.ticker));
     }
     final inputs = await _withKeys(picked, root: root);
     return [
@@ -969,7 +972,7 @@ extension KerriganMasternodes on KerriganWallet {
         .txidWalletIdVoutEqualTo(mn.txid, walletId, mn.vout)
         .findFirst();
     if (utxo == null || utxo.used == true) {
-      throw Exception("The collateral output is not in this wallet anymore");
+      throw Exception(l10n.mnCollateralGone);
     }
     final height = utxo.blockHeight;
     if (height == null || height <= 0) return 0;
@@ -986,23 +989,20 @@ extension KerriganMasternodes on KerriganWallet {
     required String service,
     String? hostOperatorKey,
   }) async {
-    if (isViewOnly) throw Exception("View only wallets cannot sign");
+    if (isViewOnly) throw Exception(l10n.walletViewOnlyCannotSign);
     if (await _collateralConfirmations(mn) < 1) {
-      throw Exception("Wait for the collateral to be confirmed");
+      throw Exception(l10n.mnWaitCollateral);
     }
     final normalized = service.trim().isEmpty
         ? ""
         : normalizeMasternodeService(service);
     final host = hostOperatorKey?.trim().toLowerCase();
     if (host != null && host.isNotEmpty && !isValidOperatorPublicKey(host)) {
-      throw Exception("That is not a valid operator public key");
+      throw Exception(l10n.mnInvalidOperatorKey);
     }
     if (mn.type == KerriganMasternodeType.broodNode &&
         (host == null || host.isEmpty)) {
-      throw Exception(
-        "A BroodNode registers with its server's identity key "
-        "(kerrigan-cli gethmpidentity)",
-      );
+      throw Exception(l10n.mnBroodNodeIdentityKey);
     }
     final root = await getRootHDNode();
     final registered = await bridge.protxList();
@@ -1015,7 +1015,7 @@ extension KerriganMasternodes on KerriganWallet {
 
     final address = await mainDB.getAddress(walletId, mn.address);
     if (address?.derivationPath == null) {
-      throw Exception("The collateral address is not a wallet address");
+      throw Exception(l10n.mnCollateralNotWallet);
     }
     final collateralKey = root
         .derivePath(address!.derivationPath!.value)
@@ -1059,14 +1059,11 @@ extension KerriganMasternodes on KerriganWallet {
     KerriganMasternode mn, {
     required String service,
   }) async {
-    if (!mn.isRegistered) throw Exception("Register the masternode first");
+    if (!mn.isRegistered) throw Exception(l10n.mnRegisterFirst);
     final root = await getRootHDNode();
     final secret = await operatorSecretOf(mn, root: root);
     if (secret == null) {
-      throw Exception(
-        "Your host holds this masternode's operator key; they set its "
-        "server",
-      );
+      throw Exception(l10n.mnHostSetsServer);
     }
     final normalized = normalizeMasternodeService(service);
     return _buildProviderTx(
@@ -1089,15 +1086,15 @@ extension KerriganMasternodes on KerriganWallet {
     KerriganMasternode mn, {
     String? hostOperatorKey,
   }) async {
-    if (!mn.isRegistered) throw Exception("Register the masternode first");
+    if (!mn.isRegistered) throw Exception(l10n.mnRegisterFirst);
     final keyIndex = mn.keyIndex;
     if (keyIndex == null) {
-      throw Exception("This wallet doesn't hold the masternode's owner key");
+      throw Exception(l10n.mnNoOwnerKey);
     }
     final host = hostOperatorKey?.trim().toLowerCase();
     final useHost = host != null && host.isNotEmpty;
     if (useHost && !isValidOperatorPublicKey(host)) {
-      throw Exception("That is not a valid operator public key");
+      throw Exception(l10n.mnInvalidOperatorKey);
     }
     final root = await getRootHDNode();
     int? operatorIndex;
@@ -1153,7 +1150,6 @@ extension KerriganMasternodes on KerriganWallet {
   // ---------------------------------------------------------------------------
   // Hosting
 
-  /// `kerrigan.conf` for [mn]'s server, run with the operator secret.
   /// The port of a "host:port" [service], else the network's default.
   int masternodePortOf(String? service) {
     if (service == null) return masternodePort;
@@ -1161,6 +1157,7 @@ extension KerriganMasternodes on KerriganWallet {
         masternodePort;
   }
 
+  /// `kerrigan.conf` for [mn]'s server, run with the operator secret.
   String masternodeKerriganConf(KerriganMasternode mn, String operatorSecret) {
     final service = mn.service ?? "YOUR_SERVER_IP:$masternodePort";
     final i = service.lastIndexOf(":");

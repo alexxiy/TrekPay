@@ -8,24 +8,32 @@
  *
  */
 
+import '../l10n/l10n.dart';
 import '../utilities/amount/amount.dart';
 import 'isar/models/blockchain_data/transaction_type.dart';
 import 'isar/models/blockchain_data/v2/transaction_v2.dart';
 
 /// Kerrigan history categories the filter can select.
 enum KerriganTxCategory {
-  sent("Sent"),
-  received("Received"),
-  sentToSelf("Sent to self"),
-  blockReward("Block rewards"),
-  masternodeReward("Masternode rewards"),
-  masternode("Masternodes and proposals"),
-  shield("Shielded"),
-  unshield("Unshielded");
+  sent,
+  received,
+  sentToSelf,
+  blockReward,
+  masternodeReward,
+  masternode,
+  shield,
+  unshield;
 
-  const KerriganTxCategory(this.label);
-
-  final String label;
+  String get label => switch (this) {
+    sent => l10n.txSent,
+    received => l10n.txReceived,
+    sentToSelf => l10n.txSentToSelf,
+    blockReward => l10n.txBlockRewards,
+    masternodeReward => l10n.txMasternodeRewards,
+    masternode => l10n.txMasternodesAndProposals,
+    shield => l10n.txShielded,
+    unshield => l10n.txUnshielded,
+  };
 
   /// The categories [tx] belongs to.
   static Set<KerriganTxCategory> allOf(TransactionV2 tx) => {of(tx)};

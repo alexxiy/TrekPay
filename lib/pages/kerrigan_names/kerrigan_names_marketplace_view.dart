@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../services/kerrigan_name/kerrigan_names_protocol.dart';
 import '../../services/kerrigan_name/kerrigan_names_registrar.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/text_styles.dart';
+import '../../utilities/util.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../widgets/background.dart';
 import '../../widgets/desktop/primary_button.dart';
@@ -80,7 +82,7 @@ class _KerriganNamesMarketplaceViewState
       setState(() => _names = names);
     } catch (e) {
       if (!mounted || request != _request) return;
-      setState(() => _error = "Couldn't load the names. ${kerriganNamesError(e)}");
+      setState(() => _error = l10n.kerriganNamesLoadNamesFailed(kerriganNamesError(e)));
     } finally {
       if (mounted && request == _request) setState(() => _loading = false);
     }
@@ -98,11 +100,12 @@ class _KerriganNamesMarketplaceViewState
   Future<void> _buy(KerriganNamesDomain d) async {
     final ok = await kerriganNamesConfirm(
       context,
-      title: "Buy name",
-      message:
-          "Do you want to buy ${d.name} for "
-          "${kerriganNamesAmount(d.price, ref, _wallet)}?",
-      action: "Buy",
+      title: l10n.kerriganNamesBuyName,
+      message: l10n.kerriganNamesBuyConfirm(
+        kerriganNamesUnbroken(d.name),
+        kerriganNamesAmount(d.price, ref, _wallet),
+      ),
+      action: l10n.kerriganNamesBuy,
     );
     if (ok && mounted) {
       await startKerriganNamesFlow(context, ref, _flow(d, KerriganNamesOp.buy));
@@ -112,9 +115,9 @@ class _KerriganNamesMarketplaceViewState
   Future<void> _unlist(KerriganNamesDomain d) async {
     final ok = await kerriganNamesConfirm(
       context,
-      title: "Unlist from sale",
-      message: "Take ${d.name} off the marketplace?",
-      action: "Unlist",
+      title: l10n.kerriganNamesUnlistTitle,
+      message: l10n.kerriganNamesUnlistConfirm(kerriganNamesUnbroken(d.name)),
+      action: l10n.kerriganNamesUnlist,
     );
     if (ok && mounted) {
       await startKerriganNamesFlow(context, ref, _flow(d, KerriganNamesOp.ult));
@@ -137,7 +140,10 @@ class _KerriganNamesMarketplaceViewState
                 Expanded(child: KerriganNamesNameText(d.name)),
                 const SizedBox(width: 8),
                 if (own)
-                  KerriganNamesPill(text: "Yours", color: colors.accentColorBlue)
+                  KerriganNamesPill(
+                    text: l10n.kerriganNamesYours,
+                    color: colors.accentColorBlue,
+                  )
                 else
                   KerriganNamesZoneBadge(name: d.name),
               ],
@@ -156,8 +162,8 @@ class _KerriganNamesMarketplaceViewState
                 children: [
                   Expanded(
                     child: SecondaryButton(
-                      label: "Change price",
-                      buttonHeight: ButtonHeight.m,
+                      label: l10n.kerriganNamesChangePrice,
+                      buttonHeight: Util.isDesktop ? ButtonHeight.m : null,
                       onPressed: () => startKerriganNamesFlow(
                         context,
                         ref,
@@ -168,8 +174,8 @@ class _KerriganNamesMarketplaceViewState
                   const SizedBox(width: 8),
                   Expanded(
                     child: SecondaryButton(
-                      label: "Unlist",
-                      buttonHeight: ButtonHeight.m,
+                      label: l10n.kerriganNamesUnlist,
+                      buttonHeight: Util.isDesktop ? ButtonHeight.m : null,
                       onPressed: () => _unlist(d),
                     ),
                   ),
@@ -177,8 +183,8 @@ class _KerriganNamesMarketplaceViewState
               )
             else
               PrimaryButton(
-                label: "Buy name",
-                buttonHeight: ButtonHeight.m,
+                label: l10n.kerriganNamesBuyName,
+                buttonHeight: Util.isDesktop ? ButtonHeight.m : null,
                 onPressed: () => _buy(d),
               ),
           ],
@@ -196,7 +202,7 @@ class _KerriganNamesMarketplaceViewState
         backgroundColor: colors.background,
         appBar: KerriganNamesAppBar(
           walletId: widget.walletId,
-          title: "Marketplace",
+          title: l10n.kerriganNamesMarketplace,
           section: KerriganNamesSection.marketplace,
         ),
         body: SafeArea(
@@ -206,12 +212,12 @@ class _KerriganNamesMarketplaceViewState
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               children: [
                 Text(
-                  "Find and buy Kerrigan names from other users.",
+                  l10n.kerriganNamesMarketplaceIntro,
                   style: STextStyles.itemSubtitle(context),
                 ),
                 const SizedBox(height: 12),
                 KerriganNamesSearchField(
-                  hint: "Search names on sale",
+                  hint: l10n.kerriganNamesSearchOnSale,
                   onSearch: (term) {
                     _search = term;
                     _page = 1;
@@ -226,14 +232,16 @@ class _KerriganNamesMarketplaceViewState
                 else if (names == null || names.items.isEmpty)
                   KerriganNamesListState(
                     empty: _search.isNotEmpty
-                        ? "No names match your search."
-                        : "There are no names for sale right now.",
+                        ? l10n.kerriganNamesNoMatch
+                        : l10n.kerriganNamesNoneOnSale,
                     action: _search.isNotEmpty
                         ? null
                         : SecondaryButton(
-                            label: "Sell my names",
+                            label: l10n.kerriganNamesSellMyNames,
                             width: 200,
-                            buttonHeight: ButtonHeight.m,
+                            buttonHeight: Util.isDesktop
+                                ? ButtonHeight.m
+                                : null,
                             onPressed: () => Navigator.of(context)
                                 .pushReplacementNamed(
                                   KerriganNamesSection.myNames.routeName,

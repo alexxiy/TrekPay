@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../services/kerrigan_name/kerrigan_names_registrar.dart';
 import '../../themes/stack_colors.dart';
@@ -153,22 +154,25 @@ class _KerriganNamesStatusViewState extends ConsumerState<KerriganNamesStatusVie
     }
   }
 
-  String get _success => switch (_t.op) {
-    "BUY" => "You've bought ${_t.name}!",
-    "UPD" => "${_t.name} now points to its new address!",
-    "CHG" => "${_t.name} now belongs to its new owner!",
-    "LST" => "${_t.name} is listed on the marketplace!",
-    "ULT" => "${_t.name} is off the marketplace!",
-    _ => "You've registered ${_t.name}!",
-  };
+  String get _success {
+    final name = kerriganNamesUnbroken(_t.name);
+    return switch (_t.op) {
+      "BUY" => l10n.kerriganNamesDoneBuy(name),
+      "UPD" => l10n.kerriganNamesDoneDestination(name),
+      "CHG" => l10n.kerriganNamesDoneOwner(name),
+      "LST" => l10n.kerriganNamesDoneList(name),
+      "ULT" => l10n.kerriganNamesDoneUnlist(name),
+      _ => l10n.kerriganNamesDoneRegister(name),
+    };
+  }
 
   /// "3 minutes 20 seconds", "3 minutes" or "20 seconds".
   static String _time(int seconds) {
     final m = seconds ~/ 60;
     final s = seconds % 60;
     return [
-      if (m > 0) "$m ${m == 1 ? "minute" : "minutes"}",
-      if (s > 0 || m == 0) "$s ${s == 1 ? "second" : "seconds"}",
+      if (m > 0) l10n.kerriganNamesMinutes(m),
+      if (s > 0 || m == 0) l10n.kerriganNamesSeconds(s),
     ].join(" ");
   }
 
@@ -179,51 +183,47 @@ class _KerriganNamesStatusViewState extends ConsumerState<KerriganNamesStatusVie
     final seconds = p?.seconds;
     return switch (status) {
       null when _txId == null => (
-        "Looking for your payment…",
-        "Waiting for your payment to reach the network.",
+        l10n.kerriganNamesLookingForPayment,
+        l10n.kerriganNamesLookingForPaymentText,
       ),
       null => (
-        "Waiting for confirmation",
-        "Your transaction is on the network.",
+        l10n.kerriganNamesWaitingConfirmation,
+        l10n.kerriganNamesWaitingConfirmationText,
       ),
       KerriganNamesTxStatus.confirmingPayment => (
-        "Confirmed $confirmations/$_paymentConfirmations",
-        "Waiting for the payment's confirmations.",
+        l10n.kerriganNamesConfirmed(confirmations, _paymentConfirmations),
+        l10n.kerriganNamesWaitingPaymentConfirmations,
       ),
       KerriganNamesTxStatus.pendingRefund => (
-        "Confirmed $confirmations/$_refundConfirmations",
-        "Waiting for the refund's confirmations.",
+        l10n.kerriganNamesConfirmed(confirmations, _refundConfirmations),
+        l10n.kerriganNamesWaitingRefundConfirmations,
       ),
       KerriganNamesTxStatus.pendingProof || KerriganNamesTxStatus.queuedProof => (
-        "Waiting for the ZK proof…",
+        l10n.kerriganNamesWaitingProof,
         seconds != null && seconds > 0
-            ? "It starts in about ${_time(seconds)}."
-            : "It's about to start.",
+            ? l10n.kerriganNamesProofStartsIn(_time(seconds))
+            : l10n.kerriganNamesProofAboutToStart,
       ),
       KerriganNamesTxStatus.processingProof => (
-        "Creating the ZK proof…",
-        "Checking the cryptographic proofs.",
+        l10n.kerriganNamesCreatingProof,
+        l10n.kerriganNamesCreatingProofText,
       ),
       KerriganNamesTxStatus.submittingProof => (
-        "Submitting the ZK proof…",
-        "Almost done.",
+        l10n.kerriganNamesSubmittingProof,
+        l10n.kerriganNamesAlmostDone,
       ),
-      KerriganNamesTxStatus.done => ("Congrats!", _success),
+      KerriganNamesTxStatus.done => (l10n.kerriganNamesCongrats, _success),
       KerriganNamesTxStatus.refunded => (
-        "Payment refunded",
-        "Something in the payment was wrong, or someone else got the name "
-            "first. The amount is back in your Kerrigan.name balance (My "
-            "Balance).",
+        l10n.kerriganNamesPaymentRefunded,
+        l10n.kerriganNamesPaymentRefundedText,
       ),
       KerriganNamesTxStatus.orphaned => (
-        "Payment unsuccessful",
-        "The transaction seems to be orphaned because of Kerrigan network "
-            "issues.",
+        l10n.kerriganNamesPaymentUnsuccessful,
+        l10n.kerriganNamesPaymentUnsuccessfulText,
       ),
       KerriganNamesTxStatus.rejected => (
-        "Transaction not accepted",
-        "Kerrigan.name rejected the transaction because it doesn't follow the "
-            "protocol rules.",
+        l10n.kerriganNamesTxRejected,
+        l10n.kerriganNamesTxRejectedText,
       ),
     };
   }
@@ -328,8 +328,8 @@ class _KerriganNamesStatusViewState extends ConsumerState<KerriganNamesStatusVie
                               const SizedBox(width: 8),
                               Text(
                                 _polling
-                                    ? "Checking…"
-                                    : "Next check in ${_countdown}s",
+                                    ? l10n.kerriganNamesChecking
+                                    : l10n.kerriganNamesNextCheckIn(_countdown),
                                 style: STextStyles.w600_14(context),
                               ),
                             ],
@@ -339,8 +339,7 @@ class _KerriganNamesStatusViewState extends ConsumerState<KerriganNamesStatusVie
                     if (_offline && !_final) ...[
                       const SizedBox(height: 8),
                       Text(
-                        "Couldn't reach Kerrigan.name. Trying again at the next "
-                        "check.",
+                        l10n.kerriganNamesOfflineRetry,
                         textAlign: TextAlign.center,
                         style: STextStyles.w500_12(context)
                             .copyWith(color: colors.textSubtitle1),
@@ -360,9 +359,7 @@ class _KerriganNamesStatusViewState extends ConsumerState<KerriganNamesStatusVie
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                "You can close this screen: nothing stops. "
-                                "Follow the payment in My Transactions and "
-                                "tap it there to come back here.",
+                                l10n.kerriganNamesCanClose,
                                 style: STextStyles.w500_12(context),
                               ),
                             ),
@@ -374,15 +371,20 @@ class _KerriganNamesStatusViewState extends ConsumerState<KerriganNamesStatusVie
                       const SizedBox(height: 16),
                       Center(
                         child: TextButton.icon(
-                          onPressed: () =>
-                              kerriganNamesCopy(context, txId, "Transaction ID"),
+                          onPressed: () => kerriganNamesCopy(
+                            context,
+                            txId,
+                            l10n.commonTransactionId,
+                          ),
                           icon: Icon(
                             Icons.copy_rounded,
                             size: 14,
                             color: colors.textSubtitle1,
                           ),
                           label: Text(
-                            "Transaction ${kerriganNamesShortId(txId)}",
+                            l10n.kerriganNamesTransactionShort(
+                              kerriganNamesShortId(txId),
+                            ),
                             style: STextStyles.w500_12(context)
                                 .copyWith(color: colors.textSubtitle1),
                           ),
@@ -398,7 +400,7 @@ class _KerriganNamesStatusViewState extends ConsumerState<KerriganNamesStatusVie
                   children: [
                     Expanded(
                       child: SecondaryButton(
-                        label: "My Transactions",
+                        label: l10n.kerriganNamesMyTransactions,
                         onPressed: () => Navigator.of(context)
                             .pushReplacementNamed(
                               KerriganNamesSection.transactions.routeName,
@@ -409,7 +411,7 @@ class _KerriganNamesStatusViewState extends ConsumerState<KerriganNamesStatusVie
                     const SizedBox(width: 12),
                     Expanded(
                       child: PrimaryButton(
-                        label: _final ? "Done" : "Close",
+                        label: _final ? l10n.commonDone : l10n.commonClose,
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                     ),

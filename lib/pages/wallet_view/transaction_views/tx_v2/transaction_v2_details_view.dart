@@ -16,8 +16,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tuple/tuple.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../l10n/l10n.dart';
 import '../../../../models/isar/models/blockchain_data/transaction_type.dart';
 import '../../../../models/isar/models/blockchain_data/v2/transaction_v2.dart';
 import '../../../../providers/global/address_book_service_provider.dart';
@@ -36,16 +36,14 @@ import '../../../../wallets/crypto_currency/crypto_currency.dart';
 import '../../../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../../../widgets/icon_buttons.dart';
 import '../../../../widgets/background.dart';
+import '../../../../widgets/block_explorer_link.dart';
 import '../../../../widgets/conditional_parent.dart';
 import '../../../../widgets/custom_buttons/app_bar_icon_button.dart';
 import '../../../../widgets/custom_buttons/blue_text_button.dart';
 import '../../../../widgets/custom_buttons/simple_copy_button.dart';
 import '../../../../widgets/desktop/desktop_dialog.dart';
 import '../../../../widgets/desktop/desktop_dialog_close_button.dart';
-import '../../../../widgets/desktop/primary_button.dart';
-import '../../../../widgets/desktop/secondary_button.dart';
 import '../../../../widgets/rounded_white_container.dart';
-import '../../../../widgets/stack_dialog.dart';
 import '../../sub_widgets/tx_icon.dart';
 import '../edit_note_view.dart';
 
@@ -204,12 +202,12 @@ class _TransactionV2DetailsViewState
 
     if (_transaction.type == TransactionType.incoming) {
       if (data.length == 1 && data.first.addresses.length == 1) {
-        outputLabel = "Receiving address";
+        outputLabel = l10n.txReceivingAddress;
       } else {
-        outputLabel = "Receiving addresses";
+        outputLabel = l10n.txReceivingAddresses;
       }
     } else {
-      outputLabel = "Sent to";
+      outputLabel = l10n.txSentTo;
     }
 
     Decimal? price;
@@ -252,7 +250,7 @@ class _TransactionV2DetailsViewState
                   },
                 ),
                 title: Text(
-                  "Transaction details",
+                  l10n.txDetails,
                   style: STextStyles.navBarTitle(context),
                 ),
               ),
@@ -271,7 +269,7 @@ class _TransactionV2DetailsViewState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "Transaction details",
+                        l10n.txDetails,
                         style: STextStyles.desktopH3(context),
                       ),
                       const DesktopDialogCloseButton(),
@@ -328,7 +326,7 @@ class _TransactionV2DetailsViewState
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text("Status", style: labelStyle),
+                                    Text(l10n.mnStatus, style: labelStyle),
                                     SelectableText(
                                       whatIsIt(_transaction, currentHeight),
                                       style: isDesktop
@@ -539,8 +537,8 @@ class _TransactionV2DetailsViewState
                                           children: [
                                             Text(
                                               coin is Kerrigan
-                                                  ? "Shielded memo"
-                                                  : "On chain note",
+                                                  ? l10n.kerriganNamesShieldedMemo
+                                                  : l10n.txOnChainNote,
                                               style: labelStyle,
                                             ),
                                             const SizedBox(height: 8),
@@ -572,7 +570,10 @@ class _TransactionV2DetailsViewState
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text("Note ", style: labelStyle),
+                                        Text(
+                                          "${l10n.sendNote} ",
+                                          style: labelStyle,
+                                        ),
                                         isDesktop
                                             ? IconPencilButton(
                                                 onPressed: () {
@@ -617,7 +618,7 @@ class _TransactionV2DetailsViewState
                                                     ),
                                                     const SizedBox(width: 4),
                                                     Text(
-                                                      "Edit",
+                                                      l10n.commonEdit,
                                                       style: STextStyles.link2(
                                                         context,
                                                       ),
@@ -659,7 +660,7 @@ class _TransactionV2DetailsViewState
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text("Date", style: labelStyle),
+                                        Text(l10n.txDate, style: labelStyle),
                                         if (isDesktop)
                                           const SizedBox(height: 2),
                                         if (isDesktop)
@@ -707,7 +708,7 @@ class _TransactionV2DetailsViewState
                                                       pAmountFormatter(coin),
                                                     )
                                                     .format(fee)
-                                              : "Pending"
+                                              : l10n.txPending
                                         : ref
                                               .watch(pAmountFormatter(coin))
                                               .format(fee);
@@ -723,7 +724,7 @@ class _TransactionV2DetailsViewState
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              "Transaction fee",
+                                              l10n.sendTransactionFee,
                                               style: labelStyle,
                                             ),
                                             if (isDesktop)
@@ -763,13 +764,13 @@ class _TransactionV2DetailsViewState
                                     coin.minCoinbaseConfirms,
                                   );
                                   if (confirmed) {
-                                    height =
-                                        "${_transaction.height == 0 ? "Unknow"
-                                                  "n" : _transaction.height}";
+                                    height = _transaction.height == 0
+                                        ? l10n.mnStatusUnknown
+                                        : "${_transaction.height}";
                                   } else {
                                     height = confirms > 0
                                         ? "${_transaction.height}"
-                                        : "Pending";
+                                        : l10n.txPending;
                                   }
 
                                   // Rewards (coinbase / coinstake) can be
@@ -798,7 +799,7 @@ class _TransactionV2DetailsViewState
                                                   CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  "Block height",
+                                                  l10n.txBlockHeight,
                                                   style: labelStyle,
                                                 ),
                                                 if (isDesktop)
@@ -838,7 +839,7 @@ class _TransactionV2DetailsViewState
                                                   CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  "Confirmations",
+                                                  l10n.txConfirmations,
                                                   style: labelStyle,
                                                 ),
                                                 if (isDesktop)
@@ -872,7 +873,7 @@ class _TransactionV2DetailsViewState
                                     : const SizedBox(height: 12),
                               if (_transaction.memo != null)
                                 _DetailItem(
-                                  label: "Memo",
+                                  label: l10n.commonMemo,
                                   detail: _transaction.memo!,
                                 ),
                               if (kDebugMode)
@@ -881,7 +882,7 @@ class _TransactionV2DetailsViewState
                                     : const SizedBox(height: 12),
                               if (kDebugMode)
                                 _DetailItem(
-                                  label: "Tx sub type",
+                                  label: l10n.txSubType,
                                   detail: _transaction.subType.toString(),
                                 ),
 
@@ -935,14 +936,14 @@ class OutputCard extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Address", style: labelStyle),
+        Text(l10n.commonAddress, style: labelStyle),
         SelectableText(address, style: valueStyle),
         const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              "Amount",
+              l10n.commonAmount,
               style: Util.isDesktop
                   ? STextStyles.desktopTextExtraExtraSmall(context)
                   : STextStyles.itemSubtitle(context),
@@ -977,17 +978,19 @@ class _KerriganTxParts extends StatelessWidget {
     final change = transaction.kerriganChangeAddresses;
     String where(List<String> addresses, {bool shield = false}) {
       final text = addresses.where((e) => e.isNotEmpty).join(", ");
-      return text.isNotEmpty ? text : (shield ? "Shielded" : "Unknown");
+      return text.isNotEmpty
+          ? text
+          : (shield ? l10n.txShielded : l10n.mnStatusUnknown);
     }
 
     final inputs = [
       for (final i in transaction.inputs)
         (
           address: i.coinbase != null
-              ? "New coins"
+              ? l10n.txNewCoins
               : where(i.addresses, shield: i.outpoint == null),
           value: i.value,
-          tag: i.walletOwns ? "Yours" : null,
+          tag: i.walletOwns ? l10n.kerriganNamesYours : null,
         ),
     ];
     final outputs = [
@@ -998,17 +1001,17 @@ class _KerriganTxParts extends StatelessWidget {
           tag: !o.walletOwns
               ? null
               : o.addresses.any(change.contains)
-              ? "Change"
-              : "Yours",
+              ? l10n.txChange
+              : l10n.kerriganNamesYours,
         ),
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _KerriganPartList(title: "Inputs", entries: inputs, coin: coin),
+        _KerriganPartList(title: l10n.txInputs, entries: inputs, coin: coin),
         Util.isDesktop ? const _Divider() : const SizedBox(height: 12),
-        _KerriganPartList(title: "Outputs", entries: outputs, coin: coin),
+        _KerriganPartList(title: l10n.txOutputs, entries: outputs, coin: coin),
       ],
     );
   }
@@ -1073,33 +1076,60 @@ class _KerriganPartListState extends ConsumerState<_KerriganPartList> {
           if (_open)
             for (final e in widget.entries) ...[
               const SizedBox(height: 10),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: SelectableText(
-                      e.address,
-                      style: STextStyles.itemSubtitle12(context),
+              if (Util.isDesktop)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: SelectableText(
+                        e.address,
+                        style: STextStyles.itemSubtitle12(context),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          fmt.format(amount(e.value)),
+                          style: STextStyles.itemSubtitle12(context),
+                        ),
+                        if (e.tag != null)
+                          Text(
+                            e.tag!,
+                            style: STextStyles.label(context)
+                                .copyWith(color: colors.textSubtitle1),
+                          ),
+                      ],
+                    ),
+                  ],
+                )
+              else ...[
+                // On a phone the address gets the whole width, so it
+                // doesn't break in the middle.
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
                         fmt.format(amount(e.value)),
                         style: STextStyles.itemSubtitle12(context),
                       ),
-                      if (e.tag != null)
-                        Text(
-                          e.tag!,
-                          style: STextStyles.label(context)
-                              .copyWith(color: colors.textSubtitle1),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                    if (e.tag != null)
+                      Text(
+                        e.tag!,
+                        style: STextStyles.label(context)
+                            .copyWith(color: colors.textSubtitle1),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                SelectableText(
+                  e.address,
+                  style: STextStyles.label(context)
+                      .copyWith(color: colors.textDark),
+                ),
+              ],
             ],
         ],
       ),
@@ -1186,154 +1216,6 @@ class _TxidDetailItem extends ConsumerStatefulWidget {
 }
 
 class _TxidDetailItemState extends ConsumerState<_TxidDetailItem> {
-  Future<bool> showExplorerWarning(String explorer) async {
-    final outsideTor = ref.read(prefsChangeNotifierProvider).useTor
-        ? "\n\nYour browser opens it outside of Tor."
-        : "";
-    final warningMessage =
-        "You are about to view this transaction in a block explorer. "
-        "The explorer may log your IP address and link it to the "
-        "transaction. Only proceed if you trust $explorer.$outsideTor";
-
-    final bool? shouldContinue = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) {
-        if (!Util.isDesktop) {
-          return StackDialog(
-            title: "Attention",
-            message: warningMessage,
-            icon: Row(
-              children: [
-                Consumer(
-                  builder: (_, ref, __) {
-                    return Checkbox(
-                      value: ref.watch(
-                        prefsChangeNotifierProvider.select(
-                          (value) => value.hideBlockExplorerWarning,
-                        ),
-                      ),
-                      onChanged: (value) {
-                        if (value is bool) {
-                          ref
-                                  .read(prefsChangeNotifierProvider)
-                                  .hideBlockExplorerWarning =
-                              value;
-                          setState(() {});
-                        }
-                      },
-                    );
-                  },
-                ),
-                Text(
-                  "Never show again",
-                  style: STextStyles.smallMed14(context),
-                ),
-              ],
-            ),
-            leftButton: TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-              child: Text(
-                "Cancel",
-                style: STextStyles.button(context).copyWith(
-                  color: Theme.of(context)
-                      .extension<StackColors>()!
-                      .accentColorDark,
-                ),
-              ),
-            ),
-            rightButton: TextButton(
-              style: Theme.of(context)
-                  .extension<StackColors>()!
-                  .getPrimaryEnabledButtonStyle(context),
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-              child: Text("Continue", style: STextStyles.button(context)),
-            ),
-          );
-        } else {
-          return DesktopDialog(
-            maxWidth: 550,
-            maxHeight: 300,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text("Attention", style: STextStyles.desktopH2(context)),
-                      Row(
-                        children: [
-                          Consumer(
-                            builder: (_, ref, __) {
-                              return Checkbox(
-                                value: ref.watch(
-                                  prefsChangeNotifierProvider.select(
-                                    (value) => value.hideBlockExplorerWarning,
-                                  ),
-                                ),
-                                onChanged: (value) {
-                                  if (value is bool) {
-                                    ref
-                                            .read(prefsChangeNotifierProvider)
-                                            .hideBlockExplorerWarning =
-                                        value;
-                                    setState(() {});
-                                  }
-                                },
-                              );
-                            },
-                          ),
-                          Text(
-                            "Never show again",
-                            style: STextStyles.smallMed14(context),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    warningMessage,
-                    style: STextStyles.desktopTextSmall(context),
-                  ),
-                  const SizedBox(height: 35),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SecondaryButton(
-                        width: 200,
-                        buttonHeight: ButtonHeight.l,
-                        label: "Cancel",
-                        onPressed: () {
-                          Navigator.of(context, rootNavigator: true).pop(false);
-                        },
-                      ),
-                      const SizedBox(width: 20),
-                      PrimaryButton(
-                        width: 200,
-                        buttonHeight: ButtonHeight.l,
-                        label: "Continue",
-                        onPressed: () {
-                          Navigator.of(context, rootNavigator: true).pop(true);
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-      },
-    );
-    return shouldContinue ?? false;
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDesktop = Util.isDesktop;
@@ -1356,7 +1238,7 @@ class _TxidDetailItemState extends ConsumerState<_TxidDetailItem> {
                     ],
                   ),
                   child: Text(
-                    "Transaction ID",
+                    l10n.commonTransactionId,
                     style: isDesktop
                         ? STextStyles.desktopTextExtraExtraSmall(context)
                         : STextStyles.itemSubtitle(context),
@@ -1377,48 +1259,15 @@ class _TxidDetailItemState extends ConsumerState<_TxidDetailItem> {
                 ),
                 const SizedBox(height: 8),
                 CustomTextButton(
-                  text: "Open in block explorer",
-                  onTap: () async {
-                    final uri = getBlockExplorerTransactionUrlFor(
+                  text: l10n.txOpenInExplorer,
+                  onTap: () => openInBlockExplorer(
+                    context,
+                    ref,
+                    getBlockExplorerTransactionUrlFor(
                       coin: widget.coin,
                       txid: widget.txid,
-                    );
-
-                    if (ref
-                            .read(prefsChangeNotifierProvider)
-                            .hideBlockExplorerWarning ==
-                        false) {
-                      final shouldContinue = await showExplorerWarning(
-                        "${uri.scheme}://${uri.host}",
-                      );
-
-                      if (!shouldContinue || !context.mounted) {
-                        return;
-                      }
-                    }
-
-                    try {
-                      await launchUrl(
-                        uri,
-                        mode: LaunchMode.externalApplication,
-                      );
-                    } catch (_) {
-                      if (context.mounted) {
-                        unawaited(
-                          showDialog<void>(
-                            context: context,
-                            builder: (_) => StackOkDialog(
-                              title: "Could not open in block explorer",
-                              message:
-                                  "Failed to open "
-                                  "\"${uri.toString()}\"",
-                              maxWidth: Util.isDesktop ? 400 : null,
-                            ),
-                          ),
-                        );
-                      }
-                    }
-                  },
+                    ),
+                  ),
                 ),
               ],
             ),

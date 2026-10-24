@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:isar_community/isar.dart';
 
+import '../../../../../l10n/l10n.dart';
 import '../../../../../utilities/amount/amount.dart';
 import '../transaction_type.dart';
 import 'input_v2.dart';
@@ -252,21 +253,21 @@ class TransactionV2 {
 
     if (type == TransactionType.incoming) {
       if (isConfirmed(currentChainHeight, minConfirms, minCoinbaseConfirms)) {
-        return "Received";
+        return l10n.txReceived;
       } else {
-        return "Receiving ${prettyConfirms()}";
+        return "${l10n.txReceiving} ${prettyConfirms()}";
       }
     } else if (type == TransactionType.outgoing) {
       if (isConfirmed(currentChainHeight, minConfirms, minCoinbaseConfirms)) {
-        return "Sent";
+        return l10n.txSent;
       } else {
-        return "Sending ${prettyConfirms()}";
+        return "${l10n.txSending} ${prettyConfirms()}";
       }
     } else if (type == TransactionType.sentToSelf) {
       if (isConfirmed(currentChainHeight, minConfirms, minCoinbaseConfirms)) {
-        return "Sent to self";
+        return l10n.txSentToSelf;
       } else {
-        return "Sent to self ${prettyConfirms()}";
+        return "${l10n.txSentToSelf} ${prettyConfirms()}";
       }
     } else {
       return type.name;
@@ -281,19 +282,22 @@ class TransactionV2 {
         confirmed ? done : "$pending $confirms";
     switch (kerriganKind) {
       case KerriganTxKind.blockReward:
-        return label("Block reward", "Block reward");
+        return label(l10n.txBlockReward, l10n.txBlockReward);
       case KerriganTxKind.masternodeReward:
-        return label("Masternode reward", "Masternode reward");
+        return label(l10n.txMasternodeReward, l10n.txMasternodeReward);
       case KerriganTxKind.burn:
-        return label("Proposal fee", "Proposal fee");
+        return label(l10n.txProposalFee, l10n.txProposalFee);
       case KerriganTxKind.masternodeRegistration:
-        return label("Masternode registered", "Registering masternode");
+        return label(
+          l10n.txMasternodeRegistered,
+          l10n.txRegisteringMasternode,
+        );
       case KerriganTxKind.masternodeUpdate:
-        return label("Masternode updated", "Updating masternode");
+        return label(l10n.txMasternodeUpdated, l10n.txUpdatingMasternode);
       case KerriganTxKind.shield:
-        return label("Shielded", "Shielding");
+        return label(l10n.txShielded, l10n.txShielding);
       case KerriganTxKind.unshield:
-        return label("Unshielded", "Unshielding");
+        return label(l10n.txUnshielded, l10n.txUnshielding);
       default:
         return null;
     }
