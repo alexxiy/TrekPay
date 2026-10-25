@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=TrekPay
+Comment=Non-custodial Kerrigan wallet
+Exec=trekpay %u
+Icon=trekpay
+Type=Application
+Categories=Office;Finance;
+Keywords=Kerrigan;KRGN;wallet;crypto;masternode;
+MimeType=x-scheme-handler/kerrigan;

@@ -203,7 +203,7 @@ void main() {
       "and the masternode votes on it", () async {
     final payee = p2pkh(bip44(0, 3).publicKey);
     final now = DateTime.timestamp().millisecondsSinceEpoch ~/ 1000;
-    final name = "astronaut-test-${Random().nextInt(1 << 30)}";
+    final name = "trekpay-test-${Random().nextInt(1 << 30)}";
     final dataHex = kerriganProposalDataHex(
       type: KerriganProposalType.proposal,
       name: name,

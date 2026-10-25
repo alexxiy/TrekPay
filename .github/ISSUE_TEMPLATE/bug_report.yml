@@ -1,14 +1,14 @@
 name: 🐞 Bug report
-description: Report something in Astronaut that doesn't work as it should
+description: Report something in TrekPay that doesn't work as it should
 title: 'Bug: <title>'
 labels: [Bug]
 body:
   - type: markdown
     attributes:
       value: |
-        :stop_sign: _For questions and help with your wallet, ask the Kerrigan community on [Discord](https://discord.kerrigan.org/), [Telegram](https://t.me/KERRIGAN_official) or [Reddit](https://www.reddit.com/r/kerrigan/), or email support@astronaut.me._
+        :stop_sign: _For questions and help with your wallet, ask the Kerrigan community on [Discord](https://discord.kerrigan.org/), [Telegram](https://t.me/KERRIGAN_official) or [Reddit](https://www.reddit.com/r/kerrigan/), or email support@trekpay.space._
 
-        :warning: **Never share your recovery phrase, private keys, PIN or backup password**, here or anywhere else. Nobody from Astronaut will ever ask for them.
+        :warning: **Never share your recovery phrase, private keys, PIN or backup password**, here or anywhere else. Nobody from TrekPay will ever ask for them.
   - type: checkboxes
     attributes:
       label: 'Is there an existing issue for this?'
@@ -60,7 +60,7 @@ body:
       label: 'Environment'
       description: 'The app version is in Settings > About.'
       value: |
-          - Astronaut version:
+          - TrekPay version:
           - Network (mainnet or testnet):
           - Device and OS version (e.g. Galaxy S26 Ultra, Android 17):
           - Server (default or your own kerrigan-bridge):

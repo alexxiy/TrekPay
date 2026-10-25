@@ -1,6 +1,6 @@
-# camera_linux (PIVXie's copy, used by Astronaut)
+# camera_linux (PIVXie's copy, used by TrekPay)
 
-Camera capture for Astronaut's desktop QR scanner on Linux, through Dart FFI.
+Camera capture for TrekPay's desktop QR scanner on Linux, through Dart FFI.
 Based on [camera_linux](https://github.com/islamroshan/camera-linux) by
 Muhammad Islam (BSD 3-Clause, see `LICENSE`), as used by Stack Wallet
 (`cypherstack/camera-linux` at `ecb4124`).

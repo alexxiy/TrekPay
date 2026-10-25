@@ -121,7 +121,7 @@
   },
   "favoritesRemove": "Remove from favorites",
   "favoritesAdd": "Add to favorites",
-  "mnemonicAccountNote": "This wallet is account {account} of its recovery phrase. Restoring the phrase in Astronaut brings back every account with history, and Add account brings back the others.",
+  "mnemonicAccountNote": "This wallet is account {account} of its recovery phrase. Restoring the phrase in TrekPay brings back every account with history, and Add account brings back the others.",
   "@mnemonicAccountNote": {
     "description": "\"Add account\" is the name of a button.",
     "placeholders": {
@@ -412,7 +412,7 @@
       }
     }
   },
-  "kerriganNamesWhoOwnsText": "Paste the public key of the new owner. They find it in My Names, in Astronaut or on Kerrigan.name.",
+  "kerriganNamesWhoOwnsText": "Paste the public key of the new owner. They find it in My Names, in TrekPay or on Kerrigan.name.",
   "kerriganNamesSetPrice": "Set the price for {name}",
   "@kerriganNamesSetPrice": {
     "placeholders": {
@@ -914,10 +914,10 @@
     }
   },
   "kerriganNameErrorUnreachable": "Couldn't reach the Kerrigan.name server.",
-  "kerriganNameErrorIndexer": "The Kerrigan.name server sent an answer Astronaut can't use.",
+  "kerriganNameErrorIndexer": "The Kerrigan.name server sent an answer TrekPay can't use.",
   "kerriganNameErrorChainUnavailable": "Too few BNB Smart Chain servers answered to check the name. Try again later.",
   "kerriganNameErrorChainDisagreement": "BNB Smart Chain servers gave different answers about the Kerrigan.name registry, so names can't be checked right now.",
-  "kerriganNameErrorEpoch": "The Kerrigan.name registry has changed its rules or rolled back. This version of Astronaut won't send to names until it's updated.",
+  "kerriganNameErrorEpoch": "The Kerrigan.name registry has changed its rules or rolled back. This version of TrekPay won't send to names until it's updated.",
   "kerriganNameErrorUnanchored": "The Kerrigan.name server answered from a registry state that was never published on BNB Smart Chain. This can mean the server is misbehaving.",
   "kerriganNameErrorBadRecord": "The record the Kerrigan.name server sent doesn't match the registry on chain.",
   "kerriganNameErrorUnavailable": "Checking names isn't available here.",
@@ -966,7 +966,7 @@
       }
     }
   },
-  "sendNameWaitingText": "Kerrigan.name is still processing the latest registry update, so its answer for {name} may be out of date. This usually takes a few minutes; Astronaut continues once it's done.",
+  "sendNameWaitingText": "Kerrigan.name is still processing the latest registry update, so its answer for {name} may be out of date. This usually takes a few minutes; TrekPay continues once it's done.",
   "@sendNameWaitingText": {
     "placeholders": {
       "name": {
@@ -1238,7 +1238,7 @@
   "govYourProposal": "Your proposal",
   "commonRemove": "Remove",
   "govFeeSent": "Fee sent; waiting for it to be mined",
-  "govFeeConfirming": "Fee confirming: {count} of {needed}. Then Astronaut submits it (keep the wallet syncing).",
+  "govFeeConfirming": "Fee confirming: {count} of {needed}. Then TrekPay submits it (keep the wallet syncing).",
   "@govFeeConfirming": {
     "placeholders": {
       "count": {
@@ -1568,7 +1568,7 @@
     "description": "Shown after the user taps Refresh on a masternode's page and the network didn't answer."
   },
   "mnStatusEnabled": "Enabled",
-  "accountsAddedOne": "This recovery phrase has another account with history. Astronaut added it as a separate wallet, {names}, which is still syncing.",
+  "accountsAddedOne": "This recovery phrase has another account with history. TrekPay added it as a separate wallet, {names}, which is still syncing.",
   "@accountsAddedOne": {
     "placeholders": {
       "names": {
@@ -1576,7 +1576,7 @@
       }
     }
   },
-  "accountsAddedMany": "This recovery phrase has other accounts with history. Astronaut added them as separate wallets, which are still syncing: {names}.",
+  "accountsAddedMany": "This recovery phrase has other accounts with history. TrekPay added them as separate wallets, which are still syncing: {names}.",
   "@accountsAddedMany": {
     "description": "{names} is a list of wallet names in quotes.",
     "placeholders": {
@@ -2272,7 +2272,7 @@
   "restoreFailed": "Restore failed",
   "restoreNodeUnreachable": "Couldn't reach {node}. Check your internet connection, or choose another node in Settings → Manage nodes.",
   "@restoreNodeUnreachable": {
-    "description": "Restoring a wallet failed because the node didn't answer. {node}: the node's address, e.g. eu-bridge.pivxie.me. \"Settings → Manage nodes\" names the app's menu items.",
+    "description": "Restoring a wallet failed because the node didn't answer. {node}: the node's address, e.g. eu-bridge.trekpay.space. \"Settings → Manage nodes\" names the app's menu items.",
     "placeholders": {
       "node": {
         "type": "String"
@@ -3758,9 +3758,9 @@
   "govUseMyAddress": "Use one of my addresses",
   "govPayAnotherAddress": "Pay another address",
   "govVotingRunsFor": "Voting runs for",
-  "govAfterFeeKerrigan": "After the fee has {count} confirmations ({minutes, plural, =1{about 1 minute} other{about {minutes} minutes}}) Astronaut submits the proposal by itself; keep the wallet syncing until then.",
+  "govAfterFeeKerrigan": "After the fee has {count} confirmations ({minutes, plural, =1{about 1 minute} other{about {minutes} minutes}}) TrekPay submits the proposal by itself; keep the wallet syncing until then.",
   "@govAfterFeeKerrigan": {
-    "description": "Astronaut is the app's name.",
+    "description": "TrekPay is the app's name.",
     "placeholders": {
       "count": {
         "type": "int"
@@ -3811,9 +3811,9 @@
   "@mnKeysNotInWallet": {
     "description": "Follows a \"txid:output\" reference after a \" · \", so it starts in lower case."
   },
-  "mnAddExistingIntroKerrigan": "For a masternode whose collateral is already in this wallet, e.g. after restoring it. Nothing is sent: Astronaut lists it and freezes its collateral.",
+  "mnAddExistingIntroKerrigan": "For a masternode whose collateral is already in this wallet, e.g. after restoring it. Nothing is sent: TrekPay lists it and freezes its collateral.",
   "@mnAddExistingIntroKerrigan": {
-    "description": "Astronaut is the app's name."
+    "description": "TrekPay is the app's name."
   },
   "mnOrCollateral": "Masternode or collateral",
   "mnRegularText": "Earns masternode rewards and votes on proposals.",
@@ -3901,9 +3901,9 @@
       }
     }
   },
-  "mnRemoveTextKerrigan": "Astronaut forgets this masternode and unfreezes its collateral, so it can be spent. Spending the collateral ends the masternode on the network.",
+  "mnRemoveTextKerrigan": "TrekPay forgets this masternode and unfreezes its collateral, so it can be spent. Spending the collateral ends the masternode on the network.",
   "@mnRemoveTextKerrigan": {
-    "description": "Astronaut is the app's name."
+    "description": "TrekPay is the app's name."
   },
   "mnRegisterSection": "Register on the network",
   "mnRegisterSectionText": "Registering puts the masternode on the network with its server's address and the operator key the server runs with. Get the server ready first (see below); you may also register now without a server and set it later.",

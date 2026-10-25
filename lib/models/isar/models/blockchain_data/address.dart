@@ -88,7 +88,7 @@ class Address {
 }
 
 // Stored by index: the values of other coins only keep the indexes of the
-// ones Astronaut uses. Append new values, never insert or remove.
+// ones TrekPay uses. Append new values, never insert or remove.
 enum AddressType {
   p2pkh,
   p2sh,

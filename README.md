@@ -1,8 +1,6 @@
-# Astronaut
+# TrekPay
 
-Astronaut is a non-custodial mobile wallet for [Kerrigan](https://kerrigan.network) (KRGN). Your recovery phrase and keys never leave your device. The app talks to the Kerrigan network through a kerrigan-bridge server, and you can point it at your own.
-
-Astronaut is a working name.
+TrekPay is a non-custodial mobile wallet for [Kerrigan](https://kerrigan.network) (KRGN). Your recovery phrase and keys never leave your device. The app talks to the Kerrigan network through a kerrigan-bridge server, and you can point it at your own.
 
 ## Features
 
@@ -17,7 +15,7 @@ Astronaut is a working name.
 
 Kerrigan logic follows [Kerrigan Core](https://github.com/kerrigan-network/kerrigan). The shield code (`crypto_plugins/flutter_libkerriganshield`) is a Rust library on `sapling-crypto` that reads and writes Kerrigan's Sapling transactions (special transaction type 10).
 
-Astronaut started as a port of PIVXie, a PIVX wallet.
+TrekPay started as a port of PIVXie, a PIVX wallet.
 
 ## Platforms
 
@@ -32,7 +30,7 @@ See the [build instructions](docs/building.md).
 
 ## Credits
 
-Astronaut is built on [Stack Wallet](https://github.com/cypherstack/stack_wallet) by Cypher Stack, which is licensed under GPLv3. Source files keep their original copyright notices.
+TrekPay is built on [Stack Wallet](https://github.com/cypherstack/stack_wallet) by Cypher Stack, which is licensed under GPLv3. Source files keep their original copyright notices.
 
 ## License
 

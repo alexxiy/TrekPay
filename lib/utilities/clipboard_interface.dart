@@ -33,7 +33,7 @@ class ClipboardWrapper implements ClipboardInterface {
   }
 }
 
-const _secretChannel = MethodChannel("ASTRONAUT_CLIPBOARD");
+const _secretChannel = MethodChannel("TREKPAY_CLIPBOARD");
 
 extension SecretClipboard on ClipboardInterface {
   /// Copy a secret (a recovery phrase, a masternode key) and clear the

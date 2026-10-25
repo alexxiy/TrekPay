@@ -95,7 +95,7 @@ jobs:
       - name: Configure app
         run: |
           cd scripts
-          echo "yes" | ./build_app.sh -a astronaut -p android -i \
+          echo "yes" | ./build_app.sh -a trekpay -p android -i \
             -v "${{ needs.version.outputs.version }}" \
             -b "${{ needs.version.outputs.build_number }}"
 
@@ -127,7 +127,7 @@ jobs:
             keytool -genkeypair -keystore android/release.jks -storetype pkcs12 \
               -alias "$KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 365 \
               -storepass "$STORE_PASSWORD" -keypass "$KEY_PASSWORD" \
-              -dname "CN=Astronaut test build" -noprompt
+              -dname "CN=TrekPay test build" -noprompt
           fi
           cat > android/key.properties << EOF
           storeFile=../release.jks
@@ -149,14 +149,14 @@ jobs:
           mkdir -p out
           for abi in arm64-v8a armeabi-v7a x86_64; do
             cp "build/app/outputs/flutter-apk/app-${abi}-release.apk" \
-               "out/astronaut-${VERSION}-android-${abi}.apk"
+               "out/trekpay-${VERSION}-android-${abi}.apk"
           done
-          cp build/app/outputs/flutter-apk/app-release.apk "out/astronaut-${VERSION}-android-universal.apk"
-          cp build/app/outputs/bundle/release/app-release.aab "out/astronaut-${VERSION}-android.aab"
+          cp build/app/outputs/flutter-apk/app-release.apk "out/trekpay-${VERSION}-android-universal.apk"
+          cp build/app/outputs/bundle/release/app-release.aab "out/trekpay-${VERSION}-android.aab"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: astronaut-${{ env.VERSION }}-android
+          name: trekpay-${{ env.VERSION }}-android
           path: out/
 
   # Unsigned: sign the IPA with your Apple certificate before installing it.
@@ -183,7 +183,7 @@ jobs:
       - name: Configure app
         run: |
           cd scripts
-          echo "yes" | ./build_app.sh -a astronaut -p ios -i \
+          echo "yes" | ./build_app.sh -a trekpay -p ios -i \
             -v "${{ needs.version.outputs.version }}" \
             -b "${{ needs.version.outputs.build_number }}"
 
@@ -197,12 +197,12 @@ jobs:
         run: |
           mkdir -p Payload
           cp -r build/ios/iphoneos/Runner.app Payload/
-          zip -qr "astronaut-${VERSION}-ios-unsigned.ipa" Payload
+          zip -qr "trekpay-${VERSION}-ios-unsigned.ipa" Payload
 
       - uses: actions/upload-artifact@v7
         with:
-          name: astronaut-${{ env.VERSION }}-ios-unsigned.ipa
-          path: astronaut-${{ env.VERSION }}-ios-unsigned.ipa
+          name: trekpay-${{ env.VERSION }}-ios-unsigned.ipa
+          path: trekpay-${{ env.VERSION }}-ios-unsigned.ipa
 
   build-linux:
     runs-on: ubuntu-24.04
@@ -236,7 +236,7 @@ jobs:
           USE_SYSTEM_SECURE_STORAGE_DEPS: "1"
         run: |
           cd scripts
-          echo "yes" | ./build_app.sh -a astronaut -p linux -i -s \
+          echo "yes" | ./build_app.sh -a trekpay -p linux -i -s \
             -v "${{ needs.version.outputs.version }}" \
             -b "${{ needs.version.outputs.build_number }}"
 
@@ -262,13 +262,13 @@ jobs:
 
       - name: Package
         run: |
-          tar -czf "astronaut-${VERSION}-linux-x86_64.tar.gz" \
+          tar -czf "trekpay-${VERSION}-linux-x86_64.tar.gz" \
             -C build/linux/x64/release bundle
 
       - uses: actions/upload-artifact@v7
         with:
-          name: astronaut-${{ env.VERSION }}-linux-x86_64.tar.gz
-          path: astronaut-${{ env.VERSION }}-linux-x86_64.tar.gz
+          name: trekpay-${{ env.VERSION }}-linux-x86_64.tar.gz
+          path: trekpay-${{ env.VERSION }}-linux-x86_64.tar.gz
 
   build-flatpak:
     runs-on: ubuntu-24.04
@@ -281,15 +281,15 @@ jobs:
       - name: Download Linux bundle
         uses: actions/download-artifact@v8
         with:
-          name: astronaut-${{ env.VERSION }}-linux-x86_64.tar.gz
+          name: trekpay-${{ env.VERSION }}-linux-x86_64.tar.gz
 
       - name: Stage bundle and icon
         run: |
           sudo apt-get update -q
           sudo apt-get install -y imagemagick
-          tar -xzf "astronaut-${VERSION}-linux-x86_64.tar.gz" -C flatpak/
-          convert asset_sources/icon/astronaut/icon.png -resize 512x512 \
-            flatpak/org.kerrigan.astronaut.png
+          tar -xzf "trekpay-${VERSION}-linux-x86_64.tar.gz" -C flatpak/
+          convert asset_sources/icon/trekpay/icon.png -resize 512x512 \
+            flatpak/alexxiy.trekpay.TrekPay.png
 
       - name: Install Flatpak tools
         run: |
@@ -315,19 +315,19 @@ jobs:
         run: |
           flatpak-builder --user --force-clean \
             --repo=flatpak-repo \
-            build-flatpak flatpak/org.kerrigan.astronaut.yaml
+            build-flatpak flatpak/alexxiy.trekpay.TrekPay.yaml
 
       - name: Bundle Flatpak
         run: |
           flatpak build-bundle flatpak-repo \
             --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo \
-            "astronaut-${VERSION}-x86_64.flatpak" \
-            org.kerrigan.astronaut
+            "trekpay-${VERSION}-x86_64.flatpak" \
+            alexxiy.trekpay.TrekPay
 
       - uses: actions/upload-artifact@v7
         with:
-          name: astronaut-${{ env.VERSION }}-x86_64.flatpak
-          path: astronaut-${{ env.VERSION }}-x86_64.flatpak
+          name: trekpay-${{ env.VERSION }}-x86_64.flatpak
+          path: trekpay-${{ env.VERSION }}-x86_64.flatpak
 
   build-appimage:
     runs-on: ubuntu-24.04
@@ -340,7 +340,7 @@ jobs:
       - name: Download Linux bundle
         uses: actions/download-artifact@v8
         with:
-          name: astronaut-${{ env.VERSION }}-linux-x86_64.tar.gz
+          name: trekpay-${{ env.VERSION }}-linux-x86_64.tar.gz
 
       - name: Install AppImage tools
         run: |
@@ -349,20 +349,20 @@ jobs:
 
       - name: Build AppImage
         run: |
-          tar -xzf "astronaut-${VERSION}-linux-x86_64.tar.gz"
+          tar -xzf "trekpay-${VERSION}-linux-x86_64.tar.gz"
           mkdir -p AppDir
           cp -r bundle/* AppDir/
-          cp appimage/astronaut/AppRun AppDir/AppRun
+          cp appimage/trekpay/AppRun AppDir/AppRun
           chmod +x AppDir/AppRun
-          cp appimage/astronaut/astronaut.desktop AppDir/
-          cp asset_sources/icon/astronaut/icon.png AppDir/astronaut.png
+          cp appimage/trekpay/trekpay.desktop AppDir/
+          cp asset_sources/icon/trekpay/icon.png AppDir/trekpay.png
           curl -fsSL -o appimagetool \
             https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool
           ARCH=x86_64 ./appimagetool --appimage-extract-and-run AppDir \
-            "astronaut-${VERSION}-x86_64.AppImage"
+            "trekpay-${VERSION}-x86_64.AppImage"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: astronaut-${{ env.VERSION }}-x86_64.AppImage
-          path: astronaut-${{ env.VERSION }}-x86_64.AppImage
+          name: trekpay-${{ env.VERSION }}-x86_64.AppImage
+          path: trekpay-${{ env.VERSION }}-x86_64.AppImage

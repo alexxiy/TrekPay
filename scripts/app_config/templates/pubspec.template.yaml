@@ -206,7 +206,8 @@ flutter:
     # socials
     - assets/svg/socials/
 
-    # Astronaut mascot (Void Pixie), 1.5x-4.0x density variants
+    # TrekPay mascots (Delta; the welcome and send art is still the Void
+    # Pixie), 1.5x-4.0x density variants
     - assets/persona/
 
     # lottie animations

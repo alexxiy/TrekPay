@@ -915,7 +915,7 @@ abstract class SWB {
             .map<String>((e) => e as String)
             .toList();
     _prefs.showTestNetCoins = prefs['showTestNetCoins'] as bool;
-    // The Astronaut experience (older backups do not have it).
+    // The TrekPay experience (older backups do not have it).
     if (prefs['externalCalls'] is bool) {
       _prefs.externalCalls = prefs['externalCalls'] as bool;
     }

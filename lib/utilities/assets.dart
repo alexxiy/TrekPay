@@ -15,19 +15,20 @@ abstract class Assets {
   static const persona = _PERSONA();
 }
 
-/// The Astronaut mascot (the Void Pixie). PNGs with 1.5x-4.0x density
-/// variants: the privacy choice at 140 logical px, the screen artwork
-/// within 280.
+/// TrekPay's mascots: Delta, light and transparent or dark and shielded
+/// (the welcome, add wallet and send artwork is still PIVXie's Void
+/// Pixie). PNGs with 1.5x-4.0x density variants: the privacy choice at
+/// 140 logical px, the screen artwork within 280.
 class _PERSONA {
   const _PERSONA();
 
   static const _path = "assets/persona/";
 
-  /// "Easy Crypto": external calls on.
-  String get public => "${_path}pivxie_public.png";
+  /// "Easy Crypto": external calls on. The light Delta.
+  String get public => "${_path}delta_public.png";
 
-  /// "Incognito": external calls off.
-  String get private => "${_path}pivxie_private.png";
+  /// "Incognito": external calls off. The dark, shielded Delta.
+  String get private => "${_path}delta_private.png";
 
   /// Holding a "WELCOME" banner: the first screen.
   String get welcome => "${_path}pivxie_welcome.png";

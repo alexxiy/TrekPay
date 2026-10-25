@@ -7,18 +7,18 @@ void main() {
   test("backup file names start with the app name", () {
     expect(
       createBackupFilename("/dir", date),
-      "/dir/Astronaut-backup-2026-10-02_09-05-03.swb",
+      "/dir/TrekPay-backup-2026-10-02_09-05-03.swb",
     );
     expect(
       createAutoBackupFilename("/dir", date),
-      "/dir/Astronaut-autobackup-2026-10-02_09-05-03.swb",
+      "/dir/TrekPay-autobackup-2026-10-02_09-05-03.swb",
     );
   });
 
   test("auto backup date is read back from the file name", () {
     final name = createAutoBackupFilename("/dir", date).split("/").last;
     expect(autoBackupDate(name), date);
-    expect(autoBackupDate("Astronaut-backup-2026-10-02_09-05-03.swb"), isNull);
+    expect(autoBackupDate("TrekPay-backup-2026-10-02_09-05-03.swb"), isNull);
     expect(autoBackupDate("notes.txt"), isNull);
   });
 }

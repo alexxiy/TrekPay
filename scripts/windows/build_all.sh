@@ -2,7 +2,7 @@
 
 set -x -e
 
-APP="${1:-astronaut}"
+APP="${1:-trekpay}"
 
 mkdir -p build
 

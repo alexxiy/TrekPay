@@ -19,7 +19,7 @@ import java.io.InputStream
 import java.util.concurrent.Executors
 class MainActivity: FlutterFragmentActivity() {
     private val CHANNEL = "STACK_WALLET_RESTORE"
-    private val CLIPBOARD_CHANNEL = "ASTRONAUT_CLIPBOARD"
+    private val CLIPBOARD_CHANNEL = "TREKPAY_CLIPBOARD"
 
     /** An opened backup file, read when Flutter asks for it. */
     private var openUri: Uri? = null

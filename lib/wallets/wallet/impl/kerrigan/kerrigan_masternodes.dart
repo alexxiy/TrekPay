@@ -66,8 +66,8 @@ class KerriganMasternode {
   final int? operatorIndex;
 
   /// Operator public key (BLS, hex) of a masternode registered with a key
-  /// this wallet didn't make (elsewhere, or by an older version with a
-  /// host's key).
+  /// this wallet didn't make (elsewhere, or with a hosting provider's
+  /// key).
   final String? hostOperatorKey;
 
   /// The registration transaction, once sent.

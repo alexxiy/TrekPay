@@ -3,7 +3,7 @@ name: Test
 on:
   pull_request:
   push:
-    branches: [astronaut]
+    branches: [trekpay]
   workflow_dispatch:
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
       - name: Configure app
         run: |
           cd scripts
-          echo "yes" | ./build_app.sh -a astronaut -p linux -v 0.0.1 -b 1 -i -s
+          echo "yes" | ./build_app.sh -a trekpay -p linux -v 0.0.1 -b 1 -i -s
 
       - name: Get dependencies
         run: flutter pub get

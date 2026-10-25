@@ -715,7 +715,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
 
   /// Bumped when parsing changes: the next sync re-parses all history.
   static const _kTxParseVersion = "kerriganTxParseVersion";
-  static const _txParseVersion = 7;
+  static const _txParseVersion = 1;
 
   /// The parse version and the masternode payout addresses: a new
   /// masternode re-parses the history, so its past rewards show as

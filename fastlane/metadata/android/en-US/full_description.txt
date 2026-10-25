@@ -1,4 +1,4 @@
-Astronaut is a Kerrigan wallet that keeps you in control. Your recovery phrase and keys stay on your device. There's no account to create, and nobody else can move your coins.
+TrekPay is a Kerrigan wallet that keeps you in control. Your recovery phrase and keys stay on your device. There's no account to create, and nobody else can move your coins.
 
 Privacy
 • Shielded transactions: shield, unshield and send KRGN privately, with an optional encrypted memo.
@@ -25,6 +25,6 @@ Backups and security
 Your own server, if you like
 You can switch to your own kerrigan-bridge server at any time.
 
-Keep your recovery phrase written down somewhere safe. Whoever has it controls your coins, and nobody, the Astronaut team included, can restore it for you.
+Keep your recovery phrase written down somewhere safe. Whoever has it controls your coins, and nobody, the TrekPay team included, can restore it for you.
 
-Astronaut is open source under the GPLv3 license.
+TrekPay is open source under the GPLv3 license.

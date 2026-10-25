@@ -1,0 +1,45 @@
+# Flatpak manifest for the TrekPay Linux build.
+#
+# Put next to this file before building:
+#   bundle/            the Linux release bundle (build/linux/x64/release/bundle)
+#   alexxiy.trekpay.TrekPay.png  a 512x512 app icon (asset_sources/icon/trekpay/icon.png, resized)
+#
+#   flatpak-builder --user --install build-dir alexxiy.trekpay.TrekPay.yaml
+app-id: alexxiy.trekpay.TrekPay
+runtime: org.freedesktop.Platform
+runtime-version: '26.08'
+sdk: org.freedesktop.Sdk
+command: trekpay
+
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  # GPU, and the camera for the QR scanner (OpenCV opens /dev/video*).
+  - --device=all
+  # Wallet data lives in ~/.trekpay.
+  - --filesystem=~/.trekpay:create
+  # Secure storage (libsecret).
+  - --talk-name=org.freedesktop.secrets
+
+modules:
+  - name: trekpay
+    buildsystem: simple
+    build-commands:
+      # Install the Flutter bundle under /app/lib/trekpay/ so the binary's
+      # $ORIGIN/lib and $ORIGIN/data lookups resolve.
+      - mkdir -p /app/lib/trekpay
+      - install -Dm755 bundle/trekpay /app/lib/trekpay/trekpay
+      - cp -r bundle/lib bundle/data /app/lib/trekpay/
+      # Wrapper so the Flatpak command resolves to the binary.
+      - install -Dm755 trekpay.sh /app/bin/trekpay
+      - install -Dm644 alexxiy.trekpay.TrekPay.desktop
+          /app/share/applications/alexxiy.trekpay.TrekPay.desktop
+      - install -Dm644 alexxiy.trekpay.TrekPay.metainfo.xml
+          /app/share/metainfo/alexxiy.trekpay.TrekPay.metainfo.xml
+      - install -Dm644 alexxiy.trekpay.TrekPay.png
+          /app/share/icons/hicolor/512x512/apps/alexxiy.trekpay.TrekPay.png
+    sources:
+      - type: dir
+        path: .

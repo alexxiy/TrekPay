@@ -8,7 +8,7 @@ import '../providers/global/prefs_provider.dart';
 import '../utilities/assets.dart';
 import '../utilities/logger.dart';
 
-/// The Astronaut send animation, looping with rounded corners, shown while a
+/// The TrekPay send animation, looping with rounded corners, shown while a
 /// transaction is generated and sent. With "Sound effects" on its sound
 /// loops along (mixed with other audio, silent in the device's silent
 /// mode).

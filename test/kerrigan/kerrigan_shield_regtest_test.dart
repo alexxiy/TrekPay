@@ -189,7 +189,7 @@ void main() {
                   {
                     "address": shieldAddress,
                     "amount": 7,
-                    "memo": _hex("hello astronaut"),
+                    "memo": _hex("hello trekpay"),
                   },
                 ],
               ])
@@ -204,7 +204,7 @@ void main() {
       final w = scanner.walletTxs.last;
       expect(w["txid"], txid);
       expect(w["received"][0]["value"], 700000000);
-      expect(w["received"][0]["memo"], "hello astronaut");
+      expect(w["received"][0]["memo"], "hello trekpay");
       expect(w["received"][0]["change"], isFalse);
       // Coin control identifies notes by txid + output index.
       expect(w["received"][0]["nullifier"], scanner.notes.single["nullifier"]);
@@ -213,7 +213,7 @@ void main() {
       final tx = await parsed(txid);
       expect(tx.type, TransactionType.incoming);
       expect(shown(tx), BigInt.from(700000000));
-      expect(tx.otherData, contains("hello astronaut"));
+      expect(tx.otherData, contains("hello trekpay"));
     },
     skip: skip,
     timeout: const Timeout(Duration(minutes: 10)),

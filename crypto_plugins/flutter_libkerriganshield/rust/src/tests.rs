@@ -287,7 +287,7 @@ fn builds_transactions_for_regtest() {
             "to_address": NODE_ADDRESSES[1],
             "amount": 500_000_000u64,
             "network": "regtest",
-            "memo": "from astronaut",
+            "memo": "from trekpay",
         }),
     );
     assert_eq!(spend["fee"], 25_000);

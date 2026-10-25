@@ -279,7 +279,7 @@ class KerriganNameResolver {
     if (res.status != 200 || record is! Map<String, dynamic>) {
       throw KerriganNameException(
         KerriganNameError.indexerError,
-        "The Kerrigan.name server sent an answer Astronaut can't use.",
+        "The Kerrigan.name server sent an answer TrekPay can't use.",
         detail: "HTTP ${res.status}",
       );
     }
@@ -332,7 +332,7 @@ class KerriganNameResolver {
       throw KerriganNameException(
         KerriganNameError.unreviewedEpoch,
         "The Kerrigan.name registry has changed its rules or rolled back (epoch "
-        "$epoch). This version of Astronaut only trusts epoch "
+        "$epoch). This version of TrekPay only trusts epoch "
         "${service.epochs.join(", ")}, so it won't send to names until it's "
         "updated.",
       );

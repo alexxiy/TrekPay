@@ -171,7 +171,7 @@ extension AmountUnitExt on AmountUnit {
         }
       }
 
-      // Astronaut: no trailing zeros ("1.5 KRGN", not "1.50000000 KRGN")
+      // TrekPay: no trailing zeros ("1.5 KRGN", not "1.50000000 KRGN")
       remainder = remainder.replaceFirst(RegExp(r'0+$'), "");
 
       // get decimal separator based on locale

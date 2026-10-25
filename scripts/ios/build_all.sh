@@ -2,7 +2,7 @@
 
 set -x -e
 
-APP="${1:-astronaut}"
+APP="${1:-trekpay}"
 
 # ensure ios rust triples are there
 rustup target add aarch64-apple-ios

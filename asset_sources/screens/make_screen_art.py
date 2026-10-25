@@ -1,4 +1,4 @@
-"""Cut the Astronaut screen artwork (welcome, add wallet) out of its dark
+"""Cut the TrekPay screen artwork (welcome, add wallet) out of its dark
 background and export density variants for Flutter.
 
 Same matting as ../persona/make_persona_assets.py: alpha = max(AI matte,
@@ -10,8 +10,8 @@ Usage (needs `pip install "rembg[cpu]" pillow numpy`):
 
     python make_screen_art.py <src dir> <out dir>
 
-<src dir> holds Astronaut_app_welcome_screen.jpg and
-Astronaut_add_wallet_sceen.jpeg; <out dir>/assets/ goes to assets/persona/
+<src dir> holds TrekPay_app_welcome_screen.jpg and
+TrekPay_add_wallet_sceen.jpeg; <out dir>/assets/ goes to assets/persona/
 and <out dir>/full/ to asset_sources/screens/.
 """
 import sys
@@ -32,8 +32,8 @@ session = new_session("birefnet-general")
 # name, source, drop everything below this fraction of the height (the
 # floor shadow under the welcome artwork)
 JOBS = [
-    ("pivxie_welcome", "Astronaut_app_welcome_screen.jpg", 0.835),
-    ("pivxie_add_wallet", "Astronaut_add_wallet_sceen.jpeg", None),
+    ("pivxie_welcome", "TrekPay_app_welcome_screen.jpg", 0.835),
+    ("pivxie_add_wallet", "TrekPay_add_wallet_sceen.jpeg", None),
 ]
 
 
@@ -106,7 +106,7 @@ for name, src, floor in JOBS:
             OUT / f"preview_{name}_{tag}.png")
 
 # The send animation (assets/persona/pivxie_tx_send.webp) is the artwork
-# video Astronaut_tx_send.mp4 as a looping animated WebP, so Image.asset plays
+# video TrekPay_tx_send.mp4 as a looping animated WebP, so Image.asset plays
 # it on every platform without a video plugin:
-#   ffmpeg -i Astronaut_tx_send.mp4 -an -vf "fps=24,scale=960:-2:flags=lanczos" \
+#   ffmpeg -i TrekPay_tx_send.mp4 -an -vf "fps=24,scale=960:-2:flags=lanczos" \
 #     -c:v libwebp -q:v 72 -compression_level 6 -loop 0 pivxie_tx_send.webp

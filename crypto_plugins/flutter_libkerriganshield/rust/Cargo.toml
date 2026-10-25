@@ -2,7 +2,7 @@
 name = "kerrigan_shield_ffi"
 version = "0.1.0"
 edition = "2021"
-description = "Kerrigan Sapling (shielded) wallet core with a C ABI for the Astronaut wallet: keys, note scanning and transaction building for Kerrigan's type 10 Sapling transactions."
+description = "Kerrigan Sapling (shielded) wallet core with a C ABI for the TrekPay wallet: keys, note scanning and transaction building for Kerrigan's type 10 Sapling transactions."
 license = "MIT"
 publish = false
 

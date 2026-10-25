@@ -75,7 +75,7 @@ void main() {
   test(
     "addresses match a Kerrigan Core wallet restored from the same mnemonic",
     () async {
-      final name = "astronaut-interop-${DateTime.now().millisecondsSinceEpoch}";
+      final name = "trekpay-interop-${DateTime.now().millisecondsSinceEpoch}";
       await rpc("createwallet", [name, false, true, "", false, false, false]);
       await rpc("upgradetohd", [_mnemonic, "", "", false], name);
       expect(await rpc("getnewaddress", [], name), addressAt(0, 0));

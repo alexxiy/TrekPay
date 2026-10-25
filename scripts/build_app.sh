@@ -5,7 +5,7 @@ set -e
 source ./env.sh
 
 APP_PLATFORMS=("android" "ios" "macos" "linux" "windows")
-APP_NAMED_IDS=("astronaut")
+APP_NAMED_IDS=("trekpay")
 
 # Function to display usage.
 usage() {

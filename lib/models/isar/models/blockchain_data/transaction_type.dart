@@ -3,7 +3,7 @@
 enum TransactionType { outgoing, incoming, sentToSelf, unknown }
 
 // Stored by index, like [TransactionType]: the values of other coins only
-// keep the indexes of the ones Astronaut uses.
+// keep the indexes of the ones TrekPay uses.
 enum TransactionSubType {
   none,
   bip47Notification,

@@ -20,12 +20,12 @@ cat > "$APP_CONFIG_DART_FILE" <<EOF
 
 part of 'app_config.dart';
 
-const _prefix = "Astronaut";
+const _prefix = "TrekPay";
 const _separator = "";
 const _suffix = "";
 const _emptyWalletsMessage =
     "Create your first Kerrigan wallet";
-const _appDataDirName = "astronaut";
+const _appDataDirName = "trekpay";
 const _shortDescriptionText = "Your privacy. Your keys. Your Kerrigan.";
 const _commitHash = "$BUILT_COMMIT_HASH";
 const _websiteUrl = "";

@@ -1,10 +1,10 @@
-# Building Astronaut
+# Building TrekPay
 
 These steps build the Android app on a Linux host. iOS needs a macOS host (see [iOS](#ios)). For the Linux desktop app, see [Linux desktop](#linux-desktop).
 
 ## Requirements
 
-- A Linux host. Astronaut is built on Fedora 44; Ubuntu 24.04 works too.
+- A Linux host. TrekPay is built on Fedora 44; Ubuntu 24.04 works too.
 - About 40 GB of free disk space (Flutter, the Android SDK, Gradle and Rust caches, and the build output).
 - [Flutter](https://docs.flutter.dev/install/manual) 3.47.7 or newer (Dart 3.13). Run `flutter doctor` to check the install.
 - JDK 17.
@@ -28,30 +28,30 @@ export PATH=/path/to/flutter/bin:$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$HO
 
 ## Get the code
 
-The app lives on the `astronaut` branch:
+The app lives on the `trekpay` branch:
 ```bash
-git clone --branch astronaut <Astronaut repository URL> Astronaut
-cd Astronaut
+git clone --branch trekpay <TrekPay repository URL> TrekPay
+cd TrekPay
 ```
 
 ## Configure
 
-The project is a white-label Stack Wallet tree. `scripts/build_app.sh` turns it into Astronaut: it writes `pubspec.yaml` from `scripts/app_config/templates/pubspec.template.yaml`, generates `lib/app_config.g.dart` and the Kerrigan plugin interfaces, creates the platform files (Android manifest, Gradle files, iOS `Info.plist`, and so on) from `scripts/app_config/templates/`, and generates the icons and splash screen.
+The project is a white-label Stack Wallet tree. `scripts/build_app.sh` turns it into TrekPay: it writes `pubspec.yaml` from `scripts/app_config/templates/pubspec.template.yaml`, generates `lib/app_config.g.dart` and the Kerrigan plugin interfaces, creates the platform files (Android manifest, Gradle files, iOS `Info.plist`, and so on) from `scripts/app_config/templates/`, and generates the icons and splash screen.
 
 ```bash
 cd scripts
-./build_app.sh -a astronaut -p android -v 1.0.0 -b 1 -i
+./build_app.sh -a trekpay -p android -v 1.0.0 -b 1 -i
 cd ..
 ```
 
-- `-a astronaut`: the app (the only one in this tree).
+- `-a trekpay`: the app (the only one in this tree).
 - `-p`: the platform: `android`, `ios`, `linux`, `macos` or `windows`.
 - `-v` and `-b`: the version name and the build number. The script asks you to confirm them: never ship a lower build number than an installed version.
 - `-i`: skip the native plugin scripts. Android needs none: the shield library is built by Flutter.
 
-Run the configure step again after you change a template, `configure_astronaut.sh` or the version. The generated platform files are not tracked in git.
+Run the configure step again after you change a template, `configure_trekpay.sh` or the version. The generated platform files are not tracked in git.
 
-The app ID is `org.kerrigan.astronaut`, on Linux too (Flatpak IDs need three parts, and every Linux package uses the same one so Wayland desktops find the app's icon). The app name, links, IDs and supported networks are in `scripts/app_config/configure_astronaut.sh`.
+The app ID is `alexxiy.trekpay`. On Linux it is `alexxiy.trekpay.TrekPay`: Flatpak IDs need three parts, and every Linux package uses the same one so Wayland desktops find the app's icon. The app name, links, IDs and supported networks are in `scripts/app_config/configure_trekpay.sh`.
 
 ## Build the APK
 
@@ -86,7 +86,7 @@ The Android emulator works only with x86_64 images. A real phone is better for c
 
 ## Server
 
-Astronaut gets chain data from a kerrigan-bridge server. The bridge must run with `ADDR_INDEX=true` for transaction history. You can add your own server in the app under the Kerrigan node settings, and set the default one in `lib/wallets/crypto_currency/coins/kerrigan.dart` (`defaultNode`).
+TrekPay gets chain data from a kerrigan-bridge server. The bridge must run with `ADDR_INDEX=true` for transaction history. You can add your own server in the app under the Kerrigan node settings, and set the default one in `lib/wallets/crypto_currency/coins/kerrigan.dart` (`defaultNode`).
 
 ## Tests
 
@@ -95,7 +95,7 @@ The host tests need `libsecp256k1` in `build/`:
 dart run coinlib:build_linux
 ```
 
-If `lib/app_config.g.dart` is missing (for example after `build_runner` deleted it), `scripts/ensure_test_app_config.sh` writes the Astronaut config again.
+If `lib/app_config.g.dart` is missing (for example after `build_runner` deleted it), `scripts/ensure_test_app_config.sh` writes the TrekPay config again.
 
 General tests:
 ```bash
@@ -121,7 +121,7 @@ Without extra settings, the regtest tests in `test/kerrigan/` are skipped. They 
 On a macOS host with Xcode, CocoaPods, Flutter and Rust (with the `aarch64-apple-ios` target):
 ```bash
 cd scripts
-./build_app.sh -a astronaut -p ios -v 1.0.0 -b 1 -i
+./build_app.sh -a trekpay -p ios -v 1.0.0 -b 1 -i
 cd ..
 flutter pub get
 flutter build ios --release
@@ -144,7 +144,7 @@ Then configure and build. `-s` links the system libsecret and jsoncpp, and `USE_
 ```bash
 export USE_SYSTEM_SECURE_STORAGE_DEPS=1
 cd scripts
-./build_app.sh -a astronaut -p linux -v 1.0.0 -b 1 -i -s
+./build_app.sh -a trekpay -p linux -v 1.0.0 -b 1 -i -s
 cd linux
 ./build_opencv.sh
 cd ../..
@@ -154,7 +154,7 @@ flutter build linux --release
 
 The bundle doesn't need OpenCV installed: it's built into the camera plugin's library (`lib/libcamera_linux.so`). To link the system OpenCV instead, install `libopencv-dev` (Ubuntu) or `opencv-devel` (Fedora) and build with `USE_SYSTEM_OPENCV=1`; users then need OpenCV installed too.
 
-The app is in `build/linux/x64/release/bundle` (run `bundle/astronaut`). It keeps its data in `~/.astronaut`. The shield works on Linux: the Rust library is built by cargokit and bundled as `lib/libkerrigan_shield_ffi.so`.
+The app is in `build/linux/x64/release/bundle` (run `bundle/trekpay`). It keeps its data in `~/.trekpay`. The shield works on Linux: the Rust library is built by cargokit and bundled as `lib/libkerrigan_shield_ffi.so`.
 
 On Fedora (and other distributions that install libraries to `lib64`), coinlib's secp256k1 build puts the library where its install step doesn't look. Before the first build, run:
 ```bash
@@ -162,9 +162,9 @@ mkdir -p build/linux/x64/release/secp256k1
 ln -s lib64 build/linux/x64/release/secp256k1/lib
 ```
 
-Packaging files are in `flatpak/` (`org.kerrigan.astronaut`, runtime `org.freedesktop.Platform` 26.08) and `appimage/astronaut/`. Both start from the release bundle; `.github/workflows/build.yaml` shows the full steps.
+Packaging files are in `flatpak/` (`alexxiy.trekpay`, runtime `org.freedesktop.Platform` 26.08) and `appimage/trekpay/`. Both start from the release bundle; `.github/workflows/build.yaml` shows the full steps.
 
-`kerrigan:` payment links: the app runs as a single instance (unless started with `-d <dir>`), so starting it again with a link hands the link to the running window. The desktop entries of both packages register the `kerrigan` scheme. To open links with a plain bundle, install a desktop entry for it, e.g. `~/.local/share/applications/astronaut.desktop` with `Exec=/path/to/bundle/astronaut %u` and `MimeType=x-scheme-handler/kerrigan;`, then run `xdg-mime default astronaut.desktop x-scheme-handler/kerrigan`.
+`kerrigan:` payment links: the app runs as a single instance (unless started with `-d <dir>`), so starting it again with a link hands the link to the running window. The desktop entries of both packages register the `kerrigan` scheme. To open links with a plain bundle, install a desktop entry for it, e.g. `~/.local/share/applications/trekpay.desktop` with `Exec=/path/to/bundle/trekpay %u` and `MimeType=x-scheme-handler/kerrigan;`, then run `xdg-mime default trekpay.desktop x-scheme-handler/kerrigan`.
 
 ## Windows and macOS
 

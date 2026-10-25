@@ -9,7 +9,8 @@ void main() {
   final coin = Kerrigan(CryptoCurrencyNetwork.regtest);
 
   // From a Kerrigan Core regtest node: dumpprivkey, then
-  // signmessagewithprivkey (verifymessage accepts it).
+  // signmessagewithprivkey (verifymessage accepts it). The message has
+  // the app's working name: Core signed this very text.
   const wif = "cQvkLEFiQFc3d8B6WJJKQn1vuz54PZw8R2DsH46RiEdf5kUCy8Xj";
   const address = "yh18gwPqi6yMwJYG37TZS44aiHajqPr9D8";
   const message = "Sign me: Astronaut ✓\nline two";
