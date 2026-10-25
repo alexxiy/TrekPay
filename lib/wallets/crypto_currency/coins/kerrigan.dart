@@ -1,5 +1,6 @@
 import 'package:coinlib_flutter/coinlib_flutter.dart' as coinlib;
 
+import '../../../app_config.dart';
 import '../../../models/isar/models/blockchain_data/address.dart';
 import '../../../models/node_model.dart';
 import '../../../utilities/amount/amount.dart';
@@ -204,30 +205,39 @@ class Kerrigan extends Bip39HDCurrency {
   }
 
   @override
-  NodeModel defaultNode({required bool isPrimary}) {
-    final String host;
+  NodeModel defaultNode({required bool isPrimary}) =>
+      defaultNodes.first.copyWith(isPrimary: isPrimary);
+
+  @override
+  List<NodeModel> get defaultNodes {
     switch (network) {
       case CryptoCurrencyNetwork.main:
-        // TODO: the public mainnet bridge, once one runs with ADDR_INDEX.
-        host = "https://bridge.kerrigan.network";
+        // The app's own bridges (kerrigan-bridge with the address index).
+        return [
+          _bridge("https://eu-bridge.trekpay.space", "EU"),
+          _bridge("https://us-bridge.trekpay.space", "US", region: "us"),
+        ];
       case CryptoCurrencyNetwork.test:
         // TODO: a public testnet bridge.
-        host = "https://bridge.kerrigan.network/testnet";
+        return [_bridge("https://bridge.kerrigan.network/testnet", "Default")];
       case CryptoCurrencyNetwork.regtest:
         // Development bridge (regtest node on the DevBox).
-        host = "http://192.168.1.101:3001";
+        return [_bridge("http://192.168.1.101:3001", "Default")];
     }
+  }
+
+  NodeModel _bridge(String host, String name, {String? region}) {
     final uri = Uri.parse(host);
     return NodeModel(
       host: host,
       port: uri.port,
-      name: DefaultNodes.defaultName,
-      id: DefaultNodes.buildId(this),
+      name: "${AppConfig.prefix} $name",
+      id: DefaultNodes.buildId(this, region: region),
       useSSL: uri.scheme == "https",
       coinName: identifier,
       torEnabled: true,
       clearnetEnabled: true,
-      isPrimary: isPrimary,
+      isPrimary: false,
     );
   }
 
