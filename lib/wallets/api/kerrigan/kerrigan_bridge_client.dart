@@ -31,13 +31,44 @@ Future<dynamic> _decodeApart(String text) =>
     Isolate.run(() => jsonDecode(text));
 
 class KerriganBridgeException implements Exception {
-  KerriganBridgeException(this.message, {this.statusCode});
+  KerriganBridgeException(
+    this.message, {
+    this.statusCode,
+    this.noIndex = false,
+  });
 
   final String message;
   final int? statusCode;
 
+  /// The bridge lacks the route asked for: it runs without the address
+  /// index, or isn't a bridge at all.
+  final bool noIndex;
+
   @override
   String toString() => "KerriganBridgeException($statusCode): $message";
+}
+
+/// Why restoring a wallet through [node] failed, for the user: bridge and
+/// connection problems name the node and say what to do about it.
+String restoreFailureText(Object error, NodeModel node) {
+  final name = KerriganBridgeClient.fromParts(
+    host: node.host,
+    port: node.port,
+    useSSL: node.useSSL,
+    useTor: false,
+  ).baseUri.authority;
+  return switch (error) {
+    KerriganBridgeException(noIndex: true) => l10n.restoreNodeNoIndex(name),
+    KerriganBridgeException(:final message) => l10n.restoreNodeError(
+      name,
+      message,
+    ),
+    SocketException() ||
+    TimeoutException() ||
+    HttpException() ||
+    TlsException() => l10n.restoreNodeUnreachable(name),
+    _ => "$error",
+  };
 }
 
 /// HTTP client for a kerrigan-bridge instance.
@@ -266,7 +297,11 @@ class KerriganBridgeClient {
     if (response.code == 404 && response.body.trim().isEmpty) {
       // No such route: the bridge runs without the address index.
       final route = path.split("/").firstWhere((e) => e.isNotEmpty);
-      throw KerriganBridgeException(l10n.bridgeNoRoute(route), statusCode: 404);
+      throw KerriganBridgeException(
+        l10n.bridgeNoRoute(route),
+        statusCode: 404,
+        noIndex: true,
+      );
     }
     if (response.code != 200) {
       throw KerriganBridgeException(
