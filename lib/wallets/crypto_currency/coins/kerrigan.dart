@@ -218,8 +218,9 @@ class Kerrigan extends Bip39HDCurrency {
           _bridge("https://us-bridge.trekpay.space", "US", region: "us"),
         ];
       case CryptoCurrencyNetwork.test:
-        // TODO: a public testnet bridge.
-        return [_bridge("https://bridge.kerrigan.network/testnet", "Default")];
+        // Development bridge (testnet node on the DevBox) until there's a
+        // public one.
+        return [_bridge("http://192.168.1.101:3003", "Default")];
       case CryptoCurrencyNetwork.regtest:
         // Development bridge (regtest node on the DevBox).
         return [_bridge("http://192.168.1.101:3001", "Default")];

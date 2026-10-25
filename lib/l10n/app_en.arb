@@ -3699,11 +3699,11 @@
   "@donateSlide": {
     "description": "A slide-to-confirm button: dragging it to the end sends the donation."
   },
-  "donateTo": "Goes to TrekPay's developer, {address}. The network fee comes on top.",
+  "donateTo": "Goes to TrekPay's developer, {name}. The network fee comes on top.",
   "@donateTo": {
-    "description": "address is the start and end of a shield address, e.g. ks1qxyz…k9fz3a",
+    "description": "name is the developer's Kerrigan name, alexxiy.kerrigan",
     "placeholders": {
-      "address": {
+      "name": {
         "type": "String"
       }
     }

@@ -1349,7 +1349,7 @@
   "donateCheersHint": "Cứ tiếp tục phát huy nhé! 🚀",
   "donateCheersNote": "Không bắt buộc. Lời nhắn nằm trong memo được mã hóa, nên chỉ nhà phát triển đọc được.",
   "donateSlide": "Trượt để nạp năng lượng ⚡",
-  "donateTo": "Gửi đến nhà phát triển TrekPay, {address}. Phí mạng được tính thêm.",
+  "donateTo": "Gửi đến nhà phát triển TrekPay, {name}. Phí mạng được tính thêm.",
   "donateNote": "Tiếp năng lượng cho Delta: {tier}",
   "donateThanksTitle": "Cảm ơn bạn rất nhiều! 💙",
   "donateThanksTitleShielded": "Cảm ơn! 💜",

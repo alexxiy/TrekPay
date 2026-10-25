@@ -1349,7 +1349,7 @@
   "donateCheersHint": "これからも頑張ってください！🚀",
   "donateCheersNote": "任意です。暗号化されたメモに入るので、読めるのは開発者だけです。",
   "donateSlide": "スライドしてチャージ ⚡",
-  "donateTo": "TrekPay の開発者（{address}）に送られます。ネットワーク手数料は別途かかります。",
+  "donateTo": "TrekPay の開発者（{name}）に送られます。ネットワーク手数料は別途かかります。",
   "donateNote": "Delta にエネルギーを：{tier}",
   "donateThanksTitle": "ありがとうございます！💙",
   "donateThanksTitleShielded": "ありがとう！💜",

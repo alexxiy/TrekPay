@@ -7,6 +7,7 @@ import '../../app_config.dart';
 import '../../l10n/l10n.dart';
 import '../../models/isar/models/isar_models.dart';
 import '../../networking/http.dart';
+import '../../services/kerrigan_name/kerrigan_name_resolver.dart';
 import '../../services/tor_service.dart';
 import '../../utilities/amount/amount.dart';
 import '../../utilities/assets.dart';
@@ -23,18 +24,14 @@ import '../../widgets/kerrigan_memo_field.dart';
 // dark, shielded Delta gets the power; from the transparent one, the
 // light one.
 
-/// Where donations go on each network: a shield address of TrekPay's
-/// developer, so that the cheers message travels in the encrypted memo.
-/// The screen is offered only where there is one.
-const kKerriganDonationAddresses = <CryptoCurrencyNetwork, String>{};
+/// Where donations go: a Kerrigan name of TrekPay's developer, looked up
+/// and checked like any name typed on the send screen.
+const kKerriganDonationName = "alexxiy.kerrigan";
 
-/// The donation address for [coin]'s network, if there is one.
-String? kerriganDonationAddress(CryptoCurrency coin) =>
-    kKerriganDonationAddresses[coin.network];
-
-/// Whether [coin]'s wallets can donate.
+/// Whether [coin]'s wallets can donate: where Kerrigan names resolve
+/// (nowhere until the names service is in).
 bool kerriganDonationAvailable(CryptoCurrency coin) =>
-    kerriganDonationAddress(coin) != null;
+    KerriganNameService.forCoin(coin) != null;
 
 /// The cheers message: what the 512-byte memo has room for after the
 /// tag line (at most 63 bytes, see [kerriganDonationMemo]).
@@ -185,11 +182,6 @@ String kerriganDonationKrgnText(Decimal krgn, String ticker, String locale) {
 
 String _intlLocale(String locale) =>
     NumberFormat.localeExists(locale) ? locale : "en_US";
-
-/// The donation address cut for people: "ks1qxy…k9fz".
-String kerriganDonationShortAddress(String address) => address.length <= 16
-    ? address
-    : "${address.substring(0, 8)}…${address.substring(address.length - 6)}";
 
 /// The donation's shielded memo: a tag line in English for the developer
 /// ("Fuel Delta: $20 · Quantum Hyperdrive"), then the cheers message.

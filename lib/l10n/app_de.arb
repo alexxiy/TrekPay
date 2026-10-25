@@ -1349,7 +1349,7 @@
   "donateCheersHint": "Weiter so, tolle Arbeit! 🚀",
   "donateCheersNote": "Optional. Sie steht im verschlüsselten Memo, nur der Entwickler kann sie lesen.",
   "donateSlide": "Zum Aufladen schieben ⚡",
-  "donateTo": "Geht an den Entwickler von TrekPay, {address}. Die Netzwerkgebühr kommt hinzu.",
+  "donateTo": "Geht an den Entwickler von TrekPay, {name}. Die Netzwerkgebühr kommt hinzu.",
   "donateNote": "Delta aufladen: {tier}",
   "donateThanksTitle": "Vielen Dank! 💙",
   "donateThanksTitleShielded": "Danke! 💜",

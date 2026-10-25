@@ -1349,7 +1349,7 @@
   "donateCheersHint": "Belə davam edin, əla işdir! 🚀",
   "donateCheersNote": "İstəyə bağlıdır. Şifrələnmiş memoya düşür, ona görə onu yalnız tərtibatçı oxuya bilər.",
   "donateSlide": "Enerji vermək üçün sürüşdürün ⚡",
-  "donateTo": "TrekPay-in tərtibatçısına, {address} ünvanına gedir. Şəbəkə komissiyası ayrıca əlavə olunur.",
+  "donateTo": "TrekPay-in tərtibatçısına, {name} ünvanına gedir. Şəbəkə komissiyası ayrıca əlavə olunur.",
   "donateNote": "Delta-ya enerji: {tier}",
   "donateThanksTitle": "Çox sağ olun! 💙",
   "donateThanksTitleShielded": "Təşəkkürlər! 💜",

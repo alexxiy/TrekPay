@@ -82,14 +82,6 @@ void main() {
     expect(kerriganDonationUsdText(_d("1234"), "xx"), r"$1,234");
   });
 
-  test("the address, cut", () {
-    expect(kerriganDonationShortAddress("ks1short"), "ks1short");
-    expect(
-      kerriganDonationShortAddress("ks1qxyz0123456789abcdefk9fz3a"),
-      "ks1qxyz0…k9fz3a",
-    );
-  });
-
   group("kerriganDonationMemo", () {
     test("a tag line for the developer, in the mode's names", () {
       expect(

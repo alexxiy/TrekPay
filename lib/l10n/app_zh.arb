@@ -1349,7 +1349,7 @@
   "donateCheersHint": "继续加油，干得漂亮！🚀",
   "donateCheersNote": "选填。留言放在加密附言中，只有开发者能看到。",
   "donateSlide": "滑动充能 ⚡",
-  "donateTo": "将发送给 TrekPay 的开发者（{address}）。网络手续费另计。",
+  "donateTo": "将发送给 TrekPay 的开发者（{name}）。网络手续费另计。",
   "donateNote": "给 Delta 充能：{tier}",
   "donateThanksTitle": "非常感谢！💙",
   "donateThanksTitleShielded": "谢谢！💜",

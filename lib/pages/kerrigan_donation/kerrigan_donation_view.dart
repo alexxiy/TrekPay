@@ -32,6 +32,7 @@ import '../../widgets/stack_text_field.dart';
 import '../send_view/confirm_transaction_view.dart';
 import '../send_view/sub_widgets/building_transaction_dialog.dart';
 import '../send_view/sub_widgets/kerrigan_funding_card.dart';
+import '../send_view/sub_widgets/kerrigan_name_lookup.dart';
 import 'kerrigan_donation.dart';
 import 'kerrigan_donation_controls.dart';
 import 'kerrigan_donation_stage.dart';
@@ -39,7 +40,7 @@ import 'kerrigan_donation_stage.dart';
 /// "Fuel Delta": pick a donation size on a slider and watch Delta power
 /// up, pick the balance (the Shielded switch: the dark, shielded Delta or
 /// the light, transparent one) and the coins, add a cheers message, slide
-/// to send. Paid to [kerriganDonationAddress].
+/// to send. Paid to [kKerriganDonationName].
 class KerriganDonationView extends ConsumerStatefulWidget {
   const KerriganDonationView({super.key, required this.walletId});
 
@@ -258,8 +259,7 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
       final tier = _tier;
       final value = _value;
       final krgn = value.krgn;
-      final address = kerriganDonationAddress(coin);
-      if (krgn == null || address == null) return;
+      if (krgn == null) return;
       final look = _look(value);
       final funding = _funding;
       final memo = kerriganDonationMemo(
@@ -269,12 +269,22 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
         message: _message.text,
       );
 
+      // The name is looked up and proven like one typed on the send
+      // screen, and checked again right before broadcasting.
+      final name = await lookUpKerriganNameForSend(
+        context: context,
+        coin: coin,
+        name: kKerriganDonationName,
+        contacts: const [],
+      );
+      if (name == null || !mounted) return;
+
       final txData = await showBuildingTransaction<TxData>(
         context: context,
         coin: coin,
         build: () => prepareKerriganDonation(
           wallet,
-          address: address,
+          address: name.address,
           amount: Amount.fromDecimal(krgn, fractionDigits: coin.fractionDigits),
           memo: memo,
           note: l10n.donateNote(tier.title(shielded: funding.fromShield)),
@@ -292,6 +302,7 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
             child: ConfirmTransactionView(
               txData: txData,
               walletId: widget.walletId,
+              kerriganName: name,
               onSuccess: () {},
               onSuccessInsteadOfRouteOnSuccess: () {
                 navigator.popUntil(
@@ -403,7 +414,6 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
         : "≈ ${kerriganDonationKrgnText(value.krgn!, coin.ticker, locale)}";
     final description =
         look.egg?.text ?? tier.description(shielded: fromShield);
-    final address = kerriganDonationAddress(coin) ?? "";
 
     String? priceNote;
     if (!tier.isCustom && _price == null) {
@@ -536,7 +546,7 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
               ),
               const SizedBox(height: 8),
               Text(
-                l10n.donateTo(kerriganDonationShortAddress(address)),
+                l10n.donateTo(kKerriganDonationName),
                 textAlign: TextAlign.center,
                 style: subtle,
               ),
