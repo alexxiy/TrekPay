@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../l10n/l10n.dart';
@@ -9,6 +10,7 @@ import '../../notifications/show_flush_bar.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/amount/amount_formatter.dart';
+import '../../utilities/assets.dart';
 import '../../utilities/clipboard_interface.dart';
 import '../../utilities/show_loading.dart';
 import '../../utilities/text_styles.dart';
@@ -61,11 +63,9 @@ class _KerriganMasternodeDetailsViewState
 
   final _serviceController = TextEditingController();
   final _serviceFocus = FocusNode();
-  final _hostKeyController = TextEditingController();
-  final _hostKeyFocus = FocusNode();
 
-  /// Registering: the operator key comes from the host.
-  bool _useHostKey = false;
+  /// Refresh asked the network and hasn't heard back yet.
+  bool _checking = false;
 
   KerriganWallet get _wallet =>
       ref.read(pWallets).getWallet(widget.walletId) as KerriganWallet;
@@ -78,10 +78,6 @@ class _KerriganMasternodeDetailsViewState
     super.initState();
     final mn = _masternode;
     _serviceController.text = mn?.service ?? "";
-    _useHostKey =
-        mn?.type == KerriganMasternodeType.broodNode ||
-        mn?.hostOperatorKey != null;
-    _hostKeyController.text = mn?.hostOperatorKey ?? "";
     _reload();
     unawaited(_loadKeys());
   }
@@ -119,15 +115,37 @@ class _KerriganMasternodeDetailsViewState
   void dispose() {
     _serviceController.dispose();
     _serviceFocus.dispose();
-    _hostKeyController.dispose();
-    _hostKeyFocus.dispose();
     super.dispose();
   }
 
-  void _refresh() => setState(() {
+  void _reloadAll() => setState(() {
     _reload();
     unawaited(_loadKeys());
   });
+
+  /// Refresh: asks the network again and says what it found (the status
+  /// shown may well stay the same).
+  Future<void> _checkStatus() async {
+    if (_checking) return;
+    setState(() {
+      _checking = true;
+      _reload();
+    });
+    unawaited(_loadKeys());
+    final state = await _state;
+    if (!mounted) return;
+    setState(() => _checking = false);
+    final failed = state.status == KerriganMasternodeStatus.unknown;
+    unawaited(
+      showFloatingFlushBar(
+        type: failed ? FlushBarType.warning : FlushBarType.success,
+        message: failed
+            ? l10n.mnCheckFailed
+            : l10n.mnChecked(state.status.label),
+        context: context,
+      ),
+    );
+  }
 
   Future<void> _warn(Object e) => showFloatingFlushBar(
     type: FlushBarType.warning,
@@ -198,7 +216,7 @@ class _KerriganMasternodeDetailsViewState
       return;
     }
     _serviceController.text = sent.service ?? "";
-    _refresh();
+    _reloadAll();
     await showFloatingFlushBar(
       type: FlushBarType.success,
       message: done,
@@ -221,19 +239,11 @@ class _KerriganMasternodeDetailsViewState
   Future<void> _register(KerriganMasternode mn) async {
     final service = _service();
     if (service == null) return;
-    final host = _useHostKey ? _hostKeyController.text.trim() : null;
-    if (_useHostKey && !_wallet.isValidOperatorPublicKey(host ?? "")) {
-      await _warn(l10n.mnPasteOperatorKey);
-      return;
-    }
     _serviceFocus.unfocus();
     await _providerTx(
       building: l10n.mnPreparingRegistration,
-      build: () => _wallet.prepareMasternodeRegistration(
-        mn,
-        service: service,
-        hostOperatorKey: host,
-      ),
+      build: () =>
+          _wallet.prepareMasternodeRegistration(mn, service: service),
       title: l10n.mnRegisterTitle(mn.label),
       message: service.isEmpty
           ? l10n.mnRegisterNoServer
@@ -259,28 +269,14 @@ class _KerriganMasternodeDetailsViewState
     );
   }
 
-  Future<void> _changeOperator(KerriganMasternode mn) async {
-    final hostKey = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _OperatorSheet(wallet: _wallet, masternode: mn),
-    );
-    if (hostKey == null || !mounted) return;
-    await _providerTx(
-      building: l10n.mnPreparingChange,
-      build: () => _wallet.prepareMasternodeOperatorChange(
-        mn,
-        hostOperatorKey: hostKey.isEmpty ? null : hostKey,
-      ),
-      title: l10n.mnChangeOperatorTitle,
-      message: hostKey.isEmpty
-          ? l10n.mnChangeOperatorOwn
-          : l10n.mnChangeOperatorHost,
-      done: l10n.mnChangeSent,
-    );
-  }
+  /// A new operator key, made by the wallet like the first one.
+  Future<void> _changeOperator(KerriganMasternode mn) => _providerTx(
+    building: l10n.mnPreparingChange,
+    build: () => _wallet.prepareMasternodeOperatorChange(mn),
+    title: l10n.mnChangeOperatorTitle,
+    message: l10n.mnChangeOperatorOwn,
+    done: l10n.mnChangeSent,
+  );
 
   /// Copies [text], which holds the operator secret key.
   Future<void> _copy(String text, [String? what]) async {
@@ -432,20 +428,20 @@ class _KerriganMasternodeDetailsViewState
       ? null
       : _wallet.masternodeServiceError(_serviceController.text);
 
-  String? get _hostKeyError {
-    final key = _hostKeyController.text.trim();
-    return key.isEmpty || _wallet.isValidOperatorPublicKey(key)
-        ? null
-        : l10n.mnNotOperatorKey;
-  }
-
-  Future<void> _showHostingDetails(KerriganMasternode mn) async {
+  /// What masternode.space asks for: the BLS (operator) [secret], and
+  /// the ProTx hash or the collateral output. Without the secret (a host's
+  /// operator key) it says how to get one.
+  Future<void> _showHostingDetails(
+    KerriganMasternode mn,
+    String? secret,
+    String? proTxHash,
+  ) async {
     final colors = Theme.of(context).extension<StackColors>()!;
-    final secret = _keys?.operator?.secret;
     final all = [
+      if (secret != null) "${l10n.mnOperatorSecretForHost}: $secret",
+      if (proTxHash != null) "${l10n.mnProTxHash}: $proTxHash",
       "${l10n.mnCollateralTx}: ${mn.txid}",
       "${l10n.mnOutputIndex}: ${mn.vout}",
-      if (secret != null) "${l10n.mnOperatorSecretForHost}: $secret",
     ].join("\n");
     await showModalBottomSheet<void>(
       context: context,
@@ -472,14 +468,15 @@ class _KerriganMasternodeDetailsViewState
               Text(
                 secret != null
                     ? l10n.mnHostTextKerrigan
-                    : l10n.mnHostTextHostKey(l10n.mnHostGaveKey),
+                    : l10n.mnHostTextNoSecret(l10n.mnChangeOperator),
                 style: STextStyles.itemSubtitle(context),
               ),
               const SizedBox(height: 16),
-              _row(l10n.mnCollateralTx, mn.txid),
-              _row(l10n.mnOutputIndex, "${mn.vout}"),
               if (secret != null)
                 _row(l10n.mnOperatorSecretForHost, secret, secret: true),
+              if (proTxHash != null) _row(l10n.mnProTxHash, proTxHash),
+              _row(l10n.mnCollateralTx, mn.txid),
+              _row(l10n.mnOutputIndex, "${mn.vout}"),
               const SizedBox(height: 8),
               SecondaryButton(
                 label: l10n.mnCopyAll,
@@ -543,7 +540,6 @@ class _KerriganMasternodeDetailsViewState
 
   List<Widget> _registerSection(KerriganMasternode mn) {
     final wallet = _wallet;
-    final brood = mn.type == KerriganMasternodeType.broodNode;
     return [
       _section(
         l10n.mnRegisterSection,
@@ -557,50 +553,19 @@ class _KerriganMasternodeDetailsViewState
             keyboardType: TextInputType.url,
           ),
           const SizedBox(height: 12),
-          if (!brood)
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _useHostKey
-                        ? l10n.mnOperatorFromHost
-                        : l10n.mnOperatorFromWallet,
-                    style: STextStyles.smallMed12(context),
-                  ),
-                ),
-                CustomTextButton(
-                  text: _useHostKey ? l10n.mnMakeOneHere : l10n.mnHostGaveKey,
-                  onTap: () => setState(() => _useHostKey = !_useHostKey),
-                ),
-              ],
-            )
-          else
-            Text(
-              l10n.mnBroodNodeRegisterText,
-              style: STextStyles.itemSubtitle(context),
-            ),
-          const SizedBox(height: 8),
-          if (_useHostKey)
-            _field(
-              controller: _hostKeyController,
-              focus: _hostKeyFocus,
-              hint: l10n.mnOperatorKeyHint,
-              error: _hostKeyError,
-            )
-          else
-            Text(
-              l10n.mnOperatorWalletText,
-              style: STextStyles.itemSubtitle(context),
-            ),
+          Text(
+            l10n.mnOperatorFromWallet,
+            style: STextStyles.smallMed12(context),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l10n.mnOperatorWalletText,
+            style: STextStyles.itemSubtitle(context),
+          ),
           const SizedBox(height: 12),
           PrimaryButton(
             label: l10n.mnRegister,
-            enabled:
-                !wallet.isViewOnly &&
-                _serviceError == null &&
-                (!_useHostKey ||
-                    (_hostKeyController.text.trim().isNotEmpty &&
-                        _hostKeyError == null)),
+            enabled: !wallet.isViewOnly && _serviceError == null,
             onPressed: () => _register(mn),
           ),
         ],
@@ -719,14 +684,11 @@ class _KerriganMasternodeDetailsViewState
                                   ),
                                   const Spacer(),
                                   KerriganMasternodeStatusPill(
-                                    status:
-                                        state?.status ??
-                                        KerriganMasternodeStatus.checking,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  CustomTextButton(
-                                    text: l10n.commonRefresh,
-                                    onTap: _refresh,
+                                    status: _checking
+                                        ? KerriganMasternodeStatus.checking
+                                        : state?.status ??
+                                              KerriganMasternodeStatus
+                                                  .checking,
                                   ),
                                 ],
                               ),
@@ -759,6 +721,33 @@ class _KerriganMasternodeDetailsViewState
                                   style: STextStyles.itemSubtitle(context),
                                 ),
                               ],
+                              const SizedBox(height: 12),
+                              SecondaryButton(
+                                label: _checking
+                                    ? l10n.kerriganNamesChecking
+                                    : l10n.commonRefresh,
+                                enabled: !_checking,
+                                icon: _checking
+                                    ? SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: colors
+                                              .buttonTextSecondaryDisabled,
+                                        ),
+                                      )
+                                    : SvgPicture.asset(
+                                        Assets.svg.arrowRotate,
+                                        width: 14,
+                                        height: 14,
+                                        colorFilter: ColorFilter.mode(
+                                          colors.buttonTextSecondary,
+                                          BlendMode.srcIn,
+                                        ),
+                                      ),
+                                onPressed: _checkStatus,
+                              ),
                             ],
                           ),
                         ),
@@ -781,10 +770,14 @@ class _KerriganMasternodeDetailsViewState
                         PrimaryButton(
                           label: l10n.mnShowWhatNeeded,
                           onPressed: () async {
-                            if ((_keys?.operator?.secret == null ||
+                            if ((operatorSecret == null ||
                                     await _revealSecret()) &&
                                 mounted) {
-                              await _showHostingDetails(mn);
+                              await _showHostingDetails(
+                                mn,
+                                operatorSecret,
+                                mn.proTxHash ?? state?.proTxHash,
+                              );
                             }
                           },
                         ),
@@ -794,16 +787,7 @@ class _KerriganMasternodeDetailsViewState
                           style: STextStyles.w600_14(context),
                         ),
                         const SizedBox(height: 8),
-                        if (mn.type == KerriganMasternodeType.broodNode)
-                          Text(
-                            l10n.mnOwnServerBroodNode(
-                              wallet.masternodePortOf(
-                                mn.service ?? state?.service,
-                              ),
-                            ),
-                            style: STextStyles.itemSubtitle(context),
-                          )
-                        else if (operatorSecret != null) ...[
+                        if (operatorSecret != null) ...[
                           Text(
                             (mn.service ?? state?.service) == null
                                 ? l10n.mnOwnServerTextReplaceIp(
@@ -824,6 +808,18 @@ class _KerriganMasternodeDetailsViewState
                             ),
                             operatorSecret,
                           ),
+                          if (mn.type == KerriganMasternodeType.broodNode) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              l10n.mnBroodNodeIdentityText,
+                              style: STextStyles.itemSubtitle(context),
+                            ),
+                            const SizedBox(height: 8),
+                            _codeBlock(
+                              wallet.broodNodeIdentityCommand,
+                              operatorSecret,
+                            ),
+                          ],
                         ] else
                           Text(
                             l10n.mnOperatorFromHostText(l10n.mnChangeOperator),
@@ -838,7 +834,7 @@ class _KerriganMasternodeDetailsViewState
                           state?.payoutAddress ?? mn.payoutAddress,
                         ),
                         if (mn.proTxHash != null)
-                          _row(l10n.mnRegistrationTx, mn.proTxHash!),
+                          _row(l10n.mnProTxHash, mn.proTxHash!),
                         if ((state?.ownerAddress ?? _keys?.owner ?? "")
                             .isNotEmpty)
                           _row(
@@ -873,118 +869,6 @@ class _KerriganMasternodeDetailsViewState
                   },
                 ),
               ),
-      ),
-    );
-  }
-}
-
-/// New operator key: one this wallet makes (pops "") or one from a host
-/// (pops the key).
-class _OperatorSheet extends StatefulWidget {
-  const _OperatorSheet({required this.wallet, required this.masternode});
-
-  final KerriganWallet wallet;
-  final KerriganMasternode masternode;
-
-  @override
-  State<_OperatorSheet> createState() => _OperatorSheetState();
-}
-
-class _OperatorSheetState extends State<_OperatorSheet> {
-  final _controller = TextEditingController();
-  final _focus = FocusNode();
-  late bool _host =
-      widget.masternode.type == KerriganMasternodeType.broodNode;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focus.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<StackColors>()!;
-    final key = _controller.text.trim();
-    final valid = widget.wallet.isValidOperatorPublicKey(key);
-    final brood = widget.masternode.type == KerriganMasternodeType.broodNode;
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.popupBG,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        16,
-        24,
-        16,
-        16 + MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(l10n.mnNewOperatorKey, style: STextStyles.pageTitleH2(context)),
-          const SizedBox(height: 12),
-          if (!brood) ...[
-            RadioListTile<bool>(
-              value: false,
-              groupValue: _host,
-              activeColor: colors.radioButtonIconEnabled,
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                l10n.mnMakeNewOperator,
-                style: STextStyles.w600_14(context),
-              ),
-              subtitle: Text(
-                l10n.mnMakeNewOperatorText,
-                style: STextStyles.itemSubtitle(context),
-              ),
-              onChanged: (v) => setState(() => _host = v!),
-            ),
-            RadioListTile<bool>(
-              value: true,
-              groupValue: _host,
-              activeColor: colors.radioButtonIconEnabled,
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                l10n.mnUseHostKey,
-                style: STextStyles.w600_14(context),
-              ),
-              onChanged: (v) => setState(() => _host = v!),
-            ),
-          ] else
-            Text(
-              l10n.mnPasteIdentity,
-              style: STextStyles.itemSubtitle(context),
-            ),
-          if (_host) ...[
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: TextField(
-                controller: _controller,
-                focusNode: _focus,
-                autocorrect: false,
-                enableSuggestions: false,
-                style: STextStyles.field(context),
-                onChanged: (_) => setState(() {}),
-                decoration: standardInputDecoration(
-                  l10n.mnOperatorKeyHint,
-                  _focus,
-                  context,
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          PrimaryButton(
-            label: l10n.commonContinue,
-            enabled: !_host || valid,
-            onPressed: () =>
-                Navigator.of(context).pop(_host ? key.toLowerCase() : ""),
-          ),
-        ],
       ),
     );
   }

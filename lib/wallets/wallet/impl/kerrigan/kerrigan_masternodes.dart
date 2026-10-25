@@ -21,9 +21,10 @@ enum KerriganMasternodeType {
 /// output frozen in the wallet, registered on chain by a provider
 /// transaction (ProRegTx).
 ///
-/// Its owner and voting keys, and its operator key unless the host gave
-/// one, derive from the wallet seed on DIP 9 paths, so a restored wallet
-/// has them again (see [KerriganMasternodes.findExistingMasternodes]).
+/// Its owner, voting and operator keys derive from the wallet seed on
+/// DIP 9 paths, so a restored wallet has them again (see
+/// [KerriganMasternodes.findExistingMasternodes]); a wallet backup keeps
+/// their key indexes.
 class KerriganMasternode {
   const KerriganMasternode({
     required this.label,
@@ -64,8 +65,9 @@ class KerriganMasternode {
   /// DIP 9 index of the operator key the wallet made, or null.
   final int? operatorIndex;
 
-  /// Operator public key (BLS, hex) the host gave, when the wallet
-  /// didn't make the operator key.
+  /// Operator public key (BLS, hex) of a masternode registered with a key
+  /// this wallet didn't make (elsewhere, or by an older version with a
+  /// host's key).
   final String? hostOperatorKey;
 
   /// The registration transaction, once sent.
@@ -461,10 +463,6 @@ extension KerriganMasternodes on KerriganWallet {
       ? null
       : (await masternodeOperatorKey(mn.operatorIndex!, root: root)).secret;
 
-  bool isValidOperatorPublicKey(String key) =>
-      RegExp(r"^[0-9a-fA-F]{96}$").hasMatch(key.trim()) &&
-      libKerriganShield.isValidBlsPublicKey(key.trim().toLowerCase());
-
   /// A DIP 9 index not used by this wallet's masternodes nor, as owner
   /// key, by a registration on the network (a restored wallet may have
   /// used it before).
@@ -504,10 +502,7 @@ extension KerriganMasternodes on KerriganWallet {
   Future<KerriganMasternode> ensureMasternodeKeys(KerriganMasternode mn) async {
     if (mn.keyIndex != null || mn.isRegistered || isViewOnly) return mn;
     final index = await _freeKeyIndex(await bridge.protxList());
-    final updated = mn.copyWith(
-      keyIndex: index,
-      operatorIndex: mn.hostOperatorKey == null ? index : null,
-    );
+    final updated = mn.copyWith(keyIndex: index, operatorIndex: index);
     await _saveMasternode(updated);
     return updated;
   }
@@ -982,12 +977,12 @@ extension KerriganMasternodes on KerriganWallet {
   /// Register [mn] (ProRegTx): its collateral, owner and voting keys,
   /// operator key and payout address go on chain. [service] may be empty
   /// when the server isn't known yet; the masternode then waits, banned,
-  /// until its server is set. [hostOperatorKey] is the operator public
-  /// key a host gave; without it the wallet makes the operator key.
+  /// until its server is set. The operator key is the wallet's: a
+  /// BroodNode's server takes it as its identity
+  /// ([broodNodeIdentityCommand]).
   Future<KerriganProviderTx> prepareMasternodeRegistration(
     KerriganMasternode mn, {
     required String service,
-    String? hostOperatorKey,
   }) async {
     if (isViewOnly) throw Exception(l10n.walletViewOnlyCannotSign);
     if (await _collateralConfirmations(mn) < 1) {
@@ -996,22 +991,14 @@ extension KerriganMasternodes on KerriganWallet {
     final normalized = service.trim().isEmpty
         ? ""
         : normalizeMasternodeService(service);
-    final host = hostOperatorKey?.trim().toLowerCase();
-    if (host != null && host.isNotEmpty && !isValidOperatorPublicKey(host)) {
-      throw Exception(l10n.mnInvalidOperatorKey);
-    }
-    if (mn.type == KerriganMasternodeType.broodNode &&
-        (host == null || host.isEmpty)) {
-      throw Exception(l10n.mnBroodNodeIdentityKey);
-    }
     final root = await getRootHDNode();
     final registered = await bridge.protxList();
     final index = mn.keyIndex ?? await _freeKeyIndex(registered, root: root);
-    final useHost = host != null && host.isNotEmpty;
-    final operatorIndex = useHost ? null : (mn.operatorIndex ?? index);
-    final operatorKey = useHost
-        ? host
-        : (await masternodeOperatorKey(operatorIndex!, root: root)).public;
+    final operatorIndex = mn.operatorIndex ?? index;
+    final operatorKey = (await masternodeOperatorKey(
+      operatorIndex,
+      root: root,
+    )).public;
 
     final address = await mainDB.getAddress(walletId, mn.address);
     if (address?.derivationPath == null) {
@@ -1038,7 +1025,7 @@ extension KerriganMasternodes on KerriganWallet {
       mn.copyWith(
         keyIndex: index,
         operatorIndex: operatorIndex,
-        hostOperatorKey: useHost ? host : null,
+        hostOperatorKey: null,
         service: normalized.isEmpty ? null : normalized,
       ),
       root,
@@ -1079,35 +1066,27 @@ extension KerriganMasternodes on KerriganWallet {
     );
   }
 
-  /// Give [mn] a new operator key (ProUpRegTx, signed by the owner key):
-  /// [hostOperatorKey] from a new host, or a new one the wallet makes.
-  /// The network then waits for the new operator to set the server.
+  /// Give [mn] a new operator key the wallet makes (ProUpRegTx, signed
+  /// by the owner key), e.g. after its secret leaked or for a masternode
+  /// registered with a host's key. The network then waits for the server
+  /// to be set again with the new key.
   Future<KerriganProviderTx> prepareMasternodeOperatorChange(
-    KerriganMasternode mn, {
-    String? hostOperatorKey,
-  }) async {
+    KerriganMasternode mn,
+  ) async {
     if (!mn.isRegistered) throw Exception(l10n.mnRegisterFirst);
     final keyIndex = mn.keyIndex;
     if (keyIndex == null) {
       throw Exception(l10n.mnNoOwnerKey);
     }
-    final host = hostOperatorKey?.trim().toLowerCase();
-    final useHost = host != null && host.isNotEmpty;
-    if (useHost && !isValidOperatorPublicKey(host)) {
-      throw Exception(l10n.mnInvalidOperatorKey);
-    }
     final root = await getRootHDNode();
-    int? operatorIndex;
-    String operatorKey;
-    if (useHost) {
-      operatorKey = host;
-    } else {
-      operatorIndex = await _freeKeyIndex(await bridge.protxList(), root: root);
-      operatorKey = (await masternodeOperatorKey(
-        operatorIndex,
-        root: root,
-      )).public;
-    }
+    final operatorIndex = await _freeKeyIndex(
+      await bridge.protxList(),
+      root: root,
+    );
+    final operatorKey = (await masternodeOperatorKey(
+      operatorIndex,
+      root: root,
+    )).public;
     final state = await masternodeState(mn);
     return _buildProviderTx(
       {
@@ -1126,7 +1105,7 @@ extension KerriganMasternodes on KerriganWallet {
       },
       mn.copyWith(
         operatorIndex: operatorIndex,
-        hostOperatorKey: useHost ? host : null,
+        hostOperatorKey: null,
         service: null,
       ),
       root,
@@ -1182,5 +1161,20 @@ extension KerriganMasternodes on KerriganWallet {
         "# Kerrigan masternode: ${mn.label}\ntestnet=1\n[test]\n"
             "${lines.join("\n")}\n",
     };
+  }
+
+  /// Shell command that makes [operatorSecret] a BroodNode server's
+  /// identity: kerrigand checks a BroodNode's operator key against the
+  /// identity in its data directory's hmp_identity.dat ("HMPI", version 1,
+  /// the 32-byte BLS secret), which it otherwise makes up on first start.
+  String broodNodeIdentityCommand(String operatorSecret) {
+    final dir = switch (cryptoCurrency.network) {
+      CryptoCurrencyNetwork.main => "~/.kerrigan",
+      CryptoCurrencyNetwork.regtest => "~/.kerrigan/regtest",
+      _ => "~/.kerrigan/testnet3",
+    };
+    return "mkdir -p $dir && (umask 077 && perl -e "
+        "'print \"HMPI\\x01\", pack(\"H*\", \"$operatorSecret\")' "
+        "> $dir/hmp_identity.dat)\n";
   }
 }

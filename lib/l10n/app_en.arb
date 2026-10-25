@@ -1476,6 +1476,10 @@
   "commonHide": "Hide",
   "mnCollateralTx": "Collateral transaction",
   "mnOutputIndex": "Output index",
+  "mnProTxHash": "ProTx hash",
+  "@mnProTxHash": {
+    "description": "Label of a masternode's registration transaction ID (ProRegTx hash). Keep \"ProTx\" as is."
+  },
   "mnHostTitle": "Host on masternode.space",
   "mnCopyAll": "Copy all",
   "mnHostingCopied": "Hosting details copied",
@@ -1550,6 +1554,19 @@
     }
   },
   "mnStatusUnknown": "Unknown",
+  "mnChecked": "Checked with the network: {status}",
+  "@mnChecked": {
+    "description": "Shown after the user taps Refresh on a masternode's page and the network answered. {status}: the masternode's status as shown on the page, e.g. \"Enabled\" or \"Needs a server\".",
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "mnCheckFailed": "Couldn't get the status from the network. Check your connection and try again.",
+  "@mnCheckFailed": {
+    "description": "Shown after the user taps Refresh on a masternode's page and the network didn't answer."
+  },
   "mnStatusEnabled": "Enabled",
   "accountsAddedOne": "This recovery phrase has another account with history. Astronaut added it as a separate wallet, {names}, which is still syncing.",
   "@accountsAddedOne": {
@@ -3544,11 +3561,6 @@
     }
   },
   "mnWaitCollateral": "Wait for the collateral to be confirmed",
-  "mnInvalidOperatorKey": "That is not a valid operator public key",
-  "mnBroodNodeIdentityKey": "A BroodNode registers with its server's identity key (kerrigan-cli gethmpidentity)",
-  "@mnBroodNodeIdentityKey": {
-    "description": "BroodNode is a name; keep \"kerrigan-cli gethmpidentity\" as is (a command)."
-  },
   "mnRegisterFirst": "Register the masternode first",
   "mnHostSetsServer": "Your host holds this masternode's operator key; they set its server",
   "mnNoOwnerKey": "This wallet doesn't hold the masternode's owner key",
@@ -3809,7 +3821,7 @@
   },
   "mnOrCollateral": "Masternode or collateral",
   "mnRegularText": "Earns masternode rewards and votes on proposals.",
-  "mnBroodNodeText": "Votes with four times the weight. On a server that also mines, it reaches the top Hivemind sealing tier. It registers with its server's identity key.",
+  "mnBroodNodeText": "Votes with four times the weight. On a server that also mines, it reaches the top Hivemind sealing tier.",
   "@mnBroodNodeText": {
     "description": "Hivemind is the name of Kerrigan's mining and sealing system: keep it as is."
   },
@@ -3834,7 +3846,6 @@
   "mnAuthReason": "Authenticate to send the masternode transaction",
   "mnNotAuthorised": "Not authorised",
   "mnSendFailed": "Couldn't send the transaction",
-  "mnPasteOperatorKey": "Paste a valid operator public key (96 hex characters)",
   "mnPreparingRegistration": "Preparing the registration",
   "mnRegisterTitle": "Register {alias}?",
   "@mnRegisterTitle": {
@@ -3874,22 +3885,20 @@
   "mnPreparingChange": "Preparing the change",
   "mnChangeOperatorTitle": "Change the operator key",
   "mnChangeOperatorOwn": "The masternode stops until its server is set again with the new key (do it here once this change is in a block).",
-  "mnChangeOperatorHost": "The masternode stops until its server is set again with the new key (your host does that).",
   "mnChangeSent": "Change sent. Set the server once it is in a block.",
   "mnShowOperatorKey": "Show operator key",
   "mnShowOperatorKeyReason": "Unlock to show the masternode's operator secret key",
-  "mnNotOperatorKey": "Not an operator public key (96 hex characters)",
-  "mnOperatorSecretForHost": "Masternode key (operator secret)",
+  "mnOperatorSecretForHost": "BLS secret key",
   "@mnOperatorSecretForHost": {
-    "description": "What masternode.space calls the operator secret key."
+    "description": "What masternode.space calls the operator secret key (a BLS key): keep \"BLS\"."
   },
-  "mnHostTextKerrigan": "Give masternode.space these values when you add the masternode there. Your collateral never leaves this wallet. They tell you the server's IP address: enter it on this page to register the masternode (or to update its server).",
+  "mnHostTextKerrigan": "masternode.space asks for the BLS secret key and either the ProTx hash or the collateral transaction with its output index. Your collateral never leaves this wallet. They then tell you the server's IP address: enter it on this page to register the masternode (or to update its server).",
   "@mnHostTextKerrigan": {
     "description": "masternode.space is a website: keep it as is."
   },
-  "mnHostTextHostKey": "Give masternode.space the collateral transaction and output index. Ask them for the server's IP address and its operator public key, then register the masternode on this page with \"{button}\".",
-  "@mnHostTextHostKey": {
-    "description": "{button}: the \"My host gave me an operator key\" button.",
+  "mnHostTextNoSecret": "This masternode uses an operator key from its host, so this wallet has no BLS secret key for masternode.space. Switch it to a key made by this wallet first with \"{button}\".",
+  "@mnHostTextNoSecret": {
+    "description": "In the masternode.space sheet, for a masternode registered with an operator key from its host. {button}: the \"Change operator key\" button. masternode.space is a website and BLS a key type: keep them as is.",
     "placeholders": {
       "button": {
         "type": "String"
@@ -3902,22 +3911,12 @@
   },
   "mnRegisterSection": "Register on the network",
   "mnRegisterSectionText": "Registering puts the masternode on the network with its server's address and the operator key the server runs with. Get the server ready first (see below); you may also register now without a server and set it later.",
-  "mnOperatorFromHost": "Operator key from my host",
   "mnOperatorFromWallet": "Operator key made by this wallet",
-  "mnMakeOneHere": "Make one here",
-  "@mnMakeOneHere": {
-    "description": "A button: make the operator key in this wallet instead."
+  "mnOperatorWalletText": "The server runs with this wallet's operator secret key (shown below). Your recovery phrase and wallet backups bring it back.",
+  "mnBroodNodeIdentityText": "A BroodNode also takes this key as its identity: with kerrigand stopped, run this command on the server once, then start kerrigand again.",
+  "@mnBroodNodeIdentityText": {
+    "description": "Above a shell command that writes the operator secret key into a BroodNode server's identity file. kerrigand is the Kerrigan Core server program: keep it as is."
   },
-  "mnHostGaveKey": "My host gave me an operator key",
-  "@mnHostGaveKey": {
-    "description": "A button."
-  },
-  "mnBroodNodeRegisterText": "A BroodNode registers with its server's identity key: run \"kerrigan-cli gethmpidentity\" on the server and paste the identity here.",
-  "@mnBroodNodeRegisterText": {
-    "description": "BroodNode is a name; keep \"kerrigan-cli gethmpidentity\" as is (a command)."
-  },
-  "mnOperatorKeyHint": "Operator public key (96 hex characters)",
-  "mnOperatorWalletText": "The server runs with this wallet's operator secret key (shown below). Restoring this wallet brings it back.",
   "mnRegister": "Register masternode",
   "mnServerRevive": "Enter the server's address to revive the masternode. The server must run Kerrigan Core with this masternode's operator secret key.",
   "mnServerStart": "Enter the server's address to start the masternode. The server must run Kerrigan Core with this masternode's operator secret key.",
@@ -3961,15 +3960,6 @@
     "description": "masternode.space is a website: keep it as is."
   },
   "mnOwnServer": "Or run it on your own server",
-  "mnOwnServerBroodNode": "Install Kerrigan Core on the server and open port {port}. Register with the identity \"kerrigan-cli gethmpidentity\" prints there, following Kerrigan's BroodNode guide for the server's settings.",
-  "@mnOwnServerBroodNode": {
-    "description": "Kerrigan Core is the coin's node software; keep \"kerrigan-cli gethmpidentity\" as is.",
-    "placeholders": {
-      "port": {
-        "type": "int"
-      }
-    }
-  },
   "mnOwnServerText": "Install Kerrigan Core on the server, put these lines in its kerrigan.conf, open port {port} and restart kerrigand. Then register the masternode (or set its server) above.",
   "@mnOwnServerText": {
     "description": "Keep kerrigan.conf and kerrigand as they are (a file and a program).",
@@ -3998,19 +3988,10 @@
     }
   },
   "mnPayoutAddress": "Payout address",
-  "mnRegistrationTx": "Registration transaction",
   "mnOwnerAddress": "Owner address",
   "mnVotingAddress": "Voting address",
   "mnOperatorPublicKey": "Operator public key",
   "mnOperatorSecretKey": "Operator secret key",
-  "mnNewOperatorKey": "New operator key",
-  "mnMakeNewOperator": "Make a new one in this wallet",
-  "mnMakeNewOperatorText": "For your own server: put its secret in kerrigan.conf.",
-  "mnUseHostKey": "Use my host's key",
-  "mnPasteIdentity": "Paste the identity \"kerrigan-cli gethmpidentity\" prints on the BroodNode's server.",
-  "@mnPasteIdentity": {
-    "description": "BroodNode is a name; keep \"kerrigan-cli gethmpidentity\" as is."
-  },
   "sendTooManyInputs": "This needs more coins than fit in one transaction (at most {count}). Combine them first: send up to {amount} to one of your own addresses, then try again.",
   "@sendTooManyInputs": {
     "description": "{amount} has its ticker, e.g. \"1,234.5 KRGN\".",
