@@ -157,6 +157,7 @@ void main() {
       expect(isSwbBackup(jsonEncode(backup())), isTrue);
       final keys = backup();
       (keys["wallets"] as List).first["coinFlags"] = <Object>[];
+      (keys["prefs"] as Map)["nodesChosenByUser"] = ["kerrigan"];
       expect(isSwbBackup(jsonEncode(keys)), isTrue);
     });
 
