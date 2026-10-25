@@ -37,10 +37,9 @@ class _DONATION {
       "$_path${shielded ? "private" : "public"}_thanks.webp";
 }
 
-/// TrekPay's mascots: Delta, light and transparent or dark and shielded
-/// (the welcome, add wallet and send artwork is still PIVXie's Void
-/// Pixie). PNGs with 1.5x-4.0x density variants: the privacy choice at
-/// 140 logical px, the screen artwork within 280.
+/// TrekPay's mascot Delta: light and transparent or dark and shielded.
+/// PNGs with 1.5x-4.0x density variants: the privacy choice at 140
+/// logical px, the screen artwork within 280.
 class _PERSONA {
   const _PERSONA();
 
@@ -53,17 +52,17 @@ class _PERSONA {
   String get private => "${_path}delta_private.png";
 
   /// Holding a "WELCOME" banner: the first screen.
-  String get welcome => "${_path}pivxie_welcome.png";
+  String get welcome => "${_path}delta_welcome.png";
 
   /// Holding a Kerrigan wallet: create or restore a wallet.
-  String get addWallet => "${_path}pivxie_add_wallet.png";
+  String get addWallet => "${_path}delta_add_wallet.png";
 
   /// Looping animation (animated WebP, 960x540) while a transaction is
   /// built and sent.
-  String get txSend => "${_path}pivxie_tx_send.webp";
+  String get txSend => "${_path}delta_tx_send.webp";
 
   /// [txSend]'s sound (AAC, as long as one loop of the animation).
-  String get txSendSound => "${_path}pivxie_tx_send.m4a";
+  String get txSendSound => "${_path}delta_tx_send.m4a";
 }
 
 class _SOCIALS {
