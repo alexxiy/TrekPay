@@ -2979,6 +2979,7 @@
   "featureGovernanceText": "Proposals and growth fund releases: follow them and vote with your masternodes",
   "featureNamesText": "Register a name, and manage or sell your names",
   "featurePrivatizeText": "Move your whole transparent balance to your shield balance",
+  "featureDonateText": "Power up TrekPay's development, straight from this wallet",
   "walletMoreFeatures": "More features",
   "netUnableToSyncShort": "Unable to sync",
   "walletWriteDownDesktop": "Write down your recovery phrase in the right order and keep it safe. It's the only way to get to your funds if this computer is lost or you forget your password.",
@@ -3491,6 +3492,166 @@
         "type": "String"
       }
     }
+  },
+  "donateTitle": "Fuel Delta",
+  "@donateTitle": {
+    "description": "The donation screen and its menu entry. Delta is TrekPay's mascot; \"fuel\" as in powering it up."
+  },
+  "donateShielded": "Shielded",
+  "@donateShielded": {
+    "description": "The switch in the donation screen's top bar: pay from the shielded balance."
+  },
+  "donateSize": "Donation size",
+  "donateCustom": "Custom",
+  "@donateCustom": {
+    "description": "The last stop on the donation size slider, where you type the amount."
+  },
+  "donateDeltaTransparent": "Transparent Delta",
+  "@donateDeltaTransparent": {
+    "description": "Above the donation tier's name: Delta's look when paid from the transparent balance."
+  },
+  "donateDeltaShielded": "Shielded Delta",
+  "@donateDeltaShielded": {
+    "description": "Above the donation tier's name: Delta's look when paid from the shielded balance."
+  },
+  "donateTinySpark": "Tiny Spark",
+  "@donateTinySpark": {
+    "description": "The $1 donation tier, paid from the transparent balance."
+  },
+  "donateTinySparkText": "A tiny burst of digital stardust to awaken Delta's core systems.",
+  "donatePowerCell": "Power Cell",
+  "@donatePowerCell": {
+    "description": "The $5 donation tier, paid from the transparent balance."
+  },
+  "donatePowerCellText": "Delta hugs a freshly charged energy cell, powering up instant transaction relays.",
+  "donateCyberConsole": "Cyber Console",
+  "@donateCyberConsole": {
+    "description": "The $10 donation tier, paid from the transparent balance."
+  },
+  "donateCyberConsoleText": "Delta deploys floating holo-screens, optimizing open network pathways and node speeds.",
+  "donateQuantumHyperdrive": "Quantum Hyperdrive",
+  "@donateQuantumHyperdrive": {
+    "description": "The $20 donation tier, paid from the transparent balance."
+  },
+  "donateQuantumHyperdriveText": "Delta is over-clocked, broadcasting transparent payments at light speed!",
+  "donateCosmicSurge": "Cosmic Surge",
+  "@donateCosmicSurge": {
+    "description": "The $50 donation tier, paid from the transparent balance."
+  },
+  "donateCosmicSurgeText": "Pure network energy surges through Delta, charging full validation power across the chain.",
+  "donateAstroFlight": "Astro Flight",
+  "@donateAstroFlight": {
+    "description": "The $100 donation tier, paid from the transparent balance."
+  },
+  "donateAstroFlightText": "Warp drive fully engaged! Delta rockets across the cosmos at maximum velocity.",
+  "donateLimitlessNova": "Limitless Nova",
+  "@donateLimitlessNova": {
+    "description": "The custom donation amount, paid from the transparent balance."
+  },
+  "donateLimitlessNovaText": "Breaking the boundaries of space and time—Delta ascends into a sparkling galaxy supernova, opening infinite support possibilities!",
+  "donateTinyShield": "Tiny Shield",
+  "@donateTinyShield": {
+    "description": "The $1 donation tier, paid from the shielded balance."
+  },
+  "donateTinyShieldText": "A subtle barrier flickers online to guard your first private satoshi.",
+  "donateShieldCell": "Shield Cell",
+  "@donateShieldCell": {
+    "description": "The $5 donation tier, paid from the shielded balance."
+  },
+  "donateShieldCellText": "Armored and ready—Delta equips a fortified cyber canister to fuel stealth operations.",
+  "donateCyberNode": "Cyber Node",
+  "@donateCyberNode": {
+    "description": "The $10 donation tier, paid from the shielded balance."
+  },
+  "donateCyberNodeText": "Delta monitors encrypted traffic through secure terminal feeds, screening out trace vectors.",
+  "donateZeroKnowledgeAegis": "Zero-Knowledge Aegis",
+  "@donateZeroKnowledgeAegis": {
+    "description": "The $20 donation tier, paid from the shielded balance."
+  },
+  "donateZeroKnowledgeAegisText": "Delta is heavily shielded, encrypting transactions at maximum zero-knowledge privacy!",
+  "donateQuantumAegis": "Quantum Aegis",
+  "@donateQuantumAegis": {
+    "description": "The $50 donation tier, paid from the shielded balance."
+  },
+  "donateQuantumAegisText": "Multi-layered neon forcefields activate, surrounding Delta with impenetrable cryptographic armor.",
+  "donateStealthFlight": "Stealth Flight",
+  "@donateStealthFlight": {
+    "description": "The $100 donation tier, paid from the shielded balance."
+  },
+  "donateStealthFlightText": "Complete cloaking enabled! Delta blasts into deep space, entirely off the radar.",
+  "donateInfiniteCitadel": "Infinite Citadel",
+  "@donateInfiniteCitadel": {
+    "description": "The custom donation amount, paid from the shielded balance."
+  },
+  "donateInfiniteCitadelText": "Ultimate privacy unlocked! Delta summons a hyper-dimensional cyber-vortex and impenetrable matrix shields to fortify the ecosystem without limits.",
+  "donateEggLowBattery": "Delta squints at the battery gauge… is this a single electron? Every bit of charge still counts!",
+  "@donateEggLowBattery": {
+    "description": "A custom donation under one US dollar."
+  },
+  "donateEggFuelNotFound": "Error 404: Fuel Not Found. Delta's scanners show a flickering phantom battery.",
+  "@donateEggFuelNotFound": {
+    "description": "A custom donation of exactly $4.04, a joke on the HTTP 404 error."
+  },
+  "donateEggOverload": "Absolute overload! The power cell is stretching past the ceiling. Delta is looking way, way up.",
+  "@donateEggOverload": {
+    "description": "A custom donation of $250 or more."
+  },
+  "donatePriceLoading": "Getting the Kerrigan price…",
+  "donateNoPrice": "Without the Kerrigan price, the dollar amounts can't be worked out: CoinGecko is off in Incognito mode, or can't be reached. Choose Custom to enter an amount in KRGN.",
+  "donateAvailable": "{amount} available",
+  "@donateAvailable": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "donateNotEnoughShielded": "Your shielded balance is too low for this donation.",
+  "donateNotEnoughTransparent": "Your transparent balance is too low for this donation.",
+  "donateUseTransparent": "Pay from transparent",
+  "donateUseShielded": "Pay from shielded",
+  "donateCheers": "Cheers message",
+  "@donateCheers": {
+    "description": "An optional message to the developer that goes with the donation."
+  },
+  "donateCheersHint": "Keep up the great work! 🚀",
+  "donateCheersNote": "Optional. It goes in the encrypted memo, so only the developer can read it.",
+  "donateSlide": "Slide to power up ⚡",
+  "@donateSlide": {
+    "description": "A slide-to-confirm button: dragging it to the end sends the donation."
+  },
+  "donateTo": "Goes to TrekPay's developer, {address}. The network fee comes on top.",
+  "@donateTo": {
+    "description": "address is the start and end of a shield address, e.g. ks1qxyz…k9fz3a",
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "donateNote": "Fuel Delta: {tier}",
+  "@donateNote": {
+    "description": "The donation's note in the transaction history. tier is the donation size, e.g. Power Cell.",
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "donateThanksTitle": "Thank you! 💙",
+  "@donateThanksTitle": {
+    "description": "After a donation from the transparent balance."
+  },
+  "donateThanksTitleShielded": "Thanks! 💜",
+  "@donateThanksTitleShielded": {
+    "description": "After a donation from the shielded balance."
+  },
+  "donateThanksText": "Sparkles and digital heart waves celebrate your successful transparent transaction.",
+  "donateThanksTextShielded": "A subtle, warm gesture from behind the cyber-shield, celebrating your encrypted transfer with glowing neon hearts.",
+  "donateOnItsWay": "Your donation is on its way to TrekPay's developer.",
+  "donateAgain": "Power up again",
+  "@donateAgain": {
+    "description": "Start over on the donation screen after a donation."
   },
   "txBlockRewards": "Block rewards",
   "@txBlockRewards": {

@@ -13,6 +13,28 @@ abstract class Assets {
   static const lottie = _ANIMATIONS();
   static const socials = _SOCIALS();
   static const persona = _PERSONA();
+  static const donation = _DONATION();
+}
+
+/// "Fuel Delta" donation art: square 1024 px WebPs, from the design files
+/// by asset_sources/donation/. The dark, shielded Delta when [shielded]
+/// (paid from the shielded balance), the light, transparent one otherwise.
+class _DONATION {
+  const _DONATION();
+
+  static const _path = "assets/donation/";
+
+  /// The [usd] dollar tier (1, 5, 10, 20, 50 or 100).
+  String tier(int usd, {required bool shielded}) =>
+      "$_path${shielded ? "private" : "public"}_t$usd.webp";
+
+  /// The custom amount: Delta over a "$[???]" panel.
+  String custom({required bool shielded}) =>
+      "$_path${shielded ? "private" : "public"}_custom.webp";
+
+  /// After a donation: Delta making a heart, with a "THANKS!" bubble.
+  String thanks({required bool shielded}) =>
+      "$_path${shielded ? "private" : "public"}_thanks.webp";
 }
 
 /// TrekPay's mascots: Delta, light and transparent or dark and shielded

@@ -21,6 +21,7 @@ import 'models/isar/models/isar_models.dart';
 import 'models/keys/key_data_interface.dart';
 import 'models/keys/view_only_wallet_data.dart';
 import 'models/send_view_auto_fill_data.dart';
+import 'pages/kerrigan_donation/kerrigan_donation_view.dart';
 import 'pages/kerrigan_governance/kerrigan_create_proposal_view.dart';
 import 'pages/kerrigan_governance/kerrigan_governance_view.dart';
 import 'pages/kerrigan_governance/kerrigan_proposal_view.dart';
@@ -1055,6 +1056,17 @@ class RouteGenerator {
         }
         return _routeError("${settings.name} invalid args: ${args.toString()}");
 
+      case KerriganDonationView.routeName:
+        if (args is String) {
+          return getRoute(
+            shouldUseMaterialRoute: useMaterialPageRoute,
+            builder: (_) =>
+                DesktopPageColumn(child: KerriganDonationView(walletId: args)),
+            settings: RouteSettings(name: settings.name),
+          );
+        }
+        return _routeError("${settings.name} invalid args: ${args.toString()}");
+
       case KerriganNamesView.routeName:
         if (args is String) {
           return getRoute(
@@ -1070,8 +1082,9 @@ class RouteGenerator {
         if (args is String) {
           return getRoute(
             shouldUseMaterialRoute: useMaterialPageRoute,
-            builder: (_) =>
-                DesktopPageColumn(child: KerriganNamesMyNamesView(walletId: args)),
+            builder: (_) => DesktopPageColumn(
+              child: KerriganNamesMyNamesView(walletId: args),
+            ),
             settings: RouteSettings(name: settings.name),
           );
         }
@@ -1081,8 +1094,9 @@ class RouteGenerator {
         if (args is String) {
           return getRoute(
             shouldUseMaterialRoute: useMaterialPageRoute,
-            builder: (_) =>
-                DesktopPageColumn(child: KerriganNamesBalanceView(walletId: args)),
+            builder: (_) => DesktopPageColumn(
+              child: KerriganNamesBalanceView(walletId: args),
+            ),
             settings: RouteSettings(name: settings.name),
           );
         }
@@ -1116,8 +1130,9 @@ class RouteGenerator {
         if (args is KerriganNamesTracked) {
           return getRoute(
             shouldUseMaterialRoute: useMaterialPageRoute,
-            builder: (_) =>
-                DesktopPageColumn(child: KerriganNamesStatusView(tracked: args)),
+            builder: (_) => DesktopPageColumn(
+              child: KerriganNamesStatusView(tracked: args),
+            ),
             settings: RouteSettings(name: settings.name),
           );
         }

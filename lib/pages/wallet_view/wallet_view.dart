@@ -44,6 +44,8 @@ import '../../wallets/crypto_currency/crypto_currency.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../address_book_views/address_book_view.dart';
+import '../kerrigan_donation/kerrigan_donation.dart';
+import '../kerrigan_donation/kerrigan_donation_view.dart';
 import '../kerrigan_names/kerrigan_names_common.dart';
 import '../kerrigan_names/kerrigan_names_view.dart';
 import '../../wallets/wallet/wallet_mixin_interfaces/view_only_option_interface.dart';
@@ -472,7 +474,8 @@ class _WalletViewState extends ConsumerState<WalletView> {
                           ),
                         ),
                       ),
-                      if (isKerriganShield && !viewOnly) const SizedBox(height: 10),
+                      if (isKerriganShield && !viewOnly)
+                        const SizedBox(height: 10),
                       if (isKerriganShield && !viewOnly)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -708,6 +711,30 @@ class _WalletViewState extends ConsumerState<WalletView> {
                       onTap: () {
                         Navigator.of(context).pushNamed(
                           KerriganNamesView.routeName,
+                          arguments: widget.walletId,
+                        );
+                      },
+                    ),
+                  if (!viewOnly &&
+                      wallet is KerriganWallet &&
+                      kerriganDonationAvailable(coin))
+                    WalletNavigationBarItemData(
+                      label: l10n.donateTitle,
+                      icon: Icon(
+                        Icons.bolt_rounded,
+                        size: 20,
+                        color: Theme.of(context)
+                            .extension<StackColors>()!
+                            .bottomNavIconIcon,
+                      ),
+                      isNew: !ref.watch(
+                        prefsChangeNotifierProvider.select(
+                          (value) => value.donationSeen,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.of(context).pushNamed(
+                          KerriganDonationView.routeName,
                           arguments: widget.walletId,
                         );
                       },
