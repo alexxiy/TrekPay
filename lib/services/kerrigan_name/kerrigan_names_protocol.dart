@@ -5,11 +5,12 @@ import 'package:decimal/decimal.dart';
 
 import 'kerrigan_name.dart';
 
-/// The commands of the Kerrigan.name registrar (as PIVX.name has them), as its
-/// web app (pivx-name-front) and the indexer's `Protocol` spell them.
+/// The commands of the Kerrigan NameSpace registrar (the same as PIVX.name's),
+/// as its web app (kerrigan-name-front) and the indexer's `Protocol` spell
+/// them.
 ///
 /// A command is the shielded memo of a payment to the registrar's
-/// address: `PiNS:1:<OP>:<name>:<args…>:<nonce>:<signature>`. The amount
+/// address: `KNS:1:<OP>:<name>:<args…>:<nonce>:<signature>`. The amount
 /// is the price of the operation, and must be exact (a purchase pays the
 /// listing price). The signature is an Ed25519 signature, in lowercase
 /// hex, of everything before it.
@@ -78,7 +79,7 @@ int kerriganNamesNonce([DateTime? now]) =>
     (now ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
 
 /// A command without its signature: what gets signed. [marker] is the
-/// registrar's protocol marker ("PiNS" on mainnet).
+/// registrar's protocol marker ("KNS" on mainnet).
 ///
 /// - [KerriganNamesOp.reg], [KerriganNamesOp.upd], [KerriganNamesOp.buy]:
 ///   [target] is the address the name points to, [pubkey] the signer's key.
@@ -206,7 +207,7 @@ String sanitizeKerriganNamesLabel(String input) {
 bool isValidKerriganNamesLabel(String label) =>
     RegExp(r"^[a-z0-9]+(-[a-z0-9]+)*$").hasMatch(label);
 
-/// The label of [name] and its zone (".krgn").
+/// The label of [name] and its zone (".kerrigan").
 ({String label, String zone}) splitKerriganName(String name) {
   final dot = name.indexOf(".");
   return dot < 0
@@ -216,7 +217,8 @@ bool isValidKerriganNamesLabel(String label) =>
 
 /// Whether [address] can be the target of a name: the registry's address
 /// rule (mainnet Sapling, canonical lowercase, exact length).
-bool isValidKerriganNamesTarget(String address) => isStrictKerriganNameTarget(address);
+bool isValidKerriganNamesTarget(String address) =>
+    isStrictKerriganNameTarget(address);
 
 // =============================================================================
 // Ed25519 public keys

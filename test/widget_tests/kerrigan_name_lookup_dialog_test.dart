@@ -107,7 +107,7 @@ void main() {
     ]);
     final results = await open(t, resolver);
     await t.pump();
-    expect(find.text("Waiting for Kerrigan.name"), findsOneWidget);
+    expect(find.text("Waiting for Kerrigan NameSpace"), findsOneWidget);
     // Nothing to send while waiting: only Cancel.
     expect(find.text("Try again"), findsNothing);
 
@@ -142,7 +142,7 @@ void main() {
     final resolver = _FakeResolver([
       () => throw const KerriganNameException(
         KerriganNameError.indexerUnreachable,
-        "Couldn't reach the Kerrigan.name server.",
+        "Couldn't reach the Kerrigan NameSpace server.",
       ),
       () => const KerriganNameVerified("alice.krgn", _address),
     ]);

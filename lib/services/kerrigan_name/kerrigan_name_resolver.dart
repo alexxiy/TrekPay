@@ -42,10 +42,25 @@ class KerriganNameService {
 
   final int minAgreement;
 
-  /// The name service for [coin], or null where there is none. Kerrigan
-  /// has none yet: name lookups and the names screens stay off until one
-  /// runs and its indexer, anchor contract and endpoints are set here.
-  static KerriganNameService? forCoin(CryptoCurrency coin) => null;
+  static final mainnet = KerriganNameService(
+    indexer: Uri.parse("https://indexer.kerrigan-name.space"),
+    anchor: "0xca90886d9999cef4e15da8b4af061a52c366238d",
+    rpcs: [
+      Uri.parse("https://bsc-dataseed.bnbchain.org"),
+      Uri.parse("https://bsc-dataseed.defibit.io"),
+      Uri.parse("https://bsc-dataseed.ninicoin.io"),
+      Uri.parse("https://bsc-rpc.publicnode.com"),
+      Uri.parse("https://bsc-mainnet.public.blastapi.io"),
+    ],
+    epochs: const {1},
+  );
+
+  /// The name service for [coin], or null where there is none: names exist
+  /// on mainnet only.
+  static KerriganNameService? forCoin(CryptoCurrency coin) =>
+      coin is Kerrigan && coin.network == CryptoCurrencyNetwork.main
+      ? mainnet
+      : null;
 }
 
 /// What a lookup found.
@@ -68,7 +83,7 @@ final class KerriganNameNotRegistered extends KerriganNameLookup {
   const KerriganNameNotRegistered(super.name);
 }
 
-/// The Kerrigan.name server is still on an earlier (genuine) registry state.
+/// The Kerrigan NameSpace server is still on an earlier (genuine) registry state.
 /// Its answer may be out of date, so nothing can be sent until it catches
 /// up. [nameMissing]: it doesn't know the name yet.
 final class KerriganNameIndexerBehind extends KerriganNameLookup {
@@ -78,10 +93,10 @@ final class KerriganNameIndexerBehind extends KerriganNameLookup {
 }
 
 enum KerriganNameError {
-  /// No answer from the Kerrigan.name server.
+  /// No answer from the Kerrigan NameSpace server.
   indexerUnreachable,
 
-  /// The Kerrigan.name server answered with an error or something malformed.
+  /// The Kerrigan NameSpace server answered with an error or something malformed.
   indexerError,
 
   /// Too few BNB Smart Chain endpoints answered.
@@ -140,7 +155,7 @@ typedef KerriganNameTransport = Future<KerriganNameResponse> Function(
 ///    have reached, and read `anchoredState()` (root, height, epoch) at it,
 ///    under quorum. Pinning matters: endpoints agreeing on "latest" may both
 ///    be behind, and a stale root would pay a name's previous address.
-/// 2. Ask the Kerrigan.name server for the record and proof (in parallel).
+/// 2. Ask the Kerrigan NameSpace server for the record and proof (in parallel).
 /// 3. Same root: check the proof against the chain's root. Different root:
 ///    ask the contract whether the server's root is a genuine earlier state
 ///    (it is behind: wait) or not (refuse).
@@ -168,7 +183,8 @@ class KerriganNameResolver {
   /// it. A fabricated root is unknown at every block.
   final Duration recheckDelay;
 
-  Future<KerriganNameLookup> lookup(String name) => _lookup(name, recheck: true);
+  Future<KerriganNameLookup> lookup(String name) =>
+      _lookup(name, recheck: true);
 
   /// Whether the server has caught up with the chain. A cheap check for
   /// waiting on [KerriganNameIndexerBehind]; run [lookup] again once it's true.
@@ -179,9 +195,16 @@ class KerriganNameResolver {
     return serverRoot == (await chain).root;
   }
 
-  Future<KerriganNameLookup> _lookup(String name, {required bool recheck}) async {
+  Future<KerriganNameLookup> _lookup(
+    String name, {
+    required bool recheck,
+  }) async {
     if (!isValidKerriganName(name)) {
-      throw ArgumentError.value(name, "name", "not a valid Kerrigan.name name");
+      throw ArgumentError.value(
+        name,
+        "name",
+        "not a valid Kerrigan NameSpace name",
+      );
     }
     // Started first so the chain reads overlap the server's answer. The
     // handler only keeps an early failure from going unhandled; it is
@@ -200,7 +223,7 @@ class KerriganNameResolver {
           parseKerriganNameRoot(record["smt_root"]) ??
           (throw const KerriganNameException(
             KerriganNameError.indexerError,
-            "The Kerrigan.name server sent a malformed registry root.",
+            "The Kerrigan NameSpace server sent a malformed registry root.",
           ));
     }
 
@@ -210,7 +233,7 @@ class KerriganNameResolver {
       if (address == null) {
         throw KerriganNameException(
           KerriganNameError.badRecord,
-          "The record the Kerrigan.name server sent for $name doesn't match the "
+          "The record the Kerrigan NameSpace server sent for $name doesn't match the "
           "registry on chain.",
         );
       }
@@ -228,13 +251,13 @@ class KerriganNameResolver {
     }
     throw const KerriganNameException(
       KerriganNameError.unanchoredRoot,
-      "The Kerrigan.name server answered from a registry state that was never "
+      "The Kerrigan NameSpace server answered from a registry state that was never "
       "published on BNB Smart Chain. This can mean the server is "
       "misbehaving.",
     );
   }
 
-  // --- Kerrigan.name server ---
+  // --- Kerrigan NameSpace server ---
 
   Future<KerriganNameResponse> _indexer(
     String method,
@@ -252,7 +275,7 @@ class KerriganNameResolver {
     } catch (e) {
       throw KerriganNameException(
         KerriganNameError.indexerUnreachable,
-        "Couldn't reach the Kerrigan.name server.",
+        "Couldn't reach the Kerrigan NameSpace server.",
         detail: _clean(e.toString()),
       );
     }
@@ -271,7 +294,7 @@ class KerriganNameResolver {
       if (text == "Domain not found") return null;
       throw KerriganNameException(
         KerriganNameError.indexerError,
-        "The Kerrigan.name server answered with an error.",
+        "The Kerrigan NameSpace server answered with an error.",
         detail: _clean(text),
       );
     }
@@ -279,7 +302,7 @@ class KerriganNameResolver {
     if (res.status != 200 || record is! Map<String, dynamic>) {
       throw KerriganNameException(
         KerriganNameError.indexerError,
-        "The Kerrigan.name server sent an answer TrekPay can't use.",
+        "The Kerrigan NameSpace server sent an answer TrekPay can't use.",
         detail: "HTTP ${res.status}",
       );
     }
@@ -292,7 +315,7 @@ class KerriganNameResolver {
     if (res.status != 200 || root == null) {
       throw KerriganNameException(
         KerriganNameError.indexerError,
-        "The Kerrigan.name server sent a malformed registry root.",
+        "The Kerrigan NameSpace server sent a malformed registry root.",
         detail: "HTTP ${res.status}",
       );
     }
@@ -331,8 +354,9 @@ class KerriganNameResolver {
     if (!service.epochs.contains(epoch)) {
       throw KerriganNameException(
         KerriganNameError.unreviewedEpoch,
-        "The Kerrigan.name registry has changed its rules or rolled back (epoch "
-        "$epoch). This version of TrekPay only trusts epoch "
+        "The Kerrigan NameSpace registry has changed its rules or rolled back "
+        "(epoch $epoch). This version of TrekPay only trusts "
+        "${service.epochs.length == 1 ? "epoch" : "epochs"} "
         "${service.epochs.join(", ")}, so it won't send to names until it's "
         "updated.",
       );
@@ -432,7 +456,7 @@ class KerriganNameResolver {
       if (answers.length > 1) {
         throw const KerriganNameException(
           KerriganNameError.chainDisagreement,
-          "BNB Smart Chain servers gave different answers about the Kerrigan.name "
+          "BNB Smart Chain servers gave different answers about the Kerrigan NameSpace "
           "registry, so names can't be checked right now.",
         );
       }
@@ -497,7 +521,7 @@ Map<String, dynamic>? _decodeObject(String body) {
 /// characters removed, and cut short (the field is sized by whoever sent it).
 String? _clean(Object? text) => cleanKerriganNameServerText(text);
 
-/// [_clean], for the other Kerrigan.name clients.
+/// [_clean], for the other Kerrigan NameSpace clients.
 String? cleanKerriganNameServerText(Object? text) {
   if (text is! String || text.isEmpty) return null;
   final s = text

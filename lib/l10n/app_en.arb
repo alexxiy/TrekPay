@@ -166,25 +166,26 @@
   },
   "kerriganNamesTitle": "Names",
   "@kerriganNamesTitle": {
-    "description": "The Kerrigan Name screens' title: Kerrigan names (domain-like names such as john.krgn)."
+    "description": "The Kerrigan NameSpace screens' title: KNS names (domain-like names such as john.kerrigan)."
   },
   "kerriganNamesMyNames": "My Names",
-  "kerriganNamesMyBalance": "My Balance",
+  "kerriganNamesMyBalance": "Kerrigan NameSpace balance",
   "kerriganNamesMyTransactions": "My Transactions",
   "kerriganNamesMarketplace": "Marketplace",
-  "kerriganNamesAbout": "About Kerrigan Name",
+  "kerriganNamesAbout": "About Kerrigan NameSpace",
   "kerriganNamesMenu": "Names menu",
   "kerriganNamesInfoHowTitle": "How it works",
-  "kerriganNamesInfoHow1": "Get your own name, like john.krgn, and share it to get paid instead of a long address.",
+  "kerriganNamesInfoHow1": "Get your own name, like john.kerrigan, and share it instead of a long address.",
   "kerriganNamesInfoHow2": "Your names are yours: keep them, sell them on the marketplace or give them to someone else. Only you can change them.",
   "kerriganNamesInfoBenefitsTitle": "Benefits",
   "kerriganNamesInfoBenefits1": "No renewal fees. Once registered, a name is yours for good.",
   "kerriganNamesInfoBenefits2": "Names are stored on-chain, where nobody can alter or remove them.",
   "kerriganNamesInfoBenefits3": "Private by design: a name says nothing about your finances.",
   "kerriganNamesInfoControlTitle": "Control",
-  "kerriganNamesInfoControl1": "Point your name to a new address at any time. People keep paying john.krgn and never need to know.",
+  "kerriganNamesInfoControl1": "Point your name to a new address at any time. People keep paying john.kerrigan and never need to know.",
   "kerriganNamesInfoControl2": "Hand a name to a new owner. That takes a signature with your key, so only you can do it.",
-  "kerriganNamesInfoControl3": "List names on the marketplace and earn from popular ones.",
+  "kerriganNamesInfoControl3": "List your names on the Kerrigan NameSpace marketplace.",
+  "kerriganNamesInfoService": "KNS names come from Kerrigan NameSpace, a service separate from this wallet. TrekPay only sends your requests to it and never holds your coins.",
   "kerriganNamesInfoQuestionTitle": "Have a question?",
   "kerriganNamesInfoTelegram": "Join us on Telegram",
   "kerriganNamesInfoDocs": "Read the docs",
@@ -236,14 +237,14 @@
   },
   "kerriganNamesInvalidName": "Use letters, numbers and single hyphens (not at the start or end), up to {max} characters with the zone.",
   "@kerriganNamesInvalidName": {
-    "description": "The zone is the ending of a name: .krgn, .private, .secure or .safe.",
+    "description": "The zone is the ending of a name: .kerrigan, .krgn, .private, .secure or .safe.",
     "placeholders": {
       "max": {
         "type": "int"
       }
     }
   },
-  "kerriganNamesUnreachable": "Couldn't reach Kerrigan.name. Please try again.",
+  "kerriganNamesUnreachable": "Couldn't reach Kerrigan NameSpace. Please try again.",
   "kerriganNamesBuyName": "Buy name",
   "kerriganNamesBuyConfirm": "Do you want to buy {name} for {amount}?",
   "@kerriganNamesBuyConfirm": {
@@ -270,11 +271,11 @@
   "kerriganNamesZone": "Zone",
   "kerriganNamesZoneSample": "name",
   "@kerriganNamesZoneSample": {
-    "description": "Placeholder in the zone list while the name field is empty: \"name.krgn\". Lowercase, letters a-z only if possible."
+    "description": "Placeholder in the zone list while the name field is empty: \"name.kerrigan\". Lowercase, letters a-z only if possible."
   },
   "kerriganNamesAvailableFor": "is available for {amount}",
   "@kerriganNamesAvailableFor": {
-    "description": "Shown on its own line under a name, e.g. \"my-shop.krgn\" / \"is available for 10 KRGN\".",
+    "description": "Shown on its own line under a name, e.g. \"my-shop.kerrigan\" / \"is available for 10 KRGN\".",
     "placeholders": {
       "amount": {
         "type": "String"
@@ -301,14 +302,14 @@
       }
     }
   },
-  "kerriganNamesGetYourName": "Get your <b>Kerrigan name</b>",
+  "kerriganNamesGetYourName": "Get your <b>KNS name</b>",
   "@kerriganNamesGetYourName": {
     "description": "The words between <b> and </b> show in color."
   },
-  "kerriganNamesIntro": "Register an easy name for your Kerrigan address, and getting paid is as simple as sharing it.",
+  "kerriganNamesIntro": "Register an easy name for your Kerrigan address, so others can send to the name instead of a long address.",
   "kerriganNamesHowDoesItWork": "How does it work?",
   "kerriganNamesRegisterYourName": "Register your name",
-  "kerriganNamesEnterName": "Enter the name you want",
+  "kerriganNamesEnterName": "Enter a name",
   "kerriganNamesChecking": "Checking…",
   "kerriganNamesCheck": "Check",
   "kerriganNamesInFlight": "Your payment for this name is being processed.",
@@ -412,7 +413,7 @@
       }
     }
   },
-  "kerriganNamesWhoOwnsText": "Paste the public key of the new owner. They find it in My Names, in TrekPay or on Kerrigan.name.",
+  "kerriganNamesWhoOwnsText": "Paste the public key of the new owner. They find it in My Names, in TrekPay or on Kerrigan NameSpace.",
   "kerriganNamesSetPrice": "Set the price for {name}",
   "@kerriganNamesSetPrice": {
     "placeholders": {
@@ -429,7 +430,7 @@
       }
     }
   },
-  "kerriganNamesSetPriceText": "Anyone can buy the name for this price on the marketplace. The price then goes to your Kerrigan.name balance (My Balance), to withdraw to your wallet.",
+  "kerriganNamesSetPriceText": "Anyone can buy the name for this price on the marketplace. The price then goes to your Kerrigan NameSpace balance, to withdraw to your wallet.",
   "kerriganNamesCostRegistration": "Registration: {amount}, plus the network fee.",
   "@kerriganNamesCostRegistration": {
     "placeholders": {
@@ -480,7 +481,7 @@
       }
     }
   },
-  "kerriganNamesNoteRegister": "Kerrigan.name: register {name}",
+  "kerriganNamesNoteRegister": "Kerrigan NameSpace: register {name}",
   "@kerriganNamesNoteRegister": {
     "description": "A note saved with the payment in the wallet's history.",
     "placeholders": {
@@ -489,7 +490,7 @@
       }
     }
   },
-  "kerriganNamesNoteBuy": "Kerrigan.name: buy {name}",
+  "kerriganNamesNoteBuy": "Kerrigan NameSpace: buy {name}",
   "@kerriganNamesNoteBuy": {
     "placeholders": {
       "name": {
@@ -497,7 +498,7 @@
       }
     }
   },
-  "kerriganNamesNoteDestination": "Kerrigan.name: new destination for {name}",
+  "kerriganNamesNoteDestination": "Kerrigan NameSpace: new destination for {name}",
   "@kerriganNamesNoteDestination": {
     "placeholders": {
       "name": {
@@ -505,7 +506,7 @@
       }
     }
   },
-  "kerriganNamesNoteOwner": "Kerrigan.name: new owner for {name}",
+  "kerriganNamesNoteOwner": "Kerrigan NameSpace: new owner for {name}",
   "@kerriganNamesNoteOwner": {
     "placeholders": {
       "name": {
@@ -513,7 +514,7 @@
       }
     }
   },
-  "kerriganNamesNoteList": "Kerrigan.name: list {name}",
+  "kerriganNamesNoteList": "Kerrigan NameSpace: list {name}",
   "@kerriganNamesNoteList": {
     "placeholders": {
       "name": {
@@ -521,7 +522,7 @@
       }
     }
   },
-  "kerriganNamesNoteUnlist": "Kerrigan.name: unlist {name}",
+  "kerriganNamesNoteUnlist": "Kerrigan NameSpace: unlist {name}",
   "@kerriganNamesNoteUnlist": {
     "placeholders": {
       "name": {
@@ -538,14 +539,14 @@
     }
   },
   "kerriganNamesPayForChange": "Pay to process the change",
-  "kerriganNamesPaymentExplained": "Your wallet makes this payment to Kerrigan.name with the memo inside. The memo is the command, and Kerrigan.name acts on it once the payment is confirmed. Kerrigan.name publishes its viewing key, so anyone can read the memo, but there's nothing secret in it.",
-  "kerriganNamesToKerriganName": "To Kerrigan.name",
+  "kerriganNamesPaymentExplained": "Your wallet makes this payment to Kerrigan NameSpace with the memo inside. The memo is the command, and Kerrigan NameSpace acts on it once the payment is confirmed. Kerrigan NameSpace publishes its viewing key, so anyone can read the memo, but there's nothing secret in it.",
+  "kerriganNamesToKerriganName": "To Kerrigan NameSpace",
   "commonAddress": "Address",
   "commonAmount": "Amount",
   "kerriganNamesShieldedMemo": "Shielded memo",
   "commonMemo": "Memo",
   "kerriganNamesAddedForYou": "Added for you",
-  "kerriganNamesFeeOnTop": "The network fee comes on top: Kerrigan.name needs the exact amount, and refunds a payment that differs.",
+  "kerriganNamesFeeOnTop": "The network fee comes on top: Kerrigan NameSpace needs the exact amount, and refunds a payment that differs.",
   "kerriganNamesCreateTransaction": "Create transaction",
   "kerriganNamesBalanceUpdated": "Balance updated: {amount}",
   "@kerriganNamesBalanceUpdated": {
@@ -581,7 +582,7 @@
       }
     }
   },
-  "kerriganNamesAskingPayout": "Asking Kerrigan.name to pay out",
+  "kerriganNamesAskingPayout": "Asking Kerrigan NameSpace to pay out",
   "kerriganNamesWithdrawalFailedText": "The withdrawal failed",
   "kerriganNamesWithdrawalFailed": "Withdrawal failed",
   "kerriganNamesWithdrawDone": "Done! About {amount} is on its way to your wallet.",
@@ -595,7 +596,7 @@
   "kerriganNamesYourBalance": "Your balance",
   "commonUnavailable": "Unavailable",
   "commonRefresh": "Refresh",
-  "kerriganNamesBalanceExplained": "Payments Kerrigan.name couldn't use come back here, and so does the price of a name you sell. Withdraw them to your wallet whenever you like.",
+  "kerriganNamesBalanceExplained": "Kerrigan NameSpace holds this balance for you: payments it couldn't use and the price of names you sold. Withdraw it to your wallet whenever you like.",
   "kerriganNamesWithdrawTo": "Withdraw to",
   "kerriganNamesYouGetAbout": "You'll get about {amount} after the service fee ({fee}%).",
   "@kerriganNamesYouGetAbout": {
@@ -626,7 +627,7 @@
   },
   "kerriganNamesYours": "Yours",
   "kerriganNamesChangePrice": "Change price",
-  "kerriganNamesMarketplaceIntro": "Find and buy Kerrigan names from other users.",
+  "kerriganNamesMarketplaceIntro": "Find and buy KNS names from other users. The marketplace is run by Kerrigan NameSpace, not by TrekPay.",
   "kerriganNamesSearchOnSale": "Search names on sale",
   "kerriganNamesNoMatch": "No names match your search.",
   "kerriganNamesNoneOnSale": "There are no names for sale right now.",
@@ -654,7 +655,7 @@
   "kerriganNamesActionListNote": "Put it up for sale",
   "commonPublicKey": "Public key",
   "kerriganNamesYourPublicKey": "Your public key",
-  "kerriganNamesPublicKeyExplained": "Your names belong to this key. It comes from your recovery phrase: open Kerrigan.name with the same phrase and you'll find the same names. Share it with anyone who wants to give you a name.",
+  "kerriganNamesPublicKeyExplained": "Your names belong to this key. It comes from your recovery phrase: open Kerrigan NameSpace with the same phrase and you'll find the same names. Share it with anyone who wants to give you a name.",
   "kerriganNamesOnSale": "On sale: {amount}",
   "@kerriganNamesOnSale": {
     "placeholders": {
@@ -677,7 +678,7 @@
   "kerriganNamesManage": "Manage",
   "kerriganNamesMyNamesIntro": "Manage where your names point and who owns them.",
   "kerriganNamesSearchMine": "Search your names",
-  "kerriganNamesNoneYet": "You haven't registered a Kerrigan name yet.",
+  "kerriganNamesNoneYet": "You haven't registered a KNS name yet.",
   "kerriganNamesRegisterFirst": "Register your first name",
   "kerriganNamesDoneBuy": "You've bought {name}!",
   "@kerriganNamesDoneBuy": {
@@ -762,6 +763,15 @@
   },
   "kerriganNamesWaitingPaymentConfirmations": "Waiting for the payment's confirmations.",
   "kerriganNamesWaitingRefundConfirmations": "Waiting for the refund's confirmations.",
+  "kerriganNamesChainLockNote": "Once a ChainLock covers the block, {count} are enough.",
+  "@kerriganNamesChainLockNote": {
+    "description": "Added after the waiting-for-confirmations text. A ChainLock is Kerrigan's network lock on a block; once it covers the payment's block, the registrar needs only {count} confirmations instead of the full count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "kerriganNamesWaitingProof": "Waiting for the ZK proof…",
   "kerriganNamesProofStartsIn": "It starts in about {time}.",
   "@kerriganNamesProofStartsIn": {
@@ -778,11 +788,11 @@
   "kerriganNamesAlmostDone": "Almost done.",
   "kerriganNamesCongrats": "Congrats!",
   "kerriganNamesPaymentRefunded": "Payment refunded",
-  "kerriganNamesPaymentRefundedText": "Something in the payment was wrong, or someone else got the name first. The amount is back in your Kerrigan.name balance (My Balance).",
+  "kerriganNamesPaymentRefundedText": "Something in the payment was wrong, or someone else got the name first. The amount is back in your Kerrigan NameSpace balance.",
   "kerriganNamesPaymentUnsuccessful": "Payment unsuccessful",
   "kerriganNamesPaymentUnsuccessfulText": "The transaction seems to be orphaned because of Kerrigan network issues.",
   "kerriganNamesTxRejected": "Transaction not accepted",
-  "kerriganNamesTxRejectedText": "Kerrigan.name rejected the transaction because it doesn't follow the protocol rules.",
+  "kerriganNamesTxRejectedText": "Kerrigan NameSpace rejected the transaction because it doesn't follow the protocol rules.",
   "kerriganNamesNextCheckIn": "Next check in {seconds}s",
   "@kerriganNamesNextCheckIn": {
     "placeholders": {
@@ -791,7 +801,7 @@
       }
     }
   },
-  "kerriganNamesOfflineRetry": "Couldn't reach Kerrigan.name. Trying again at the next check.",
+  "kerriganNamesOfflineRetry": "Couldn't reach Kerrigan NameSpace. Trying again at the next check.",
   "kerriganNamesCanClose": "You can close this screen: nothing stops. Follow the payment in My Transactions and tap it there to come back here.",
   "commonTransactionId": "Transaction ID",
   "kerriganNamesTransactionShort": "Transaction {id}",
@@ -814,11 +824,11 @@
   "kerriganNamesTransactionMemo": "Transaction memo",
   "kerriganNamesIncoming": "Incoming",
   "@kerriganNamesIncoming": {
-    "description": "Tab: the user's payments to Kerrigan.name."
+    "description": "Tab: the user's payments to Kerrigan NameSpace."
   },
   "kerriganNamesRefunds": "Refunds",
   "@kerriganNamesRefunds": {
-    "description": "Tab: withdrawals from the Kerrigan.name balance."
+    "description": "Tab: withdrawals from the Kerrigan NameSpace balance."
   },
   "kerriganNamesConfirmations": "{progress} confirmations",
   "@kerriganNamesConfirmations": {
@@ -830,7 +840,7 @@
     }
   },
   "kerriganNamesShowMemo": "Show memo",
-  "kerriganNamesSentWaiting": "Sent. Waiting for Kerrigan.name to see it.",
+  "kerriganNamesSentWaiting": "Sent. Waiting for Kerrigan NameSpace to see it.",
   "kerriganNamesFeePercent": "Fee {fee}%",
   "@kerriganNamesFeePercent": {
     "placeholders": {
@@ -839,10 +849,10 @@
       }
     }
   },
-  "kerriganNamesRefundsIntro": "Your withdrawals from My Balance.",
-  "kerriganNamesIncomingIntro": "Your payments to Kerrigan.name. Tap one in progress to follow it.",
+  "kerriganNamesRefundsIntro": "Your withdrawals from your Kerrigan NameSpace balance.",
+  "kerriganNamesIncomingIntro": "Your payments to Kerrigan NameSpace. Tap one in progress to follow it.",
   "kerriganNamesNoWithdrawals": "No withdrawals yet.",
-  "kerriganNamesNoPayments": "No payments to Kerrigan.name yet.",
+  "kerriganNamesNoPayments": "No payments to Kerrigan NameSpace yet.",
   "kerriganNamesTxConfirmingPayment": "Confirming payment",
   "kerriganNamesTxPendingProof": "Waiting for the proof",
   "kerriganNamesTxQueuedProof": "Proof queued",
@@ -856,7 +866,7 @@
   "kerriganNamesRefundQueued": "Queued",
   "kerriganNamesRefundPaid": "Paid",
   "kerriganNamesRefundError": "Error",
-  "kerriganNamesUnreachableError": "Couldn't reach Kerrigan.name ({error})",
+  "kerriganNamesUnreachableError": "Couldn't reach Kerrigan NameSpace ({error})",
   "@kerriganNamesUnreachableError": {
     "placeholders": {
       "error": {
@@ -864,8 +874,8 @@
       }
     }
   },
-  "kerriganNamesRefused": "Kerrigan.name refused the request",
-  "kerriganNamesBadAnswerHttp": "Kerrigan.name sent an answer the app doesn't understand (HTTP {status})",
+  "kerriganNamesRefused": "Kerrigan NameSpace refused the request",
+  "kerriganNamesBadAnswerHttp": "Kerrigan NameSpace sent an answer the app doesn't understand (HTTP {status})",
   "@kerriganNamesBadAnswerHttp": {
     "placeholders": {
       "status": {
@@ -873,9 +883,9 @@
       }
     }
   },
-  "kerriganNamesBadAnswer": "Kerrigan.name sent an answer the app doesn't understand",
-  "kerriganNamesClockOff": "Kerrigan.name turned the request down because this device's clock is off. Set the right time and try again.",
-  "kerriganNamesWrongNetwork": "Kerrigan.name answered for {got}, not {expected}",
+  "kerriganNamesBadAnswer": "Kerrigan NameSpace sent an answer the app doesn't understand",
+  "kerriganNamesClockOff": "Kerrigan NameSpace turned the request down because this device's clock is off. Set the right time and try again.",
+  "kerriganNamesWrongNetwork": "Kerrigan NameSpace answered for {got}, not {expected}",
   "@kerriganNamesWrongNetwork": {
     "placeholders": {
       "got": {
@@ -886,7 +896,7 @@
       }
     }
   },
-  "kerriganNamesNotValidName": "{name} isn't a valid Kerrigan name",
+  "kerriganNamesNotValidName": "{name} isn't a valid KNS name",
   "@kerriganNamesNotValidName": {
     "placeholders": {
       "name": {
@@ -894,9 +904,9 @@
       }
     }
   },
-  "kerriganNamesWithdrawUnexpected": "The withdrawal failed: Kerrigan.name sent an unexpected answer",
+  "kerriganNamesWithdrawUnexpected": "The withdrawal failed: Kerrigan NameSpace sent an unexpected answer",
   "sendInvalidAddress": "Invalid address",
-  "sendNameInvalid": "Names use letters, digits and single hyphens, like alice.krgn",
+  "sendNameInvalid": "Names use letters, digits and single hyphens, like alice.kerrigan",
   "sendEnterAddress": "Enter {ticker} address",
   "@sendEnterAddress": {
     "placeholders": {
@@ -905,7 +915,7 @@
       }
     }
   },
-  "sendEnterAddressOrName": "Enter {ticker} address or .krgn name",
+  "sendEnterAddressOrName": "Enter {ticker} address or KNS name",
   "@sendEnterAddressOrName": {
     "placeholders": {
       "ticker": {
@@ -913,13 +923,13 @@
       }
     }
   },
-  "kerriganNameErrorUnreachable": "Couldn't reach the Kerrigan.name server.",
-  "kerriganNameErrorIndexer": "The Kerrigan.name server sent an answer TrekPay can't use.",
+  "kerriganNameErrorUnreachable": "Couldn't reach the Kerrigan NameSpace server.",
+  "kerriganNameErrorIndexer": "The Kerrigan NameSpace server sent an answer TrekPay can't use.",
   "kerriganNameErrorChainUnavailable": "Too few BNB Smart Chain servers answered to check the name. Try again later.",
-  "kerriganNameErrorChainDisagreement": "BNB Smart Chain servers gave different answers about the Kerrigan.name registry, so names can't be checked right now.",
-  "kerriganNameErrorEpoch": "The Kerrigan.name registry has changed its rules or rolled back. This version of TrekPay won't send to names until it's updated.",
-  "kerriganNameErrorUnanchored": "The Kerrigan.name server answered from a registry state that was never published on BNB Smart Chain. This can mean the server is misbehaving.",
-  "kerriganNameErrorBadRecord": "The record the Kerrigan.name server sent doesn't match the registry on chain.",
+  "kerriganNameErrorChainDisagreement": "BNB Smart Chain servers gave different answers about the Kerrigan NameSpace registry, so names can't be checked right now.",
+  "kerriganNameErrorEpoch": "The Kerrigan NameSpace registry has changed its rules or rolled back. This version of TrekPay won't send to names until it's updated.",
+  "kerriganNameErrorUnanchored": "The Kerrigan NameSpace server answered from a registry state that was never published on BNB Smart Chain. This can mean the server is misbehaving.",
+  "kerriganNameErrorBadRecord": "The record the Kerrigan NameSpace server sent doesn't match the registry on chain.",
   "kerriganNameErrorUnavailable": "Checking names isn't available here.",
   "sendNameIsContact": "{name} is also a contact",
   "@sendNameIsContact": {
@@ -929,8 +939,8 @@
       }
     }
   },
-  "sendNameIsContactText": "To pay your contact, pick it from the address book. To pay the name registered on Kerrigan.name, rename the contact first, so the two can't be mixed up.",
-  "sendNameNotCaughtUp": "Kerrigan.name still hasn't caught up with the registry on chain. Try again later.",
+  "sendNameIsContactText": "To pay your contact, pick it from the address book. To pay the name registered on Kerrigan NameSpace, rename the contact first, so the two can't be mixed up.",
+  "sendNameNotCaughtUp": "Kerrigan NameSpace still hasn't caught up with the registry on chain. Try again later.",
   "sendNameCheckFailed": "Something went wrong while checking {name}.",
   "@sendNameCheckFailed": {
     "placeholders": {
@@ -947,7 +957,7 @@
       }
     }
   },
-  "sendNameWaiting": "Waiting for Kerrigan.name",
+  "sendNameWaiting": "Waiting for Kerrigan NameSpace",
   "sendNameNotFound": "Name not found",
   "sendNameCantSend": "Can't send to {name}",
   "@sendNameCantSend": {
@@ -957,8 +967,8 @@
       }
     }
   },
-  "sendNameCheckingText": "Looking up the address and checking it against the Kerrigan.name registry on BNB Smart Chain.",
-  "sendNameWaitingMissing": "Kerrigan.name doesn't know {name} yet, and it is still processing the latest registry update. If the name was registered in the last few minutes, wait here; otherwise check the spelling.",
+  "sendNameCheckingText": "Looking up the address and checking it against the Kerrigan NameSpace registry on BNB Smart Chain.",
+  "sendNameWaitingMissing": "Kerrigan NameSpace doesn't know {name} yet, and it is still processing the latest registry update. If the name was registered in the last few minutes, wait here; otherwise check the spelling.",
   "@sendNameWaitingMissing": {
     "placeholders": {
       "name": {
@@ -966,7 +976,7 @@
       }
     }
   },
-  "sendNameWaitingText": "Kerrigan.name is still processing the latest registry update, so its answer for {name} may be out of date. This usually takes a few minutes; TrekPay continues once it's done.",
+  "sendNameWaitingText": "Kerrigan NameSpace is still processing the latest registry update, so its answer for {name} may be out of date. This usually takes a few minutes; TrekPay continues once it's done.",
   "@sendNameWaitingText": {
     "placeholders": {
       "name": {
@@ -974,7 +984,7 @@
       }
     }
   },
-  "sendNameNotRegistered": "{name} isn't registered on Kerrigan.name. Check the spelling.",
+  "sendNameNotRegistered": "{name} isn't registered on Kerrigan NameSpace. Check the spelling.",
   "@sendNameNotRegistered": {
     "placeholders": {
       "name": {
@@ -990,7 +1000,7 @@
       }
     }
   },
-  "sendNameChecked": "Checked against the Kerrigan.name registry on BNB Smart Chain",
+  "sendNameChecked": "Checked against the Kerrigan NameSpace registry on BNB Smart Chain",
   "sendChangeTo": "Change: {amount} to",
   "@sendChangeTo": {
     "description": "Followed by an address on the next line.",
@@ -1028,7 +1038,7 @@
       }
     }
   },
-  "sendNameBehind": "Kerrigan.name is processing a registry update, so {name} can't be checked right now. Try again in a few minutes.",
+  "sendNameBehind": "Kerrigan NameSpace is processing a registry update, so {name} can't be checked right now. Try again in a few minutes.",
   "@sendNameBehind": {
     "placeholders": {
       "name": {
@@ -1036,7 +1046,7 @@
       }
     }
   },
-  "sendNameGone": "{name} is no longer registered on Kerrigan.name.",
+  "sendNameGone": "{name} is no longer registered on Kerrigan NameSpace.",
   "@sendNameGone": {
     "placeholders": {
       "name": {
@@ -1494,7 +1504,7 @@
   "mnRemove": "Remove masternode",
   "mnTitle": "Masternodes",
   "mnNoneYet": "No masternodes yet",
-  "mnNoneYetText": "A masternode locks a collateral of {amount} in this wallet and earns rewards while a server runs it. The collateral stays yours and is frozen so it can't be spent by accident. A BroodNode locks {broodAmount} and votes with four times the weight.",
+  "mnNoneYetText": "A masternode locks a collateral of {amount} in this wallet and gets rewards from the network while a server runs it. The collateral stays yours and is frozen so it can't be spent by accident. A BroodNode locks {broodAmount} and votes with four times the weight.",
   "@mnNoneYetText": {
     "placeholders": {
       "amount": {
@@ -1507,7 +1517,7 @@
     "description": "{amount}: a masternode's collateral, {broodAmount}: a BroodNode's, both with the ticker. BroodNode is a name: keep it as is."
   },
   "mnEnabled": "Enabled",
-  "mnEarned": "Earned",
+  "mnEarned": "Rewards",
   "mnServer": "Server",
   "mnNotSet": "Not set",
   "mnLastPaid": "Last paid",
@@ -1729,7 +1739,6 @@
   "txFilterTitleDesktop": "Transaction filter",
   "txSent": "Sent",
   "txReceived": "Received",
-  "txTrades": "Trades",
   "txDate": "Date",
   "txEnterAmount": "Enter {ticker} amount...",
   "@txEnterAmount": {
@@ -1779,10 +1788,10 @@
   "txInputs": "Inputs",
   "txOutputs": "Outputs",
   "txOpenInExplorer": "Open in block explorer",
-  "walletAnonymizing": "Anonymizing balance",
-  "walletNoFundsToPrivatize": "No funds available to privatize!",
-  "walletPrivatizeSubmitted": "Privatize transaction submitted",
-  "walletPrivatizeFailed": "Privatize all failed",
+  "walletAnonymizing": "Shielding your balance…",
+  "walletNoFundsToPrivatize": "No transparent balance to shield.",
+  "walletPrivatizeSubmitted": "Shield transaction sent",
+  "walletPrivatizeFailed": "Couldn't shield your balance",
   "walletReason": "Reason: {reason}",
   "@walletReason": {
     "placeholders": {
@@ -1795,8 +1804,8 @@
   "walletAddressBookSemantics": "Address Book Button. Takes To Address Book.",
   "walletSettingsSemantics": "Settings Button. Takes To Wallet Settings Page.",
   "walletAttention": "Attention!",
-  "walletPrivatizeConfirm": "You're about to privatize all of your public funds.",
-  "walletPrivatizeFunds": "Privatize funds",
+  "walletPrivatizeConfirm": "This moves your whole transparent balance to your shield balance.",
+  "walletPrivatizeFunds": "Shield all",
   "walletSeeAll": "See all",
   "commonReceive": "Receive",
   "addressBookTitle": "Address book",
@@ -2170,7 +2179,7 @@
   "addWalletCreateError": "Create Wallet Error",
   "commonUnknownError": "Unknown error",
   "addWalletExplainSemantics": "Question Button. Opens A Dialog For Recovery Phrase Explanation.",
-  "addWalletWarningDesktop": "On the next screen you will see {count} words that make up your recovery phrase.\n\nPlease write it down. Keep it safe and never share it with anyone. Your recovery phrase is the only way you can access your funds if you forget your PIN, lose your phone, etc.\n\n{app} does not keep nor is able to restore your recover phrase. Only you have access to your wallet.",
+  "addWalletWarningDesktop": "On the next screen you will see {count} words that make up your recovery phrase.\n\nPlease write it down. Keep it safe and never share it with anyone. Your recovery phrase is the only way you can access your funds if you forget your PIN, lose your phone, etc.\n\n{app} doesn't keep your recovery phrase and can't restore it. Only you have access to your wallet.",
   "@addWalletWarningDesktop": {
     "placeholders": {
       "count": {
@@ -2207,8 +2216,8 @@
   "explainCarAnalogy": "The car analogy.",
   "explainCar": "You can drive your car when your have your car keys. If you lose your car keys, you can’t drive you car. If someone steals your car keys, they can steal your car. If someone copies your car keys, they can also steal your car.",
   "explainCrypto": "Cryptocurrency works the same way. These recovery phrase words we’re about to show you are like the car keys in the metaphor above.",
-  "explainLose": "If you lose these words, you can’t access your money. If someone steals these words, they can access and steal your money. If someone copies these words, they can access and steal your money.",
-  "explainNobody": "If your funds are lost or stolen because of you don’t write down your recovery phrase or keep it safe, then NOBODY, NOT EVEN US, can help you recover your money.",
+  "explainLose": "If you lose these words, you lose access to your coins. Anyone who steals or copies them can take your coins.",
+  "explainNobody": "If your coins are lost or stolen because the recovery phrase wasn't written down or kept safe, nobody, not even us, can get them back.",
   "restoreMayTakeWhileLines": "Restoring your wallet may take a while.\nPlease do not exit this screen once the process is started.",
   "restoreAction": "Restore",
   "@restoreAction": {
@@ -2236,8 +2245,16 @@
   },
   "commonAdvanced": "Advanced",
   "restorePassphraseText": "If the recovery phrase you are about to restore was created with an optional BIP39 passphrase you can enter it here.",
-  "restoreNotXpub": "That isn't a {coin} extended public key.",
-  "@restoreNotXpub": {
+  "restoreNotWatchKey": "That isn't a {coin} extended public key or shield viewing key.",
+  "@restoreNotWatchKey": {
+    "placeholders": {
+      "coin": {
+        "type": "String"
+      }
+    }
+  },
+  "restoreNotShieldKey": "That isn't a {coin} shield viewing key.",
+  "@restoreNotShieldKey": {
     "placeholders": {
       "coin": {
         "type": "String"
@@ -2252,9 +2269,22 @@
       }
     }
   },
-  "restoreXpubEmpty": "Extended public key is empty",
   "restoreEnterViewOnly": "Enter view only details",
-  "restoreXpub": "Extended public key",
+  "restoreWatchKey": "Extended public key or viewing key",
+  "restoreWatchKeyInfo": "Use an extended public key to watch a wallet's transparent addresses, or a shield viewing key to watch shield addresses, such as the key Kerrigan NameSpace publishes.",
+  "restoreBirthday": "Birthday block (optional)",
+  "restoreBirthdayInfo": "The block of the key's first transaction, or any block before it. Left empty, the scan starts at the beginning of shield: it downloads much more and can take a long time.",
+  "restoreBirthdayAboveTip": "Block {height} isn't on the chain yet: the network is at block {tip}.",
+  "@restoreBirthdayAboveTip": {
+    "placeholders": {
+      "height": {
+        "type": "int"
+      },
+      "tip": {
+        "type": "int"
+      }
+    }
+  },
   "restoreInvalidSeed": "Invalid seed phrase!",
   "restoreScanSemantics": "View QR Code Button. Opens Camera To Scan QR Code For Restoring Wallet.",
   "restorePasteSemantics": "Paste Button. Pastes From Clipboard For Restoring Wallet.",
@@ -2502,8 +2532,63 @@
   "nodeAdd": "Add node",
   "nodeAddNew": "Add new node",
   "nodeTestConnection": "Test connection",
-  "nodePingSuccess": "Server ping success",
   "nodeUnreachable": "Server unreachable",
+  "nodeTestAll": "Test all",
+  "@nodeTestAll": {
+    "description": "Button under a coin's list of nodes: tests every node and shows each one's answer time in its row."
+  },
+  "nodeTesting": "Testing…",
+  "@nodeTesting": {
+    "description": "On a button while a node test runs."
+  },
+  "nodeConnecting": "Connecting…",
+  "@nodeConnecting": {
+    "description": "On the Connect button while the node is checked before the app switches to it."
+  },
+  "nodeConnectedTo": "Connected to {node}",
+  "@nodeConnectedTo": {
+    "description": "Shown after the user switched to a node. {node}: the node's name, like \"TrekPay EU\".",
+    "placeholders": {
+      "node": {
+        "type": "String"
+      }
+    }
+  },
+  "nodeAnsweredIn": "The node works. It answered in {time}.",
+  "@nodeAnsweredIn": {
+    "description": "A node passed the connection test. {time}: how long the test took, like \"142 ms\" or \"1.4 s\".",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "nodeNoAnswer": "No answer",
+  "@nodeNoAnswer": {
+    "description": "In a node's row after a test: the node didn't answer (unreachable, or no answer within 20 seconds)."
+  },
+  "nodeCheckFailed": "Check failed",
+  "@nodeCheckFailed": {
+    "description": "In a node's row after a test: the node answered but isn't usable (wrong network, no address index...)."
+  },
+  "nodeAnswerMs": "{ms} ms",
+  "@nodeAnswerMs": {
+    "description": "A node's answer time in milliseconds, in its row.",
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
+  },
+  "nodeAnswerSeconds": "{seconds} s",
+  "@nodeAnswerSeconds": {
+    "description": "A node's answer time in seconds (\"1.4\", \"12\", with the language's decimal separator), in its row.",
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
   "nodeName": "Node name",
   "nodeIpAddress": "IP address",
   "nodePort": "Port",
@@ -2622,7 +2707,7 @@
   "syncingSelectWalletsEllipsis": "Select wallets...",
   "syncingChooseWallets": "Choose the wallets to sync automatically at startup",
   "torWhatIs": "What is Tor?",
-  "torWhatIsText": "Short for \"The Onion Router\", is an open-source software that enables internet communication to remain anonymous by routing internet traffic through a series of layered nodes, to obscure the origin and destination of data.",
+  "torWhatIsText": "Tor, short for \"The Onion Router\", is open-source software that keeps your internet traffic private. It routes the traffic through a chain of nodes with layered encryption, so it's hard to tell where data comes from and where it goes.",
   "torOnlyText": "With Tor on, the app connects only through Tor. If Tor stops working, the app stops connecting until it's back.",
   "torConnectingTapToCancel": "Connecting (tap to cancel)",
   "torStatus": "Tor status",
@@ -2903,6 +2988,7 @@
   "@walletKeys": {
     "description": "What a view-only wallet holds instead of a seed: its public keys."
   },
+  "walletShieldViewingKey": "Shield viewing key",
   "walletSeed": "Wallet seed",
   "walletViewKeys": "View wallet keys",
   "walletViewSeed": "View wallet seed",
@@ -3156,7 +3242,7 @@
     }
   },
   "currencySelect": "Select currency",
-  "currencyText": "Select a fiat currency to evaluate your crypto assets. We use CoinGecko conversion rates when displaying your balance and transaction amounts.",
+  "currencyText": "Choose the currency for approximate values of your balance and transactions. The rates come from CoinGecko and are only shown for reference.",
   "currencyChange": "Change currency",
   "nodesSelectCoin": "Select a coin to see nodes",
   "passwordNewMismatch": "The new passwords don't match",
@@ -3516,7 +3602,7 @@
   },
   "mnCollateralGone": "The collateral output is not in this wallet anymore",
   "mnCollateralNotWallet": "The collateral address is not a wallet address",
-  "namesNotShieldAddress": "The Kerrigan.name address isn't a shield address",
+  "namesNotShieldAddress": "The Kerrigan NameSpace address isn't a shield address",
   "txWrongFromServer": "The server sent a wrong transaction for {txid}",
   "@txWrongFromServer": {
     "placeholders": {
@@ -3699,9 +3785,9 @@
   "@donateSlide": {
     "description": "A slide-to-confirm button: dragging it to the end sends the donation."
   },
-  "donateTo": "Goes to TrekPay's developer, {name}. The network fee comes on top.",
+  "donateTo": "A voluntary gift to {name}, TrekPay's developer. It doesn't unlock anything in the app. The network fee comes on top.",
   "@donateTo": {
-    "description": "name is the developer's Kerrigan name, alexxiy.kerrigan",
+    "description": "name is the developer's KNS name, alexxiy.kerrigan",
     "placeholders": {
       "name": {
         "type": "String"
@@ -4056,7 +4142,7 @@
     "description": "TrekPay is the app's name."
   },
   "mnOrCollateral": "Masternode or collateral",
-  "mnRegularText": "Earns masternode rewards and votes on proposals.",
+  "mnRegularText": "Gets masternode rewards and votes on proposals.",
   "mnBroodNodeText": "Votes with four times the weight. On a server that also mines, it reaches the top Hivemind sealing tier.",
   "@mnBroodNodeText": {
     "description": "Hivemind is the name of Kerrigan's mining and sealing system: keep it as is."
@@ -4092,7 +4178,7 @@
       }
     }
   },
-  "mnRegisterNoServer": "The masternode goes on the network without a server; it earns nothing until its server is set.",
+  "mnRegisterNoServer": "The masternode goes on the network without a server; it gets no rewards until its server is set.",
   "mnRegisterWithServer": "The masternode goes on the network with server {server}.",
   "@mnRegisterWithServer": {
     "description": "{server}: an IP address and port, e.g. \"203.0.113.5:7120\".",

@@ -615,7 +615,6 @@ class _TransactionFilterOptionBarState
   }) => TransactionFilter(
     sent: f.sent,
     received: f.received,
-    trade: f.trade,
     from: from ? null : f.from,
     to: to ? null : f.to,
     amount: amount ? null : f.amount,

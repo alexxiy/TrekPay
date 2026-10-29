@@ -16,6 +16,7 @@ import 'dart:typed_data';
 
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:coinlib_flutter/coinlib_flutter.dart' as coinlib;
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_libkerriganshield/flutter_libkerriganshield.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paymint/models/isar/models/blockchain_data/transaction_type.dart';
@@ -37,7 +38,8 @@ String _hex(String text) =>
     text.codeUnits.map((c) => c.toRadixString(16).padLeft(2, "0")).join();
 
 /// Minimal port of the wallet's scanning loop (see
-/// kerrigan_wallet_shield.dart), keeping what history parsing needs.
+/// kerrigan_wallet_shield.dart), keeping what history parsing needs: the
+/// bridge's compact stream, with txids found in the blocks.
 class _Scanner {
   _Scanner(this.bridge, this.extfvk, this.height, this.tree);
 
@@ -52,7 +54,7 @@ class _Scanner {
 
   Future<void> sync() async {
     final blocks = await parseKerriganShieldStream(
-      bridge.shieldData(height + 1),
+      bridge.shieldData(height + 1, compact: true),
     ).toList();
     if (blocks.isEmpty) return;
     final r = await KerriganShield.handleBlocks(
@@ -79,6 +81,25 @@ class _Scanner {
     ];
     for (final w in r["wallet_transactions"] as List) {
       final wtx = Map<String, dynamic>.from(w as Map);
+      expect(wtx["txid"], isEmpty, reason: "compact packets have no txid");
+      final block = blocks[wtx["block"] as int].height;
+      for (final txid in await bridge.blockTxids(block)) {
+        final parts = kerriganVerifiedShieldParts(
+          txid,
+          await bridge.rawTx(txid),
+        );
+        if (listEquals(
+              parts.nullifiers,
+              List<String>.from(wtx["nullifiers"] as List),
+            ) &&
+            listEquals(
+              parts.commitments,
+              List<String>.from(wtx["commitments"] as List),
+            )) {
+          wtx["txid"] = txid;
+        }
+      }
+      expect(wtx["txid"], isNotEmpty, reason: "no tx of block $block matches");
       walletTxs.add(wtx);
       // Same shape as KerriganShieldState.txInfo.
       txInfo[wtx["txid"] as String] = {
@@ -182,18 +203,16 @@ void main() {
       final from = await rpc("getnewaddress") as String;
       await rpc("sendtoaddress", [from, 20]);
       await mine();
-      final txid =
-          await rpc("z_sendmany", [
-                from,
-                [
-                  {
-                    "address": shieldAddress,
-                    "amount": 7,
-                    "memo": _hex("hello trekpay"),
-                  },
-                ],
-              ])
-              as String;
+      final txid = await rpc("z_sendmany", [
+        from,
+        [
+          {
+            "address": shieldAddress,
+            "amount": 7,
+            "memo": _hex("hello trekpay"),
+          },
+        ],
+      ]) as String;
       await mine();
       await waitFor(() async {
         await scanner.sync();

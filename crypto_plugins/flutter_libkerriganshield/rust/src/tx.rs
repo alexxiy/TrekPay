@@ -65,6 +65,11 @@ impl<'a> Reader<'a> {
         Ok(i64::from_le_bytes(self.array()?))
     }
 
+    /// Bytes not read yet.
+    pub fn remaining(&self) -> usize {
+        self.data.len() - self.pos
+    }
+
     /// Fail unless everything was read.
     pub fn finish(&self) -> Result<(), Error> {
         if self.pos == self.data.len() {

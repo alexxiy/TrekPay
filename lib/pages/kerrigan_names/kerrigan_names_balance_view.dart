@@ -19,7 +19,7 @@ import '../../widgets/rounded_white_container.dart';
 import '../send_view/sub_widgets/kerrigan_funding_card.dart';
 import 'kerrigan_names_common.dart';
 
-/// The user's Kerrigan.name balance: refunds and marketplace sales, waiting to
+/// The user's Kerrigan NameSpace balance: refunds and marketplace sales, waiting to
 /// be withdrawn to the wallet.
 class KerriganNamesBalanceView extends ConsumerStatefulWidget {
   const KerriganNamesBalanceView({super.key, required this.walletId});
@@ -33,7 +33,8 @@ class KerriganNamesBalanceView extends ConsumerStatefulWidget {
       _KerriganNamesBalanceViewState();
 }
 
-class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceView> {
+class _KerriganNamesBalanceViewState
+    extends ConsumerState<KerriganNamesBalanceView> {
   KerriganNamesBalance? _balance;
   bool _loading = true;
   String? _error;
@@ -88,7 +89,9 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
     } catch (e) {
       if (mounted) {
         setState(
-          () => _error = l10n.kerriganNamesLoadBalanceFailed(kerriganNamesError(e)),
+          () => _error = l10n.kerriganNamesLoadBalanceFailed(
+            kerriganNamesError(e),
+          ),
         );
       }
     } finally {
@@ -97,7 +100,7 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
   }
 
   /// What a withdrawal of [sats] pays out after the service fee (an
-  /// estimate: Kerrigan.name works it out).
+  /// estimate: Kerrigan NameSpace works it out).
   BigInt _net(BigInt sats, double feePercent) {
     final fee = Decimal.parse(feePercent.toString());
     final net =
@@ -166,7 +169,9 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
     unawaited(
       showFloatingFlushBar(
         type: FlushBarType.success,
-        message: l10n.kerriganNamesWithdrawDone(kerriganNamesAmount(net, ref, wallet)),
+        message: l10n.kerriganNamesWithdrawDone(
+          kerriganNamesAmount(net, ref, wallet),
+        ),
         context: context,
       ),
     );
@@ -181,7 +186,7 @@ class _KerriganNamesBalanceViewState extends ConsumerState<KerriganNamesBalanceV
     final colors = Theme.of(context).extension<StackColors>()!;
     final wallet = _wallet;
     final balance = _balance;
-    // A balance under the minimum stays until more comes in: Kerrigan.name
+    // A balance under the minimum stays until more comes in: Kerrigan NameSpace
     // refuses to pay it out.
     final belowMinimum =
         balance != null &&

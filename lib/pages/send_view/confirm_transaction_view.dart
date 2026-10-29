@@ -76,7 +76,7 @@ class ConfirmTransactionView extends ConsumerStatefulWidget {
   final VoidCallback? onSuccessInsteadOfRouteOnSuccess;
   final VoidCallback onSuccess;
 
-  /// The Kerrigan.name name being paid, with the address it was proven to point
+  /// The Kerrigan NameSpace name being paid, with the address it was proven to point
   /// to when the transaction was built. Checked again before sending.
   final KerriganNameVerified? kerriganName;
 
@@ -105,7 +105,7 @@ class _ConfirmTransactionViewState
         : address;
   }
 
-  /// Under the recipient when paying a Kerrigan.name name.
+  /// Under the recipient when paying a Kerrigan NameSpace name.
   Widget _kerriganNameDetails(BuildContext context, TextStyle style) {
     final colors = Theme.of(context).extension<StackColors>()!;
     return Column(
@@ -173,7 +173,10 @@ class _ConfirmTransactionViewState
       now = await resolver.lookup(name);
     } on KerriganNameException catch (e) {
       throw _NotSent(
-        l10n.sendNameRecheckFailed(name, kerriganNameErrorText(e, detail: true)),
+        l10n.sendNameRecheckFailed(
+          name,
+          kerriganNameErrorText(e, detail: true),
+        ),
       );
     }
     switch (now) {
@@ -240,7 +243,8 @@ class _ConfirmTransactionViewState
 
     final TxData confirmedTx;
     try {
-      if (widget.kerriganName != null) await _recheckKerriganName(widget.kerriganName!);
+      if (widget.kerriganName != null)
+        await _recheckKerriganName(widget.kerriganName!);
       await widget.beforeBroadcast?.call();
       try {
         confirmedTx = await wallet.confirmSend(txData: widget.txData);

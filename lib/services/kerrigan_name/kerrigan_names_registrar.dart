@@ -7,7 +7,7 @@ import 'kerrigan_name.dart';
 import 'kerrigan_name_resolver.dart';
 import 'kerrigan_names_protocol.dart';
 
-/// The Kerrigan.name registrar: where names are registered and managed. It
+/// The Kerrigan NameSpace registrar: where names are registered and managed. It
 /// takes the commands paid to its address, keeps the users' refund
 /// balances and runs the marketplace.
 class KerriganNamesService {
@@ -26,10 +26,16 @@ class KerriganNamesService {
   /// one can't be replayed on another.
   final String marker;
 
-  /// The registrar for [coin], or null where names don't exist (see
-  /// [KerriganNameService.forCoin]): Kerrigan has none yet.
+  static final mainnet = KerriganNamesService(
+    registrar: Uri.parse("https://registrar.kerrigan-name.space"),
+    network: "mainnet",
+    marker: "KNS",
+  );
+
+  /// The registrar for [coin], or null where names don't exist (only
+  /// mainnet has them).
   static KerriganNamesService? forCoin(CryptoCurrency coin) =>
-      null;
+      KerriganNameService.forCoin(coin) == null ? null : mainnet;
 }
 
 class KerriganNamesException implements Exception {
@@ -50,6 +56,9 @@ typedef KerriganNamesPaymentInfo = ({
   String address,
   int paymentConfirmations,
   int refundConfirmations,
+  // Either count drops to this once a ChainLock covers the payment's
+  // block; null when the registrar doesn't say.
+  int? chainLockConfirmations,
 });
 
 /// What a name lookup on the registrar found.
@@ -265,7 +274,9 @@ class KerriganNamesRegistrar {
         body: body == null ? null : jsonEncode(body),
       );
     } catch (e) {
-      throw KerriganNamesException(l10n.kerriganNamesUnreachableError(e.toString()));
+      throw KerriganNamesException(
+        l10n.kerriganNamesUnreachableError(e.toString()),
+      );
     }
     Object? json;
     try {
@@ -286,7 +297,9 @@ class KerriganNamesRegistrar {
       }
       if (json.containsKey("response")) return json["response"];
     }
-    throw KerriganNamesException(l10n.kerriganNamesBadAnswerHttp(response.status));
+    throw KerriganNamesException(
+      l10n.kerriganNamesBadAnswerHttp(response.status),
+    );
   }
 
   static Never _malformed() =>
@@ -300,7 +313,10 @@ class KerriganNamesRegistrar {
       return await _call(path, body);
     } on KerriganNamesException catch (e) {
       if (e.fromServer && e.message == "Request timeout") {
-        throw KerriganNamesException(l10n.kerriganNamesClockOff, fromServer: true);
+        throw KerriganNamesException(
+          l10n.kerriganNamesClockOff,
+          fromServer: true,
+        );
       }
       rethrow;
     }
@@ -327,7 +343,8 @@ class KerriganNamesRegistrar {
         l10n.kerriganNamesWrongNetwork("${r["network"]}", service.network),
       );
     }
-    if (address is! String || !isValidKerriganNamesTarget(address)) _malformed();
+    if (address is! String || !isValidKerriganNamesTarget(address))
+      _malformed();
     int confirmations(Object? v, int fallback) =>
         v is int && v > 0 && v < 10000 ? v : fallback;
     return (
@@ -340,6 +357,10 @@ class KerriganNamesRegistrar {
         r["refund_confirmations"],
         kKerriganNamesRefundConfirmations,
       ),
+      chainLockConfirmations: switch (r["chainlock_confirmations"]) {
+        final int v when v > 0 && v < 10000 => v,
+        _ => null,
+      },
     );
   }
 

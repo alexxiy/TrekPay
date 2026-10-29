@@ -406,7 +406,7 @@ class _SendViewState extends ConsumerState<SendView> {
         kerriganNameFor(coin, address) != null;
   }
 
-  /// Kerrigan.name names always point to shield addresses.
+  /// Kerrigan NameSpace names always point to shield addresses.
   bool get _sendsToShield =>
       (coin as Kerrigan).isShieldAddress(_address ?? "") ||
       kerriganNameFor(coin, _address) != null;
@@ -536,7 +536,7 @@ class _SendViewState extends ConsumerState<SendView> {
       }
     }
 
-    // A Kerrigan.name name: look it up and check it first. The transaction
+    // A Kerrigan NameSpace name: look it up and check it first. The transaction
     // pays the address that was proven, never the name's text.
     var recipient = _address!;
     KerriganNameVerified? kerriganName;

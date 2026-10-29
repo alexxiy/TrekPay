@@ -278,7 +278,8 @@ class _DesktopWalletFeaturesState extends ConsumerState<DesktopWalletFeatures> {
 
     final canGen =
         !(isViewOnly &&
-            wallet.viewOnlyType == ViewOnlyWalletType.addressOnly) &&
+            (wallet.viewOnlyType == ViewOnlyWalletType.addressOnly ||
+                wallet.viewOnlyType == ViewOnlyWalletType.saplingViewingKey)) &&
         wallet is MultiAddressInterface;
 
     final extraOptions = <(WalletFeature, Object, FutureOr<void> Function())>[

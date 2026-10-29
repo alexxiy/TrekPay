@@ -29,61 +29,51 @@ import '../../widgets/stack_text_field.dart';
 import '../../widgets/textfield_icon_button.dart';
 
 // =============================================================================
-// The PIVX.name mark (pivx-name-front, images/favicon*.svg), until
-// Kerrigan.name has its own
+// The Kerrigan NameSpace mark (kerrigan-name-front, images/favicon*.svg)
 
-const _shield =
-    '<path fill="#ffffff" d="M408 67.5c0-5.9-4.3-10.9-10.1-11.8L221.8 '
-    '27.5c-.6-.1-1.3-.2-1.9-.2h-.1c-.5 0-1.6.1-1.8.1L58.7 52.9l-17.1 '
-    '2.7c-5.8.9-10.1 5.9-10.1 11.8v257.1c0 60.2 126.2 124 183.8 147.3 1.1.4 '
-    '2.2.7 3.3.8.4 0 .8.1 1.1.1 1.5 0 3-.3 4.4-.9 32.9-13.2 88-39.6 '
-    '129.2-71 3.2-2.5 6.6-5 9.6-7.5 11.6-9.5 21.7-19.4 29.4-29.5 2.3-3.1 '
-    '6.6-9.8 7.7-11.7 2-3.6 3.6-7.2 4.9-10.8 1.9-5.4 2.9-10.9 '
-    '2.9-16.4V67.5h.2zM393.6 319c0 1.3-.1 2.5-.2 3.8-.4 3.8-1.2 7.6-2.5 '
-    '11.3-1.2 3.4-2.7 6.7-4.5 10-1 1.8-5 8-7.1 10.8-7.1 9.3-16.4 18.5-27.2 '
-    '27.3-2.7 2.3-5.9 4.6-8.9 7-38 29-89 53.4-119.3 65.6-1.3.5-2.7.8-4.1.8-1.4 '
-    '0-2.8-.3-4.1-.8C162.5 433.3 46 374.5 46 318.8V81.4c0-5.4 3.9-10 '
-    '9.3-10.9L71 68l147.1-23.5c.6-.1 1.2-.1 1.7-.1.6 0 1.2 0 1.7.1L374.8 '
-    '69l9.5 1.5c2.7.4 5 1.8 6.7 3.7.4.5.8 1 1.1 1.6.6 1.1 1.1 2.3 1.3 '
-    '3.6.1.6.2 1.3.2 2V319z"/>'
-    '<path fill="#ffffff" d="M232.8 199.2c6.8 0 12.3-5.5 12.3-12.3s-5.5-12.3'
-    '-12.3-12.3h-95c-1 0-1.7.8-1.7 1.7v10.6c0 6.6 5.2 12 11.7 12.4l85-.1z"/>'
-    '<path fill="#ffffff" d="M256.2 102.7H155.6c-1 0-1.7.8-1.7 1.7V115c0 6.6 '
-    '5.2 12 11.7 12.4l85.5-.2c3.2 0 6.1.1 6.1.1 31.5 1.5 56.6 27.7 56.6 '
-    '59.6 0 32.2-25.6 58.3-57.5 59.3h-90c-.6 0-1.2 0-1.8.1-5.6.8-10 '
-    '5.5-10.4 11.3v121.5c0 1 .8 1.7 1.7 1.7h10.6c6.6 0 12-5.2 '
-    '12.4-11.7v-96.7c0-.8.8-1.5 1.6-1.5l77.7-.1c6.7-.3 13.2-1.4 '
-    '19.4-3.1 35.3-10.1 61.1-42.4 61.1-80.9-.2-45.8-36.8-83-82.4-84.1z"/>';
-
-const _square =
+const _tile =
     '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
-    '<stop offset="0" stop-color="#c084fc"/>'
-    '<stop offset="1" stop-color="#7e22ce"/></linearGradient></defs>'
+    '<stop offset="0" stop-color="#ffffff"/>'
+    '<stop offset="1" stop-color="#ede3fd"/></linearGradient></defs>'
     '<rect width="500" height="500" rx="110" ry="110" fill="url(#g)"/>';
 
-/// The shield, the "P" and the linked nodes.
-const _logo =
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">$_square'
-    '<g transform="translate(60, 60) scale(0.76)">$_shield'
-    '<g transform="translate(320, 320)">'
-    '<circle cx="90" cy="90" r="100" fill="#a855f7" stroke="#6b21a8" '
-    'stroke-width="20"/>'
-    '<circle cx="50" cy="90" r="20" fill="#ffffff"/>'
-    '<circle cx="130" cy="60" r="20" fill="#ffffff"/>'
-    '<circle cx="110" cy="130" r="20" fill="#ffffff"/>'
-    '<line x1="50" y1="90" x2="130" y2="60" stroke="#ffffff" '
-    'stroke-width="12"/>'
-    '<line x1="50" y1="90" x2="110" y2="130" stroke="#ffffff" '
-    'stroke-width="12"/>'
-    '<line x1="130" y1="60" x2="110" y2="130" stroke="#ffffff" '
-    'stroke-width="12"/>'
-    '</g></g></svg>';
+/// The Kerrigan icon (Graphics/logo.svg).
+const _icon =
+    '<path fill="#8341ed" d="M59.17,36.38h-12.04l13.39-13.39c.37-.37.57-.86'
+    '.58-1.38l.04-8.54c0-.52-.21-1.03-.58-1.4l-3.51-3.51c-.77-.77-2.02-.77'
+    '-2.78,0l-22.06,22.06L10.13,8.16c-.77-.77-2.02-.77-2.78,0l-3.47,3.47c-.37'
+    '.37-.58.87-.58,1.39v8.59c0,.53.2,1.02.58,1.39l13.38,13.38H5.27c-1.09,0'
+    '-1.97.88-1.97,1.97v4.9c0,.53.2,1.02.58,1.39l6.07,6.07c.37.37.87.58,1.39'
+    '.58h8.09v1.1c0,.53.2,1.02.58,1.39l3.47,3.47c.77.77,2.02.77,2.78,0l5.93'
+    '-5.93,5.93,5.93c.77.77,2.02.77,2.78,0l3.51-3.51c.37-.37.58-.88.58-1.4v'
+    '-1.04s8.09,0,8.09,0c.53,0,1.02-.2,1.39-.58l6.07-6.07c.37-.37.58-.87.58'
+    '-1.39v-4.9c0-1.09-.88-1.97-1.97-1.97Z"/>'
+    '<path fill="#43de78" d="M24.13,15.45l7.98,8.02,8.01-8.01c.94-.94.28-2.56'
+    '-1.06-2.56h-13.87c-1.33,0-2,1.61-1.06,2.55Z"/>';
 
-/// The small variant: no nodes, a bigger shield (they are noise at icon
+/// The icon and the linked name nodes.
+const _logo =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">$_tile'
+    '<g transform="translate(52.17 45.41) scale(5.7054)">$_icon</g>'
+    '<g transform="translate(296.4, 296.4) scale(0.84)">'
+    '<circle cx="90" cy="90" r="100" fill="#43de78" stroke="#ffffff" '
+    'stroke-width="16"/>'
+    '<circle cx="50" cy="90" r="20" fill="#1a0a2e"/>'
+    '<circle cx="130" cy="60" r="20" fill="#1a0a2e"/>'
+    '<circle cx="110" cy="130" r="20" fill="#1a0a2e"/>'
+    '<line x1="50" y1="90" x2="130" y2="60" stroke="#1a0a2e" '
+    'stroke-width="12"/>'
+    '<line x1="50" y1="90" x2="110" y2="130" stroke="#1a0a2e" '
+    'stroke-width="12"/>'
+    '<line x1="130" y1="60" x2="110" y2="130" stroke="#1a0a2e" '
+    'stroke-width="12"/>'
+    '</g></svg>';
+
+/// The small variant: no nodes, a bigger icon (they are noise at icon
 /// sizes).
 const _smallLogo =
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">$_square'
-    '<g transform="translate(30, 26) scale(0.92)">$_shield</g></svg>';
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">$_tile'
+    '<g transform="translate(27.18 23.82) scale(6.9156)">$_icon</g></svg>';
 
 class KerriganNamesLogo extends StatelessWidget {
   const KerriganNamesLogo({super.key, this.size = 28, this.small = false});
@@ -205,7 +195,10 @@ const kKerriganNamesMarketplaceRoute = "/kerriganNamesMarketplace";
 enum KerriganNamesSection {
   myNames(KerriganNamesIcons.myNames, kKerriganNamesMyNamesRoute),
   balance(KerriganNamesIcons.balance, kKerriganNamesBalanceRoute),
-  transactions(KerriganNamesIcons.transactions, kKerriganNamesTransactionsRoute),
+  transactions(
+    KerriganNamesIcons.transactions,
+    kKerriganNamesTransactionsRoute,
+  ),
   marketplace(KerriganNamesIcons.marketplace, kKerriganNamesMarketplaceRoute);
 
   const KerriganNamesSection(this.icon, this.routeName);
@@ -220,11 +213,12 @@ enum KerriganNamesSection {
   final String routeName;
 }
 
-/// The Names header, laid out like the wallet's: back, the Kerrigan.name
+/// The Names header, laid out like the wallet's: back, the Kerrigan NameSpace
 /// logo and [title], then the info button and the menu. [section] is the
 /// open section (its menu entry replaces the screen with another one).
 /// Sized like [PageAppBar].
-class KerriganNamesAppBar extends StatelessWidget implements PreferredSizeWidget {
+class KerriganNamesAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
   const KerriganNamesAppBar({
     super.key,
     required this.walletId,
@@ -369,23 +363,24 @@ class KerriganNamesAppBar extends StatelessWidget implements PreferredSizeWidget
 }
 
 /// A flow screen's header: back and [title].
-PreferredSizeWidget kerriganNamesFlowAppBar(BuildContext context, String title) =>
-    PageAppBar(
-      titleSpacing: 0,
-      title: Text(
-        title,
-        style: STextStyles.navBarTitle(context),
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
+PreferredSizeWidget kerriganNamesFlowAppBar(
+  BuildContext context,
+  String title,
+) => PageAppBar(
+  titleSpacing: 0,
+  title: Text(
+    title,
+    style: STextStyles.navBarTitle(context),
+    overflow: TextOverflow.ellipsis,
+  ),
+);
 
 // =============================================================================
 // How it works
 
 const _kInfoSeenKey = "kerriganNamesInfoSeen";
 const kKerriganNamesTelegramUrl = "https://t.me/kerrigan_names";
-// PIVX.name's docs, until Kerrigan.name has its own.
-const kKerriganNamesDocsUrl = "https://docs.pivx.name/";
+const kKerriganNamesDocsUrl = "https://docs.kerrigan-name.space/";
 
 /// Shows [showKerriganNamesInfo] the first time Names opens.
 Future<void> showKerriganNamesInfoOnce(BuildContext context) async {
@@ -422,48 +417,25 @@ class _InfoDialogState extends State<_InfoDialog> {
     (
       l10n.kerriganNamesInfoHowTitle,
       [
-        (
-          Icons.person_outline_rounded,
-          l10n.kerriganNamesInfoHow1,
-        ),
-        (
-          Icons.key_rounded,
-          l10n.kerriganNamesInfoHow2,
-        ),
+        (Icons.person_outline_rounded, l10n.kerriganNamesInfoHow1),
+        (Icons.key_rounded, l10n.kerriganNamesInfoHow2),
+        (Icons.info_outline_rounded, l10n.kerriganNamesInfoService),
       ],
     ),
     (
       l10n.kerriganNamesInfoBenefitsTitle,
       [
-        (
-          Icons.sell_outlined,
-          l10n.kerriganNamesInfoBenefits1,
-        ),
-        (
-          Icons.link_rounded,
-          l10n.kerriganNamesInfoBenefits2,
-        ),
-        (
-          Icons.visibility_off_outlined,
-          l10n.kerriganNamesInfoBenefits3,
-        ),
+        (Icons.sell_outlined, l10n.kerriganNamesInfoBenefits1),
+        (Icons.link_rounded, l10n.kerriganNamesInfoBenefits2),
+        (Icons.visibility_off_outlined, l10n.kerriganNamesInfoBenefits3),
       ],
     ),
     (
       l10n.kerriganNamesInfoControlTitle,
       [
-        (
-          Icons.swap_horiz_rounded,
-          l10n.kerriganNamesInfoControl1,
-        ),
-        (
-          Icons.edit_outlined,
-          l10n.kerriganNamesInfoControl2,
-        ),
-        (
-          Icons.shopping_bag_outlined,
-          l10n.kerriganNamesInfoControl3,
-        ),
+        (Icons.swap_horiz_rounded, l10n.kerriganNamesInfoControl1),
+        (Icons.edit_outlined, l10n.kerriganNamesInfoControl2),
+        (Icons.shopping_bag_outlined, l10n.kerriganNamesInfoControl3),
       ],
     ),
     (l10n.kerriganNamesInfoQuestionTitle, []),
@@ -694,9 +666,21 @@ class KerriganNamesSteps extends StatelessWidget {
 
     return Row(
       children: [
-        item(KerriganNamesStep.check, KerriganNamesIcons.search, l10n.kerriganNamesStepCheck),
-        item(KerriganNamesStep.pay, KerriganNamesIcons.balance, l10n.kerriganNamesStepPay),
-        item(KerriganNamesStep.done, KerriganNamesIcons.done, l10n.kerriganNamesStepDone),
+        item(
+          KerriganNamesStep.check,
+          KerriganNamesIcons.search,
+          l10n.kerriganNamesStepCheck,
+        ),
+        item(
+          KerriganNamesStep.pay,
+          KerriganNamesIcons.balance,
+          l10n.kerriganNamesStepPay,
+        ),
+        item(
+          KerriganNamesStep.done,
+          KerriganNamesIcons.done,
+          l10n.kerriganNamesStepDone,
+        ),
       ],
     );
   }
@@ -705,18 +689,20 @@ class KerriganNamesSteps extends StatelessWidget {
 // =============================================================================
 // Badges
 
+// As the Kerrigan NameSpace web app colours its zone badges.
 const _zoneColors = {
-  ".krgn": Color(0xFFA855F7),
+  ".kerrigan": Color(0xFF8341ED),
+  ".krgn": Color(0xFF43DE78),
   ".private": Color(0xFFEC4899),
   ".secure": Color(0xFF3B82F6),
-  ".safe": Color(0xFF10B981),
+  ".safe": Color(0xFF14B8A6),
 };
 
 /// [name] for running text: a word joiner after each hyphen keeps
-/// "my-shop.krgn" on one line instead of breaking it at the hyphen.
+/// "my-shop.kerrigan" on one line instead of breaking it at the hyphen.
 String kerriganNamesUnbroken(String name) => name.replaceAll("-", "-\u2060");
 
-/// A name with its zone in the zone's colour: "alice" ".krgn".
+/// A name with its zone in the zone's colour: "alice" ".kerrigan".
 class KerriganNamesNameText extends StatelessWidget {
   const KerriganNamesNameText(this.name, {super.key, this.style});
 
@@ -794,16 +780,18 @@ Color kerriganNamesReadable(Color color, StackColors colors) {
   return hsl.lightness > 0.45 ? hsl.withLightness(0.42).toColor() : color;
 }
 
-Color kerriganNamesStatusColor(KerriganNamesTxStatus? status, StackColors colors) =>
-    kerriganNamesReadable(switch (status) {
-      KerriganNamesTxStatus.done => colors.accentColorGreen,
-      KerriganNamesTxStatus.orphaned ||
-      KerriganNamesTxStatus.rejected => colors.accentColorRed,
-      KerriganNamesTxStatus.refunded ||
-      KerriganNamesTxStatus.pendingRefund => colors.accentColorOrange,
-      null => colors.textSubtitle1,
-      _ => colors.accentColorBlue,
-    }, colors);
+Color kerriganNamesStatusColor(
+  KerriganNamesTxStatus? status,
+  StackColors colors,
+) => kerriganNamesReadable(switch (status) {
+  KerriganNamesTxStatus.done => colors.accentColorGreen,
+  KerriganNamesTxStatus.orphaned ||
+  KerriganNamesTxStatus.rejected => colors.accentColorRed,
+  KerriganNamesTxStatus.refunded ||
+  KerriganNamesTxStatus.pendingRefund => colors.accentColorOrange,
+  null => colors.textSubtitle1,
+  _ => colors.accentColorBlue,
+}, colors);
 
 /// A command's status as a pill.
 class KerriganNamesStatusPill extends StatelessWidget {
@@ -819,7 +807,11 @@ class KerriganNamesStatusPill extends StatelessWidget {
     final colors = Theme.of(context).extension<StackColors>()!;
     final s = status;
     return KerriganNamesPill(
-      text: s?.label ?? (raw == null ? l10n.kerriganNamesStatusSent : l10n.kerriganNamesStatusCode("$raw")),
+      text:
+          s?.label ??
+          (raw == null
+              ? l10n.kerriganNamesStatusSent
+              : l10n.kerriganNamesStatusCode("$raw")),
       color: kerriganNamesStatusColor(s, colors),
       icon: switch (s) {
         KerriganNamesTxStatus.done => KerriganNamesIcons.check,
@@ -923,7 +915,8 @@ class KerriganNamesSearchField extends StatefulWidget {
   final ValueChanged<String> onSearch;
 
   @override
-  State<KerriganNamesSearchField> createState() => _KerriganNamesSearchFieldState();
+  State<KerriganNamesSearchField> createState() =>
+      _KerriganNamesSearchFieldState();
 }
 
 class _KerriganNamesSearchFieldState extends State<KerriganNamesSearchField> {
@@ -1097,8 +1090,9 @@ String kerriganNamesShortId(String id) => id.length > 12
 
 /// What went wrong, for the user: the registrar's own words when it
 /// refused, else the error.
-String kerriganNamesError(Object e) =>
-    e is KerriganNamesException ? e.message : l10n.commonSomethingWentWrongError(e.toString());
+String kerriganNamesError(Object e) => e is KerriganNamesException
+    ? e.message
+    : l10n.commonSomethingWentWrongError(e.toString());
 
 Future<void> kerriganNamesCopy(
   BuildContext context,
@@ -1120,12 +1114,12 @@ Future<void> showKerriganNamesError(
   BuildContext context,
   Object error, {
   String? title,
-  }) => showDialog<void>(
-    context: context,
-    builder: (_) => StackOkDialog(
-      title: title ?? l10n.commonSomethingWentWrong,
-      message: kerriganNamesError(error),
-    ),
+}) => showDialog<void>(
+  context: context,
+  builder: (_) => StackOkDialog(
+    title: title ?? l10n.commonSomethingWentWrong,
+    message: kerriganNamesError(error),
+  ),
 );
 
 /// Asks before [action]; true when the user goes ahead.
@@ -1177,11 +1171,12 @@ Future<String> kerriganNamesPublicKey(KerriganWallet wallet) async {
   }
 }
 
-/// Ticks when a payment to Kerrigan.name finishes or its status screen
+/// Ticks when a payment to Kerrigan NameSpace finishes or its status screen
 /// closes: the Names screens underneath reload then, so they don't show
 /// a name as it was before the change.
 final kerriganNamesChanges = ValueNotifier<int>(0);
 
 /// Ticks [kerriganNamesChanges] once the current frame is done (it may come
 /// from a dispose, while the widget tree is locked).
-void kerriganNamesChanged() => scheduleMicrotask(() => kerriganNamesChanges.value++);
+void kerriganNamesChanged() =>
+    scheduleMicrotask(() => kerriganNamesChanges.value++);

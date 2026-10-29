@@ -110,6 +110,10 @@ void main() {
     for (int i = 0; i < 4; i++) {
       await rpc("mnsync", ["next"]);
     }
+    // Confirm what earlier suites left in the mempool: on top of a long
+    // unconfirmed chain the collateral's send goes past the node's
+    // ancestor size limit.
+    await mine();
   });
 
   tearDownAll(() async {

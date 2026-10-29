@@ -1,13 +1,16 @@
 # TrekPay
 
-TrekPay is a non-custodial mobile wallet for [Kerrigan](https://kerrigan.network) (KRGN). Your recovery phrase and keys never leave your device. The app talks to the Kerrigan network through a kerrigan-bridge server, and you can point it at your own.
+TrekPay is a self-custodial mobile wallet for [Kerrigan](https://kerrigan.network) (KRGN). Your recovery phrase and keys never leave your device. The app talks to the Kerrigan network through a kerrigan-bridge server, and you can point it at your own.
 
 ## Features
 
 - **Shielded (Sapling) transactions**: shield, unshield and send privately, with an optional encrypted memo. Shield change goes to your wallet's internal (change) key, as in Kerrigan Core.
 - **Same keys as Kerrigan Core**: a recovery phrase restored in Kerrigan Core (`upgradetohd`) gives the same transparent addresses and the same shield keys.
 - **InstantSend**: transactions locked by InstantSend show as confirmed and their coins can be spent at once.
-- **History**: block rewards and shield transactions are labelled, and you can filter by each type. Rewards show how many confirmations are left until they mature.
+- **Masternodes and governance**: register masternodes and BroodNodes from the wallet, follow their status and rewards, vote on proposals with all your masternodes and submit your own.
+- **Kerrigan NameSpace**: pay to a KNS name like `alice.kerrigan` (the wallet checks the registry's proof before you send), and register, point, give away, list or buy names. KNS is run by [Kerrigan NameSpace](https://kerrigan-name.space), a service separate from TrekPay.
+- **View-only wallets** from an xpub or a shield viewing key (`z_exportviewingkey`), with an optional birthday block.
+- **History**: block and masternode rewards, proposal payments and shield transactions are labelled, and you can filter by each type. Rewards show how many confirmations are left until they mature.
 - **Coin control**, an **address book** and **`kerrigan:` payment links**.
 - **Backups**: encrypted backups of all wallets and settings, plus automatic backups.
 - **Security**: PIN and fingerprint lock, and optional Tor for every connection.
@@ -35,3 +38,5 @@ TrekPay is built on [Stack Wallet](https://github.com/cypherstack/stack_wallet) 
 ## License
 
 [GPLv3](LICENSE)
+
+Google Play and the Google Play logo are trademarks of Google LLC.

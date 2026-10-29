@@ -1,10 +1,10 @@
 part of '../kerrigan_wallet.dart';
 
-// Kerrigan.name (ported from PIVX.name): registering and managing names. A
+// Kerrigan NameSpace (ported from PIVX.name): registering and managing names. A
 // command is a payment to the registrar's shield address whose memo is
 // the command, signed with the wallet's names key.
 
-/// Wallet otherData: the Kerrigan.name payments sent from this wallet, kept
+/// Wallet otherData: the Kerrigan NameSpace payments sent from this wallet, kept
 /// until the registrar lists them, so that they show in My Transactions
 /// right away.
 const _kOdNamesSent = "kerriganNamesSent";
@@ -12,7 +12,7 @@ const _kOdNamesSent = "kerriganNamesSent";
 /// How long a sent payment is shown without the registrar listing it.
 const _kNamesSentMaxAge = Duration(days: 3);
 
-/// A Kerrigan.name payment sent from this wallet.
+/// A Kerrigan NameSpace payment sent from this wallet.
 typedef KerriganNamesSent = ({
   String txid,
   String name,
@@ -22,12 +22,12 @@ typedef KerriganNamesSent = ({
 });
 
 extension KerriganNamesWallet on KerriganWallet {
-  /// The key of this wallet's names: the same key Kerrigan.name makes from
+  /// The key of this wallet's names: the same key Kerrigan NameSpace makes from
   /// this wallet's recovery phrase.
   Future<KerriganNamesIdentity> namesIdentity() async =>
       KerriganNamesIdentity.fromMnemonic(await getMnemonic());
 
-  /// The payment of a Kerrigan.name command: [amount] to the registrar's
+  /// The payment of a Kerrigan NameSpace command: [amount] to the registrar's
   /// [address], with the command as the shielded memo, paid as [funding]
   /// says. The fee comes on top (the registrar wants the exact price).
   Future<TxData> prepareNamesPayment({
@@ -67,7 +67,7 @@ extension KerriganNamesWallet on KerriganWallet {
       .sortByDerivationIndexDesc()
       .findAll();
 
-  /// The Kerrigan.name payments sent from this wallet that may not be listed
+  /// The Kerrigan NameSpace payments sent from this wallet that may not be listed
   /// by the registrar yet, newest first.
   List<KerriganNamesSent> get namesSent {
     final stored = info.otherData[_kOdNamesSent];

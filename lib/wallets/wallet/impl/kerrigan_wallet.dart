@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:bip39/bip39.dart' as bip39;
 import 'package:coinlib_flutter/coinlib_flutter.dart' as coinlib;
 import 'package:decimal/decimal.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:isar_community/isar.dart';
 import 'package:mutex/mutex.dart';
 
@@ -121,6 +122,11 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   /// two loads would give two states, one overwriting the other's file.
   Future<KerriganShieldState>? _shieldLoading;
 
+  /// Set after a compact block that doesn't match the chain: the shield
+  /// scan then reads full transactions instead of the bridge's compact
+  /// stream until the app restarts.
+  bool _shieldFullStream = false;
+
   /// Remove what a Kerrigan wallet keeps outside the wallet tables: the
   /// shield state file (its notes and history; it holds the full viewing
   /// key). For wallet deletion.
@@ -212,6 +218,11 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
 
   /// This wallet's account of its recovery phrase ([kKerriganAccountKey]).
   late final int account = info.otherData[kKerriganAccountKey] as int? ?? 0;
+
+  /// A view only wallet of a shield viewing key: it watches the key's
+  /// shield addresses and has no transparent side.
+  bool get isShieldViewOnly =>
+      isViewOnly && viewOnlyType == ViewOnlyWalletType.saplingViewingKey;
 
   String? _accountXpub;
   coinlib.HDPublicKey? _accountKey;
@@ -315,13 +326,18 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     if (isViewOnly && viewOnlyType == ViewOnlyWalletType.addressOnly) return;
     if (await getCurrentReceivingAddress() != null) return;
     await mainDB.updateOrPutAddresses([
-      await _deriveAddress(chain: 0, index: 0),
+      // A shield view only wallet shows the key's first shield address.
+      if (isShieldViewOnly)
+        await _defaultShieldAddressRow()
+      else
+        await _deriveAddress(chain: 0, index: 0),
     ]);
   }
 
   @override
   Future<void> generateNewReceivingAddress() async {
     if (isViewOnly && viewOnlyType == ViewOnlyWalletType.addressOnly) return;
+    if (isShieldViewOnly) return;
     final current = await getCurrentReceivingAddress();
     final address = await _deriveAddress(
       chain: 0,
@@ -337,6 +353,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   @override
   Future<void> generateNewChangeAddress() async {
     if (isViewOnly && viewOnlyType == ViewOnlyWalletType.addressOnly) return;
+    if (isShieldViewOnly) return;
     final current = await getCurrentChangeAddress();
     await mainDB.updateOrPutAddresses([
       await _deriveAddress(
@@ -649,17 +666,20 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
   Future<void> _updateTransactions(Completer<void> fetched) async {
     _lastProgress = -1;
     _syncProgress(0);
-    final xpub = await accountXpub;
-    final result = await UiStallWatch.run(
-      "Kerrigan ${info.name}: history",
-      () async => bridge.xpubHistory(
-        xpub,
-        from: await _historyFromHeight(),
-        gap: await _bridgeGap(),
-      ),
-    );
+    // A shield view only wallet has no transparent history.
+    final result = isShieldViewOnly
+        ? null
+        : await UiStallWatch.run(
+            "Kerrigan ${info.name}: history",
+            () async => bridge.xpubHistory(
+              await accountXpub,
+              from: await _historyFromHeight(),
+              gap: await _bridgeGap(),
+            ),
+          );
+    final historyTxs = result?.txs ?? const <Map<String, dynamic>>[];
     _historyTxs = {
-      for (final json in result.txs)
+      for (final json in historyTxs)
         json["txid"] as String: (
           blockHash: json["blockHash"] as String?,
           blockTime: json["blockTime"] as int?,
@@ -667,12 +687,14 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     };
     fetched.complete();
 
-    await UiStallWatch.run(
-      "Kerrigan ${info.name}: addresses",
-      () => _syncAddresses(result.info["tokens"] as List?),
-    );
-    // The transparent history is one request: its share of the bar.
-    _syncProgress(_shieldSupported ? 0.1 : 0.9);
+    if (result != null) {
+      await UiStallWatch.run(
+        "Kerrigan ${info.name}: addresses",
+        () => _syncAddresses(result.info["tokens"] as List?),
+      );
+      // The transparent history is one request: its share of the bar.
+      _syncProgress(_shieldSupported ? 0.1 : 0.9);
+    }
 
     // Shield first: transparent txs with a shield side (shielding,
     // unshielding) are only classified right with the scan's data.
@@ -689,7 +711,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
 
     final sets = await _addressSets();
     final txns = <TransactionV2>[
-      for (final json in result.txs) ?_parseTx(json, sets: sets),
+      for (final json in historyTxs) ?_parseTx(json, sets: sets),
     ];
     await UiStallWatch.run(
       "Kerrigan ${info.name}: store ${txns.length} txs",
@@ -868,7 +890,9 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       if (raw == null && age != null && age < _kForgetUnknownAfter.inSeconds) {
         continue;
       }
-      Logging.instance.w("Kerrigan: $txid is no longer on the network; forgot it");
+      Logging.instance.w(
+        "Kerrigan: $txid is no longer on the network; forgot it",
+      );
       await _forgetUnconfirmed(txid, row);
     }
   }
@@ -949,6 +973,8 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
 
   @override
   Future<bool> updateUTXOs() async {
+    // A shield view only wallet's coins are its notes (see _syncShield).
+    if (isShieldViewOnly) return await _putUtxoRows(transparent: const []);
     final xpub = await accountXpub;
     final list = await bridge.utxo(xpub, gap: await _bridgeGap());
     // Let the history arrive first: it has the blocks of new outputs.
@@ -1071,12 +1097,18 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
     }
     await checkSaveInitialReceivingAddress();
     final (_, change) = await _highestStoredIndices();
-    if (change < 0) {
+    if (change < 0 && !isShieldViewOnly) {
       await mainDB.updateOrPutAddresses([
         await _deriveAddress(chain: 1, index: 0),
       ]);
     }
     await updateChainHeight();
+    // A birthday typed for a viewing key: past the tip, the scan would
+    // start at the newest checkpoint and miss everything before it.
+    final tip = await chainHeight;
+    if (isShieldViewOnly && tip > 0 && info.restoreHeight > tip) {
+      throw Exception(l10n.restoreBirthdayAboveTip(info.restoreHeight, tip));
+    }
     if (_shieldSupported) {
       await _resetShield(fromHeight: shieldRestoreHeight);
     }
@@ -1224,11 +1256,10 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
       libKerriganShield.isAvailable &&
       libKerriganShield.isValidAddress(address, network: _network);
 
-  /// Where a restore starts the shield scan: the restore height, or the
-  /// shield launch when there's none.
-  int get shieldRestoreHeight => info.restoreHeight > 0
-      ? info.restoreHeight
-      : _defaultShieldRestoreHeight;
+  /// Where a restore starts the shield scan: the restore height (a
+  /// viewing key's birthday), or Sapling activation when there's none.
+  int get shieldRestoreHeight =>
+      info.restoreHeight > 0 ? info.restoreHeight : _defaultShieldRestoreHeight;
 
   /// The other accounts of this wallet's recovery phrase, after this one,
   /// that have been used: what restoring the phrase brings back. Only the
@@ -2080,7 +2111,10 @@ Map<String, dynamic> kerriganCoinFlagsToJson(UTXO u) => {
 /// [kerriganCoinFlagsToJson] read back, by outpoint, as the coin rows
 /// [KerriganWallet]'s rescan keeps (only the flags are set). Entries that
 /// aren't readable are left out.
-Map<String, UTXO> kerriganCoinFlagsFromJson(List<dynamic> json, String walletId) {
+Map<String, UTXO> kerriganCoinFlagsFromJson(
+  List<dynamic> json,
+  String walletId,
+) {
   final result = <String, UTXO>{};
   for (final e in json) {
     if (e is! Map) continue;

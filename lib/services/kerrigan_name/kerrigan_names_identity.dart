@@ -3,12 +3,12 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:cryptography/cryptography.dart' as c;
 
-/// The key that owns a wallet's names on Kerrigan.name and signs its commands.
+/// The key that owns a wallet's names on Kerrigan NameSpace and signs its commands.
 ///
-/// It comes from the wallet's recovery phrase exactly as the Kerrigan.name web
+/// It comes from the wallet's recovery phrase exactly as the Kerrigan NameSpace web
 /// app makes it from the same phrase: the Ed25519 private key is the
 /// SHA-256 of the phrase (words in lowercase, one space apart). Opening
-/// the phrase on Kerrigan.name gives the same key, so the same names.
+/// the phrase on Kerrigan NameSpace gives the same key, so the same names.
 ///
 /// The BIP39 passphrase isn't part of it (the web app has none), and the
 /// accounts of one phrase share the key.

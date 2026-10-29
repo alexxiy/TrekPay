@@ -11,14 +11,17 @@ import '../../widgets/desktop/secondary_button.dart';
 import 'kerrigan_names_common.dart';
 import 'kerrigan_names_status_view.dart';
 
-/// The payments to Kerrigan.name sent while the app runs that Kerrigan.name hasn't
+/// The payments to Kerrigan NameSpace sent while the app runs that Kerrigan NameSpace hasn't
 /// finished yet, one per wallet and name. The Names screens show those
 /// names as in progress instead of offering to pay for them again, and
 /// they are asked about every 30 seconds, status screen open or not, until
 /// they're done.
 abstract final class KerriganNamesInFlight {
   static final _entries =
-      <String, ({KerriganNamesTracked tracked, KerriganNamesRegistrar registrar})>{};
+      <
+        String,
+        ({KerriganNamesTracked tracked, KerriganNamesRegistrar registrar})
+      >{};
   static Timer? _timer;
 
   static String _key(String walletId, String name) => "$walletId/$name";
@@ -27,7 +30,10 @@ abstract final class KerriganNamesInFlight {
   static KerriganNamesTracked? of(String walletId, String name) =>
       _entries[_key(walletId, name)]?.tracked;
 
-  static void add(KerriganNamesTracked tracked, KerriganNamesRegistrar registrar) {
+  static void add(
+    KerriganNamesTracked tracked,
+    KerriganNamesRegistrar registrar,
+  ) {
     _entries[_key(tracked.walletId, tracked.name)] = (
       tracked: tracked,
       registrar: registrar,
@@ -39,7 +45,7 @@ abstract final class KerriganNamesInFlight {
     kerriganNamesChanged();
   }
 
-  /// Kerrigan.name is done with the payment [done] (an older payment for the
+  /// Kerrigan NameSpace is done with the payment [done] (an older payment for the
   /// same name leaves a newer one in progress).
   static void finished(KerriganNamesTracked done) {
     final key = _key(done.walletId, done.name);
@@ -120,8 +126,9 @@ class KerriganNamesInFlightNote extends StatelessWidget {
             label: l10n.kerriganNamesFollowIt,
             buttonHeight: Util.isDesktop ? ButtonHeight.s : null,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            onPressed: () => Navigator.of(context)
-                .pushNamed(KerriganNamesStatusView.routeName, arguments: tracked),
+            onPressed: () => Navigator.of(
+              context,
+            ).pushNamed(KerriganNamesStatusView.routeName, arguments: tracked),
           ),
         ),
       ],

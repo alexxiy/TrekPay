@@ -51,13 +51,15 @@ class KerriganNamesStatusView extends ConsumerStatefulWidget {
       _KerriganNamesStatusViewState();
 }
 
-class _KerriganNamesStatusViewState extends ConsumerState<KerriganNamesStatusView> {
+class _KerriganNamesStatusViewState
+    extends ConsumerState<KerriganNamesStatusView> {
   static const _interval = 30;
 
   late String? _txId = widget.tracked.txId;
   KerriganNamesProgress? _progress;
   int _paymentConfirmations = 40;
   int _refundConfirmations = 120;
+  int? _chainLockConfirmations;
   int _countdown = _interval;
   bool _polling = false;
   bool _offline = false;
@@ -91,6 +93,7 @@ class _KerriganNamesStatusViewState extends ConsumerState<KerriganNamesStatusVie
         setState(() {
           _paymentConfirmations = info.paymentConfirmations;
           _refundConfirmations = info.refundConfirmations;
+          _chainLockConfirmations = info.chainLockConfirmations;
         });
       }
     } catch (_) {}
@@ -176,6 +179,13 @@ class _KerriganNamesStatusViewState extends ConsumerState<KerriganNamesStatusVie
     ].join(" ");
   }
 
+  /// [text], plus how few confirmations do once a ChainLock covers the
+  /// block, when the registrar says.
+  String _withChainLockNote(String text) {
+    final cl = _chainLockConfirmations;
+    return cl == null ? text : "$text ${l10n.kerriganNamesChainLockNote(cl)}";
+  }
+
   (String, String) get _text {
     final p = _progress;
     final status = p?.status;
@@ -192,13 +202,14 @@ class _KerriganNamesStatusViewState extends ConsumerState<KerriganNamesStatusVie
       ),
       KerriganNamesTxStatus.confirmingPayment => (
         l10n.kerriganNamesConfirmed(confirmations, _paymentConfirmations),
-        l10n.kerriganNamesWaitingPaymentConfirmations,
+        _withChainLockNote(l10n.kerriganNamesWaitingPaymentConfirmations),
       ),
       KerriganNamesTxStatus.pendingRefund => (
         l10n.kerriganNamesConfirmed(confirmations, _refundConfirmations),
-        l10n.kerriganNamesWaitingRefundConfirmations,
+        _withChainLockNote(l10n.kerriganNamesWaitingRefundConfirmations),
       ),
-      KerriganNamesTxStatus.pendingProof || KerriganNamesTxStatus.queuedProof => (
+      KerriganNamesTxStatus.pendingProof ||
+      KerriganNamesTxStatus.queuedProof => (
         l10n.kerriganNamesWaitingProof,
         seconds != null && seconds > 0
             ? l10n.kerriganNamesProofStartsIn(_time(seconds))

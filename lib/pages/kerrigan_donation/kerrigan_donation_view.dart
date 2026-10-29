@@ -336,11 +336,16 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
       child: Scaffold(
         backgroundColor: colors.background,
         appBar: PageAppBar(
-          title: Text(
-            l10n.donateTitle,
-            style: Util.isDesktop
-                ? STextStyles.desktopH3(context)
-                : STextStyles.navBarTitle(context),
+          // Shares the bar with the Shield switch: on a small phone a long
+          // translation shrinks a little instead of losing its end.
+          title: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              l10n.donateTitle,
+              style: Util.isDesktop
+                  ? STextStyles.desktopH3(context)
+                  : STextStyles.navBarTitle(context),
+            ),
           ),
           actions: [
             if (wallet.supportsShield && thanks == null)

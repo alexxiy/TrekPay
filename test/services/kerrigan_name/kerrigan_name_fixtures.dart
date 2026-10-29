@@ -1,7 +1,7 @@
-/// Made-up Kerrigan.name records (it has no server yet) and the root their
-/// proofs fold to. The tree holds five names, so every inner node has two
-/// children: alice.krgn sits at depth 3, donate.krgn at depth 2. Hashing is
-/// PIVX.name's (`pins_core`), which PIVXie checks against its live answers.
+/// Made-up Kerrigan NameSpace records and the root their proofs fold to.
+/// The tree holds five names, so every inner node has two children:
+/// alice.krgn sits at depth 3, donate.krgn at depth 2. Hashing is KNS's
+/// (`kns_core`, the same as PIVX.name's `pins_core`).
 library;
 
 const liveRoot =

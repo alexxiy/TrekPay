@@ -1,4 +1,4 @@
-TrekPay is a Kerrigan wallet that keeps you in control. Your recovery phrase and keys stay on your device. There's no account to create, and nobody else can move your coins.
+TrekPay is a self-custodial Kerrigan wallet that keeps you in control. Your recovery phrase and keys stay on your device. There's no account to create, and nobody else can move your coins. TrekPay never holds your coins, and it doesn't exchange crypto or handle cash or bank payments.
 
 Privacy
 • Shielded transactions: shield, unshield and send KRGN privately, with an optional encrypted memo.
@@ -10,12 +10,20 @@ Fast payments, masternodes and governance
 • Masternodes and BroodNodes: register them from the wallet and follow their status and rewards.
 • Governance: browse proposals, vote with your masternodes and submit your own.
 
+Kerrigan NameSpace
+• Register an easy name like yourname.kerrigan (or .krgn, .private, .secure, .safe) and share it instead of a long address.
+• Point your name to any shielded address, yours or someone else's, and change it whenever you like. People keep paying the same name.
+• Give a name to someone else, or list it on the Kerrigan NameSpace marketplace, where you can also find names from others.
+• Your names belong to your recovery phrase, so the same phrase opens them on kerrigan-name.space too.
+• Pay to a KNS name instead of an address. TrekPay checks where the name points before you send.
+• KNS names are run by Kerrigan NameSpace, a service separate from this wallet.
+
 Everyday use
 • Scan QR codes and open kerrigan: payment links.
 • Address book and coin control.
 • Sign and verify messages.
 • A clear history: masternode rewards, proposal payments and shielded transactions are labelled, and you can filter by each kind.
-• Several accounts from one recovery phrase, and view-only wallets.
+• Several accounts from one recovery phrase, and view-only wallets from an xpub or a shielded viewing key.
 
 Backups and security
 • Restore with your 12- or 24-word recovery phrase, with an optional passphrase.

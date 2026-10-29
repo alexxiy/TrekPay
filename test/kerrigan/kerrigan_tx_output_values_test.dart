@@ -58,4 +58,87 @@ void main() {
       throwsA(anything),
     );
   });
+
+  group("shield parts", () {
+    String hex(List<int> b) =>
+        b.map((e) => e.toRadixString(16).padLeft(2, "0")).join();
+
+    // Spend: cv, anchor, nullifier, rk (32 each), proof 192, signature 64.
+    List<int> spend(int nf) => [
+      ...List.filled(64, 0x11),
+      ...List.filled(32, nf),
+      ...List.filled(32 + 192 + 64, 0x22),
+    ];
+    // Output: cv, cmu, epk (32 each), enc 580, out 80, proof 192.
+    List<int> output(int cmu) => [
+      ...List.filled(32, 0x33),
+      ...List.filled(32, cmu),
+      ...List.filled(32 + 580 + 80 + 192, 0x44),
+    ];
+
+    /// The Sapling payload (vExtraPayload of a type 10 transaction) with
+    /// its CompactSize length in front.
+    List<int> payload(
+      List<int> spends,
+      List<int> outputs, {
+      int cut = 0,
+      List<int> extra = const [],
+    }) {
+      final body = [
+        ...le(1, 2), // payload version
+        spends.length ~/ 384, ...spends,
+        outputs.length ~/ 948, ...outputs,
+        ...le(-7000, 8), // valueBalance
+        ...List.filled(64, 0x55), // bindingSig
+        ...extra,
+      ];
+      final n = body.length - cut;
+      return [
+        ...(n < 0xfd ? [n] : [0xfd, ...le(n, 2)]),
+        ...body.take(n),
+      ];
+    }
+
+    test("nullifiers and commitments of a Sapling transaction", () {
+      final raw = tx(
+        version: [3, 0, 10, 0], // nVersion 3, nType 10
+        values: [5000],
+        tail: payload([...spend(0xa1), ...spend(0xa2)], output(0xc1)),
+      );
+      final parts = kerriganTxShieldParts(raw);
+      expect(parts.nullifiers, [
+        hex(List.filled(32, 0xa1)),
+        hex(List.filled(32, 0xa2)),
+      ]);
+      expect(parts.commitments, [hex(List.filled(32, 0xc1))]);
+    });
+
+    test("transactions without shield data have none", () {
+      for (final raw in [
+        tx(version: le(1, 4), values: [1]),
+        tx(version: [3, 0, 0, 0], values: [1]),
+        // Another special transaction type: its payload isn't Sapling.
+        tx(version: [3, 0, 1, 0], values: [1], tail: [3, 1, 2, 3]),
+      ]) {
+        final parts = kerriganTxShieldParts(raw);
+        expect(parts.nullifiers, isEmpty);
+        expect(parts.commitments, isEmpty);
+      }
+    });
+
+    test("a Sapling payload of the wrong length is rejected", () {
+      final short = tx(
+        version: [3, 0, 10, 0],
+        values: [1],
+        tail: payload([], output(1), cut: 1),
+      );
+      expect(() => kerriganTxShieldParts(short), throwsA(anything));
+      final long = tx(
+        version: [3, 0, 10, 0],
+        values: [1],
+        tail: payload([], output(1), extra: [0]),
+      );
+      expect(() => kerriganTxShieldParts(long), throwsFormatException);
+    });
+  });
 }

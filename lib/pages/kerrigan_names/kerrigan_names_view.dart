@@ -23,7 +23,7 @@ import 'kerrigan_names_common.dart';
 import 'kerrigan_names_flow.dart';
 import 'kerrigan_names_in_flight.dart';
 
-/// Kerrigan Name (Kerrigan.name): look a name up and register it, or buy it when
+/// Kerrigan Name (Kerrigan NameSpace): look a name up and register it, or buy it when
 /// it's for sale. The menu leads to the user's names, balance and
 /// transactions, and to the marketplace.
 class KerriganNamesView extends ConsumerStatefulWidget {
@@ -95,7 +95,8 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
     final label = _label.text;
     if (label.isEmpty || _checking) return;
     FocusScope.of(context).unfocus();
-    if (!isValidKerriganNamesLabel(label) || _name.length > kKerriganNameMaxLength) {
+    if (!isValidKerriganNamesLabel(label) ||
+        _name.length > kKerriganNameMaxLength) {
       setState(() {
         _result = null;
         _error = l10n.kerriganNamesInvalidName(kKerriganNameMaxLength);
@@ -194,7 +195,10 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(l10n.kerriganNamesZone, style: STextStyles.pageTitleH2(context)),
+              Text(
+                l10n.kerriganNamesZone,
+                style: STextStyles.pageTitleH2(context),
+              ),
               const SizedBox(height: 8),
               for (final z in kKerriganNameZones)
                 ListTile(

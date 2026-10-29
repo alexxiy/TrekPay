@@ -3,16 +3,16 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 
-/// Kerrigan.name (ported from PIVX.name): human readable names for shield
-/// addresses, such as `alice.krgn`.
+/// Kerrigan NameSpace (KNS, ported from PIVX.name): human readable names for
+/// shield addresses, such as `alice.kerrigan`.
 ///
 /// This file holds the parts that need no network: what a name is, and how
 /// a record from the indexer is checked against a state root. Every rule
-/// here mirrors `pins_core` (pivx-name-prover), which the registry's circuit
+/// here mirrors `kns_core` (kerrigan-name-prover), which the registry's circuit
 /// runs, byte for byte.
 
 /// Zones the registry accepts, after the single dot.
-const kKerriganNameZones = ["krgn", "private", "secure", "safe"];
+const kKerriganNameZones = ["kerrigan", "krgn", "private", "secure", "safe"];
 
 /// Longest name, in bytes, zone included.
 const kKerriganNameMaxLength = 64;
@@ -26,7 +26,7 @@ const _targetHrp = "ks";
 /// Decoded Sapling address: 11-byte diversifier + 32-byte pk_d.
 const _saplingPayloadLength = 43;
 
-/// 43 bytes are 69 bech32 characters, plus the separator and 6 of checksum.
+/// 43 bytes are 69 bech32m characters, plus the separator and 6 of checksum.
 const _targetLength = 2 + 1 + 69 + 6;
 
 /// Whether [input] is meant as a name rather than an address: it ends with
@@ -43,7 +43,7 @@ String? normalizeKerriganName(String input) {
   return isValidKerriganName(name) ? name : null;
 }
 
-/// `pins_core::is_domain_valid`: one label of lowercase letters, digits and
+/// `kns_core::is_domain_valid`: one label of lowercase letters, digits and
 /// inner single hyphens, a dot, and a zone; 64 bytes at most.
 ///
 /// These rules make the set of names prefix free (no valid name is the start
@@ -61,16 +61,16 @@ bool isValidKerriganName(String name) {
   return kKerriganNameZones.contains(parts[1]);
 }
 
-/// `pins_core::is_address_valid`, the address rule of the registry: one
+/// `kns_core::is_address_valid`, the address rule of the registry: one
 /// mainnet Sapling address in canonical lowercase, of the exact length, with
-/// a bech32 (not bech32m) checksum and a 43-byte payload.
+/// a bech32m checksum and a 43-byte payload.
 ///
 /// Stricter than checking that a typed address decodes: here the address is
 /// a field of a hashed record from a remote party, and fixing its length is
 /// part of what keeps the record's fields from sliding into each other.
 bool isStrictKerriganNameTarget(String address) {
   if (address.length != _targetLength) return false;
-  // Bech32 also accepts the uppercase spelling; one address spelt two ways
+  // Bech32m also accepts the uppercase spelling; one address spelt two ways
   // would be two different records.
   if (address != address.toLowerCase()) return false;
   final payload = _bech32Decode(address, _targetHrp);
@@ -100,7 +100,11 @@ String? parseKerriganNameRoot(Object? value) {
 /// owner key 32 bytes, the address one fixed length, price and nonce 8 bytes
 /// each, and the name valid. With all of those fixed, no byte can move from
 /// one field into its neighbour while the hash stays the same.
-String? verifyKerriganNameRecord(Object? record, String name, String trustedRoot) {
+String? verifyKerriganNameRecord(
+  Object? record,
+  String name,
+  String trustedRoot,
+) {
   final root = parseKerriganNameRoot(trustedRoot);
   if (root == null || record is! Map) return null;
   if (!isValidKerriganName(name)) return null;
@@ -158,7 +162,7 @@ BigInt? _u64(Object? value) {
   return null;
 }
 
-/// `pins_core::hash_leaf`: SHA-256 of 0x00 ‖ name ‖ owner key ‖ address ‖
+/// `kns_core::hash_leaf`: SHA-256 of 0x00 ‖ name ‖ owner key ‖ address ‖
 /// price (u64 LE) ‖ nonce (u64 LE).
 Uint8List _hashLeaf(
   String name,
@@ -177,7 +181,7 @@ Uint8List _hashLeaf(
   return Uint8List.fromList(sha256.convert(b.takeBytes()).bytes);
 }
 
-/// `pins_core::hash_node`: SHA-256 of 0x01 ‖ left ‖ right.
+/// `kns_core::hash_node`: SHA-256 of 0x01 ‖ left ‖ right.
 Uint8List _hashNode(Uint8List left, Uint8List right) {
   final b = BytesBuilder(copy: false)
     ..addByte(0x01)

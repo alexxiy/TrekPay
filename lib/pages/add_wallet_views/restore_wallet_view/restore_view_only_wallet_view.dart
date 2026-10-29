@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:coinlib_flutter/coinlib_flutter.dart' as coinlib;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -16,18 +17,22 @@ import '../../../providers/global/secure_store_provider.dart';
 import '../../../providers/providers.dart';
 import '../../../themes/stack_colors.dart';
 import '../../../utilities/clipboard_interface.dart';
+import '../../../utilities/constants.dart';
 import '../../../utilities/text_styles.dart';
 import '../../../utilities/util.dart';
 import '../../../wallets/api/kerrigan/kerrigan_bridge_client.dart';
 import '../../../wallets/crypto_currency/crypto_currency.dart';
 import '../../../wallets/crypto_currency/intermediate/bip39_hd_currency.dart';
 import '../../../wallets/isar/models/wallet_info.dart';
+import '../../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../../wallets/wallet/wallet.dart';
 import '../../../widgets/custom_buttons/app_bar_icon_button.dart';
 import '../../../widgets/desktop/desktop_app_bar.dart';
 import '../../../widgets/desktop/desktop_scaffold.dart';
 import '../../../widgets/desktop/primary_button.dart';
+import '../../../widgets/rounded_white_container.dart';
 import '../../../widgets/stack_text_field.dart';
+import '../../../wl_gen/interfaces/lib_kerrigan_shield_interface.dart';
 import '../../home_view/home_view.dart';
 import 'confirm_recovery_dialog.dart';
 import 'sub_widgets/restore_failed_dialog.dart';
@@ -58,23 +63,52 @@ class RestoreViewOnlyWalletView extends ConsumerStatefulWidget {
 class _RestoreViewOnlyWalletViewState
     extends ConsumerState<RestoreViewOnlyWalletView> {
   late final TextEditingController viewKeyController;
+  late final TextEditingController birthdayController;
+  late final FocusNode birthdayFocusNode;
 
   bool _enableRestoreButton = false;
   bool _buttonLock = false;
 
-  /// Why [xpub] can't be watched, or null. Checked before anything is
+  /// Shown while the key looks like a shield viewing key: an xpub's
+  /// history comes from the bridge's index, but a viewing key's notes
+  /// are only found by scanning the chain.
+  bool _showBirthday = false;
+
+  /// Whether [key] is a shield viewing key, as Kerrigan Core's
+  /// `z_exportviewingkey` gives it (e.g. the key Kerrigan NameSpace
+  /// publishes). Otherwise the key must be an account xpub.
+  bool _isShieldViewingKey(String key) {
+    if (!libKerriganShield.isAvailable) return false;
+    try {
+      libKerriganShield.defaultAddress(
+        extfvk: key,
+        network: (widget.coin as Kerrigan).shieldNetwork,
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Why [key] can't be watched, or null. Checked before anything is
   /// made: a bad key only failed deep in the restore, with the library's
   /// error ("Instance of 'InvalidBase58Checksum'").
-  String? _xpubProblem(String xpub) {
+  String? _keyProblem(String key) {
     final coin = widget.coin as Bip39HDCurrency;
-    final coinlib.HDPublicKey key;
+    if (_isShieldViewingKey(key)) return null;
+    // A viewing key is 128 bytes in hex. It doesn't say its network: the
+    // same key watches the same account on every network.
+    if (RegExp(r"^[0-9a-fA-F]{256}$").hasMatch(key)) {
+      return l10n.restoreNotShieldKey(coin.prettyName);
+    }
+    final coinlib.HDPublicKey xpub;
     try {
-      key = coinlib.HDPublicKey.decode(xpub, coin.networkParams.pubHDPrefix);
+      xpub = coinlib.HDPublicKey.decode(key, coin.networkParams.pubHDPrefix);
     } catch (_) {
-      return l10n.restoreNotXpub(coin.prettyName);
+      return l10n.restoreNotWatchKey(coin.prettyName);
     }
     // Addresses are derived below the account key (chain/index).
-    if (key.depth != 3) {
+    if (xpub.depth != 3) {
       return l10n.restoreUseAccountXpub(
         coin.supportedHardenedDerivationPaths.last,
       );
@@ -87,7 +121,7 @@ class _RestoreViewOnlyWalletViewState
     _buttonLock = true;
 
     try {
-      final problem = _xpubProblem(viewKeyController.text.trim());
+      final problem = _keyProblem(viewKeyController.text.trim());
       if (problem != null) {
         await showFloatingFlushBar(
           type: FlushBarType.warning,
@@ -118,13 +152,24 @@ class _RestoreViewOnlyWalletViewState
   }
 
   Future<void> _attemptRestore() async {
+    final key = viewKeyController.text.trim();
+    final isShieldKey = _isShieldViewingKey(key);
+    // Where the shield scan starts. Without it, a viewing key is scanned
+    // from Sapling activation (see KerriganWallet.shieldRestoreHeight).
+    final birthday = isShieldKey
+        ? int.tryParse(birthdayController.text.trim())
+        : null;
     final Map<String, dynamic> otherDataJson = {
       WalletInfoKeys.isViewOnlyKey: true,
     };
 
-    // Kerrigan view only wallets watch one BIP44 account xpub.
+    // Kerrigan view only wallets watch one BIP44 account xpub, or a shield
+    // viewing key.
     otherDataJson[WalletInfoKeys.viewOnlyTypeIndexKey] =
-        ViewOnlyWalletType.xPub.index;
+        (isShieldKey
+                ? ViewOnlyWalletType.saplingViewingKey
+                : ViewOnlyWalletType.xPub)
+            .index;
     if (ref.read(pDuress)) {
       otherDataJson[WalletInfoKeys.duressMarkedVisibleWalletKey] = true;
     }
@@ -135,11 +180,13 @@ class _RestoreViewOnlyWalletViewState
       final info = WalletInfo.createNew(
         coin: widget.coin,
         name: widget.walletName,
-        restoreHeight: widget.restoreBlockHeight,
+        restoreHeight: birthday ?? widget.restoreBlockHeight,
         otherDataJsonString: jsonEncode(otherDataJson),
       );
 
       bool isRestoring = true;
+      // Set once made, so a cancel can stop its scan.
+      Wallet? created;
       // show restoring in progress
 
       if (mounted) {
@@ -150,8 +197,11 @@ class _RestoreViewOnlyWalletViewState
             barrierDismissible: false,
             builder: (context) {
               return RestoringDialog(
+                walletId: info.walletId,
                 onCancel: () async {
                   isRestoring = false;
+                  final restoring = created;
+                  if (restoring is KerriganWallet) restoring.cancelRecover();
 
                   await ref
                       .read(pWallets)
@@ -163,21 +213,22 @@ class _RestoreViewOnlyWalletViewState
         );
       }
 
-      final xpub = viewKeyController.text.trim();
-      if (xpub.isEmpty) {
-        throw Exception(l10n.restoreXpubEmpty);
-      }
-      final viewOnlyData = ExtendedKeysViewOnlyWalletData(
-        walletId: info.walletId,
-        xPubs: [
-          XPub(
-            path: (widget.coin as Bip39HDCurrency)
-                .supportedHardenedDerivationPaths
-                .last,
-            encoded: xpub,
-          ),
-        ],
-      );
+      final ViewOnlyWalletData viewOnlyData = isShieldKey
+          ? SaplingViewingKeyViewOnlyWalletData(
+              walletId: info.walletId,
+              viewingKey: key,
+            )
+          : ExtendedKeysViewOnlyWalletData(
+              walletId: info.walletId,
+              xPubs: [
+                XPub(
+                  path: (widget.coin as Bip39HDCurrency)
+                      .supportedHardenedDerivationPaths
+                      .last,
+                  encoded: key,
+                ),
+              ],
+            );
 
       final saved = ref
           .read(nodeServiceChangeNotifierProvider)
@@ -196,6 +247,7 @@ class _RestoreViewOnlyWalletViewState
           prefs: ref.read(prefsChangeNotifierProvider),
           viewOnlyData: viewOnlyData,
         );
+        created = wallet;
 
         await wallet.init();
 
@@ -270,11 +322,15 @@ class _RestoreViewOnlyWalletViewState
   void initState() {
     super.initState();
     viewKeyController = TextEditingController();
+    birthdayController = TextEditingController();
+    birthdayFocusNode = FocusNode();
   }
 
   @override
   void dispose() {
     viewKeyController.dispose();
+    birthdayController.dispose();
+    birthdayFocusNode.dispose();
     super.dispose();
   }
 
@@ -336,14 +392,68 @@ class _RestoreViewOnlyWalletViewState
                         SizedBox(height: isDesktop ? 24 : 16),
                         FullTextField(
                           key: const Key("viewOnlyKeyRestoreFieldKey"),
-                          label: l10n.restoreXpub,
+                          label: l10n.restoreWatchKey,
                           controller: viewKeyController,
                           onChanged: (value) {
                             setState(() {
                               _enableRestoreButton = value.trim().isNotEmpty;
+                              _showBirthday = value.trim().startsWith("pxview");
                             });
                           },
                         ),
+                        SizedBox(height: isDesktop ? 16 : 12),
+                        RoundedWhiteContainer(
+                          child: Text(
+                            l10n.restoreWatchKeyInfo,
+                            style: isDesktop
+                                ? STextStyles.desktopTextExtraSmall(context)
+                                      .copyWith(
+                                        color: Theme.of(context)
+                                            .extension<StackColors>()!
+                                            .textSubtitle1,
+                                      )
+                                : STextStyles.itemSubtitle(context),
+                          ),
+                        ),
+                        if (_showBirthday) ...[
+                          SizedBox(height: isDesktop ? 16 : 12),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(
+                              Constants.size.circularBorderRadius,
+                            ),
+                            child: TextField(
+                              key: const Key("viewOnlyBirthdayFieldKey"),
+                              controller: birthdayController,
+                              focusNode: birthdayFocusNode,
+                              autocorrect: false,
+                              enableSuggestions: false,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              style: STextStyles.field(context),
+                              decoration: standardInputDecoration(
+                                l10n.restoreBirthday,
+                                birthdayFocusNode,
+                                context,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: isDesktop ? 16 : 12),
+                          RoundedWhiteContainer(
+                            child: Text(
+                              l10n.restoreBirthdayInfo,
+                              style: isDesktop
+                                  ? STextStyles.desktopTextExtraSmall(context)
+                                        .copyWith(
+                                          color: Theme.of(context)
+                                              .extension<StackColors>()!
+                                              .textSubtitle1,
+                                        )
+                                  : STextStyles.itemSubtitle(context),
+                            ),
+                          ),
+                        ],
                         if (!isDesktop) const Spacer(),
                         SizedBox(height: isDesktop ? 24 : 16),
                         PrimaryButton(

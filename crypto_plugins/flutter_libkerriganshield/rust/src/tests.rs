@@ -154,6 +154,61 @@ fn scans_regtest_blocks_like_kerrigan_core() {
     assert_eq!(root.as_str().unwrap().len(), 64);
 }
 
+/// A raw transaction as the bridge's `compact` stream packs it (its
+/// `encode_compact_tx`).
+fn compact_packet(raw_hex: &str) -> String {
+    let raw = hex::decode(raw_hex).unwrap();
+    let sapling = crate::tx::Transaction::read(&raw).unwrap().sapling().unwrap().unwrap();
+    let mut p = vec![crate::scan::COMPACT_TX, sapling.spends.len() as u8, sapling.outputs.len() as u8];
+    for s in &sapling.spends {
+        p.extend_from_slice(&s.nullifier);
+    }
+    for o in &sapling.outputs {
+        for part in [&o.cv[..], &o.cmu, &o.ephemeral_key, &o.enc_ciphertext, &o.out_ciphertext] {
+            p.extend_from_slice(part);
+        }
+    }
+    hex::encode(p)
+}
+
+#[test]
+fn compact_packets_scan_like_full_transactions() {
+    let full = scan_all();
+    let blocks: Vec<Value> = serde_json::from_str(BLOCKS).unwrap();
+    let compact: Vec<Value> = blocks
+        .iter()
+        .map(|b| json!({"txs": b["txs"].as_array().unwrap().iter().map(|t| compact_packet(t.as_str().unwrap())).collect::<Vec<_>>()}))
+        .collect();
+    let r = call(
+        "handle_blocks",
+        json!({"tree": "000000", "blocks": compact, "extfvk": VIEWING_KEY, "network": "regtest", "notes": []}),
+    );
+    for key in ["decrypted_new_notes", "nullifiers", "commitment_tree"] {
+        assert_eq!(r[key], full[key], "{key}");
+    }
+    let (wc, wf) = (r["wallet_transactions"].as_array().unwrap(), full["wallet_transactions"].as_array().unwrap());
+    assert_eq!(wc.len(), wf.len());
+    for (c, f) in wc.iter().zip(wf) {
+        // No txid in a packet: the caller finds it by these.
+        assert_eq!(c["txid"], "");
+        assert_ne!(f["txid"], "");
+        for key in ["received", "sent", "nullifiers", "commitments", "block"] {
+            assert_eq!(c[key], f[key], "{key}");
+        }
+        assert_eq!(c["commitments"].as_array().unwrap().len(), 2);
+    }
+
+    // A packet cut short, or with bytes left over, is refused.
+    let packet = compact_packet(blocks[0]["txs"][0].as_str().unwrap());
+    for bad in [&packet[..packet.len() - 2], &format!("{packet}00")] {
+        let err = call_err(
+            "handle_blocks",
+            json!({"tree": "000000", "blocks": [{"txs": [bad]}], "extfvk": VIEWING_KEY, "network": "regtest", "notes": []}),
+        );
+        assert!(err.contains("wrong length"), "{err}");
+    }
+}
+
 #[test]
 fn notes_round_trip_and_witnesses_advance() {
     let blocks: Vec<Value> = serde_json::from_str(BLOCKS).unwrap();

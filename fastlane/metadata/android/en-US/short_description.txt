@@ -1,1 +1,1 @@
-Private Kerrigan wallet with shielded transactions, InstantSend and masternodes.
+Self-custodial Kerrigan wallet: shielded payments, InstantSend and KNS names.

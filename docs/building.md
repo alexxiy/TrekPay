@@ -170,7 +170,15 @@ Packaging files are in `flatpak/` (`alexxiy.trekpay`, runtime `org.freedesktop.P
 
 The shield plugin has Windows and macOS build files (cargokit), and both targets configure with `build_app.sh -p windows` or `-p macos`, but these builds are untested.
 
+On Windows, run the scripts in Git Bash (or WSL). Before `flutter build windows`, build secp256k1 into `build/secp256k1.dll` (`scripts/windows/build_secp256k1.bat`, or see the CI workflow).
+
 For `kerrigan:` links, the Windows app registers itself for the current user when it starts, unless another installed app (e.g. Kerrigan Core) already handles them. The macOS app declares the scheme in `macos/Runner/Info.plist`.
+
+## CI builds
+
+`.github/workflows/build.yaml` (Actions > Build > Run workflow) builds what a Linux host can't: Linux arm64 (tarball, AppImage, Flatpak), Windows x64, macOS and an iOS archive. Android and Linux x86_64 are built on a Linux host as above. Use the same version and build number for both.
+
+Nothing is signed in CI. The Windows zip and the macOS app (only ad-hoc signed) are signed locally; the iOS archive is exported to App Store Connect from a Mac (Xcode Organizer or `xcodebuild -exportArchive`), which signs it. With `release` ticked, the Linux arm64, Windows and macOS files go on the draft release `v<version>`; the iOS archive stays in the run's artifacts.
 
 ## Troubleshooting
 

@@ -19,7 +19,7 @@ use zip32::Scope;
 use crate::keys::{decode_dfvk, encode_address};
 use crate::network::Network;
 use crate::tree::{read_tree, read_witness, write_tree, write_witness, Witness};
-use crate::tx::{display_hash, sha256d, OutputDesc, Transaction};
+use crate::tx::{display_hash, read_compact_size, sha256d, OutputDesc, Reader, Transaction, MAX_SHIELDED_DESCRIPTIONS};
 use crate::Error;
 
 /// Kerrigan notes use the pre-ZIP 212 plaintext (Kerrigan Core keeps
@@ -107,6 +107,9 @@ impl SpendableNote {
 
 #[derive(Serialize, Deserialize)]
 pub struct Block {
+    /// Hex of each shield transaction: a full raw one (the bridge's `raw`
+    /// stream format) or a compact packet (its `compact` format, see
+    /// [`COMPACT_TX`]).
     pub txs: Vec<String>,
 }
 
@@ -137,13 +140,22 @@ pub struct SentNote {
 /// or sent shield outputs recoverable with our outgoing viewing key).
 #[derive(Serialize, Deserialize)]
 pub struct WalletTxDetail {
+    /// Empty for a compact packet, which has no txid: the caller finds
+    /// the transaction in its block by `nullifiers` and `commitments`.
     pub txid: String,
     pub hex: String,
+    /// Index of the transaction's block in the blocks passed in.
+    #[serde(default)]
+    pub block: u32,
     pub received: Vec<ReceivedNote>,
     pub sent: Vec<SentNote>,
     /// All nullifiers revealed by the tx (the caller matches its own).
     pub nullifiers: Vec<String>,
-    /// valueBalance of the Sapling bundle: value moved out of the shield pool.
+    /// Note commitments (cmu) of all the tx's shield outputs, in order.
+    #[serde(default)]
+    pub commitments: Vec<String>,
+    /// valueBalance of the Sapling bundle: value moved out of the shield
+    /// pool. 0 for a compact packet, which doesn't carry it.
     pub value_balance: i64,
 }
 
@@ -218,7 +230,71 @@ impl ViewingKeys {
     }
 }
 
-/// Scan blocks of raw transactions (the bridge's `raw` stream format).
+/// Packet type of a transaction in the bridge's `compact` stream: the
+/// nullifiers and outputs of its Sapling bundle without proofs or
+/// signatures. A full raw transaction (nVersion 3) starts with 0x03.
+pub const COMPACT_TX: u8 = 0x04;
+
+/// The Sapling parts of a transaction from the shield stream.
+struct StreamTx {
+    /// None for a compact packet.
+    txid: Option<[u8; 32]>,
+    nullifiers: Vec<[u8; 32]>,
+    outputs: Vec<OutputDesc>,
+    value_balance: i64,
+}
+
+/// A compact packet: `[0x04][spends][outputs]` (CompactSize each), then
+/// 32 bytes of nullifier per spend and per output cv, cmu, epk (32 each),
+/// enc_ciphertext and out_ciphertext (the bridge's `encode_compact_tx`).
+fn parse_compact_tx(data: &[u8]) -> Result<StreamTx, Error> {
+    const COMPACT_OUTPUT_SIZE: usize = 3 * 32 + 580 + 80;
+    let mut r = Reader::new(data);
+    r.u8()?;
+    let spends = read_compact_size(&mut r)?;
+    let outputs = read_compact_size(&mut r)?;
+    if spends > MAX_SHIELDED_DESCRIPTIONS || outputs > MAX_SHIELDED_DESCRIPTIONS {
+        return Err("Compact packet has too many spends or outputs".into());
+    }
+    if r.remaining() != spends * 32 + outputs * COMPACT_OUTPUT_SIZE {
+        return Err("Compact packet has the wrong length".into());
+    }
+    let nullifiers = (0..spends).map(|_| r.array()).collect::<Result<Vec<_>, _>>()?;
+    let outputs = (0..outputs)
+        .map(|_| {
+            Ok(OutputDesc {
+                cv: r.array()?,
+                cmu: r.array()?,
+                ephemeral_key: r.array()?,
+                enc_ciphertext: r.array()?,
+                out_ciphertext: r.array()?,
+                // Not in the packet, and not needed to find notes.
+                zkproof: [0; 192],
+            })
+        })
+        .collect::<Result<Vec<_>, Error>>()?;
+    r.finish()?;
+    Ok(StreamTx { txid: None, nullifiers, outputs, value_balance: 0 })
+}
+
+/// A stream transaction's Sapling parts, or `None` for a transaction
+/// without a Sapling bundle.
+fn parse_stream_tx(tx_hex: &str) -> Result<Option<StreamTx>, Error> {
+    let bytes = hex::decode(tx_hex).map_err(|_| "Tx hex is invalid".to_string())?;
+    if bytes.first() == Some(&COMPACT_TX) {
+        return parse_compact_tx(&bytes).map(Some);
+    }
+    Ok(Transaction::read(&bytes)?.sapling()?.map(|s| StreamTx {
+        txid: Some(sha256d(&bytes)),
+        nullifiers: s.spends.iter().map(|d| d.nullifier).collect(),
+        outputs: s.outputs,
+        value_balance: s.value_balance,
+    }))
+}
+
+/// Scan the bridge's shield stream: full raw transactions (`raw` format)
+/// or compact packets (`compact` format), which give the same notes, tree
+/// and nullifiers. A compact wallet transaction comes back without txid.
 pub fn handle_blocks(
     tree_hex: &str,
     blocks: Vec<Block>,
@@ -230,23 +306,19 @@ pub fn handle_blocks(
     let keys = ViewingKeys::new(decode_dfvk(enc_dfvk)?);
     let mut existing = notes.iter().map(SpendableNote::from_js).collect::<Result<Vec<_>, _>>()?;
 
-    let hexes: Vec<String> = blocks.into_iter().flat_map(|b| b.txs).collect();
-    let txs = hexes
-        .par_iter()
-        .map(|h| {
-            let bytes = hex::decode(h).map_err(|_| "Tx hex is invalid".to_string())?;
-            let sapling = Transaction::read(&bytes)?.sapling()?;
-            Ok((sha256d(&bytes), sapling))
-        })
-        .collect::<Result<Vec<_>, Error>>()?;
+    let hexes: Vec<(u32, String)> = blocks
+        .into_iter()
+        .enumerate()
+        .flat_map(|(i, b)| b.txs.into_iter().map(move |h| (i as u32, h)))
+        .collect();
+    let txs = hexes.par_iter().map(|(_, h)| parse_stream_tx(h)).collect::<Result<Vec<_>, Error>>()?;
 
     // Trial decryption is the expensive part: run it for all outputs at once.
     let found = txs
         .par_iter()
-        .map(|(_, sapling)| {
-            sapling
-                .as_ref()
-                .map(|s| s.outputs.iter().map(|o| keys.classify(o)).collect::<Result<Vec<_>, _>>())
+        .map(|tx| {
+            tx.as_ref()
+                .map(|t| t.outputs.iter().map(|o| keys.classify(o)).collect::<Result<Vec<_>, _>>())
                 .unwrap_or(Ok(Vec::new()))
         })
         .collect::<Result<Vec<_>, Error>>()?;
@@ -254,12 +326,12 @@ pub fn handle_blocks(
     let mut new_notes: Vec<SpendableNote> = Vec::new();
     let mut nullifiers = Vec::new();
     let mut wallet_transactions = Vec::new();
-    for (((txid, sapling), found), hex_tx) in txs.iter().zip(found).zip(&hexes) {
-        let Some(sapling) = sapling else { continue };
-        let tx_nullifiers: Vec<String> = sapling.spends.iter().map(|s| hex::encode(s.nullifier)).collect();
+    for ((tx, found), (block, hex_tx)) in txs.iter().zip(found).zip(&hexes) {
+        let Some(tx) = tx else { continue };
+        let tx_nullifiers: Vec<String> = tx.nullifiers.iter().map(hex::encode).collect();
         let mut received = Vec::new();
         let mut sent = Vec::new();
-        for (i, (output, found)) in sapling.outputs.iter().zip(found).enumerate() {
+        for (i, (output, found)) in tx.outputs.iter().zip(found).enumerate() {
             let cmu = Option::from(ExtractedNoteCommitment::from_bytes(&output.cmu)).ok_or("Invalid output cmu")?;
             let node = Node::from_cmu(&cmu);
             tree.append(node).map_err(|_| "Commitment tree is full")?;
@@ -295,12 +367,14 @@ pub fn handle_blocks(
             .any(|n| tx_nullifiers.contains(&n.nullifier));
         if !received.is_empty() || !sent.is_empty() || spends_ours {
             wallet_transactions.push(WalletTxDetail {
-                txid: display_hash(txid),
+                txid: tx.txid.as_ref().map(display_hash).unwrap_or_default(),
                 hex: hex_tx.clone(),
+                block: *block,
                 received,
                 sent,
                 nullifiers: tx_nullifiers.clone(),
-                value_balance: sapling.value_balance,
+                commitments: tx.outputs.iter().map(|o| hex::encode(o.cmu)).collect(),
+                value_balance: tx.value_balance,
             });
         }
         nullifiers.extend(tx_nullifiers);

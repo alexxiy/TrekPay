@@ -17,7 +17,7 @@ import '../../../widgets/desktop/primary_button.dart';
 import '../../../widgets/desktop/secondary_button.dart';
 import '../../../widgets/stack_dialog.dart';
 
-/// The Kerrigan.name name [input] stands for, when it is one and [coin] has
+/// The Kerrigan NameSpace name [input] stands for, when it is one and [coin] has
 /// names.
 String? kerriganNameFor(CryptoCurrency coin, String? input) =>
     KerriganNameService.forCoin(coin) == null
@@ -49,8 +49,10 @@ String kerriganNameErrorText(KerriganNameException e, {bool detail = false}) {
   return switch (e.kind) {
     KerriganNameError.indexerUnreachable => l10n.kerriganNameErrorUnreachable,
     KerriganNameError.indexerError => l10n.kerriganNameErrorIndexer,
-    KerriganNameError.chainUnavailable => l10n.kerriganNameErrorChainUnavailable,
-    KerriganNameError.chainDisagreement => l10n.kerriganNameErrorChainDisagreement,
+    KerriganNameError.chainUnavailable =>
+      l10n.kerriganNameErrorChainUnavailable,
+    KerriganNameError.chainDisagreement =>
+      l10n.kerriganNameErrorChainDisagreement,
     KerriganNameError.unreviewedEpoch => l10n.kerriganNameErrorEpoch,
     KerriganNameError.unanchoredRoot => l10n.kerriganNameErrorUnanchored,
     KerriganNameError.badRecord => l10n.kerriganNameErrorBadRecord,
@@ -127,7 +129,7 @@ Future<void> _showMessage(
 
 enum _Stage { checking, waiting, notRegistered, failed }
 
-/// Runs one lookup and, while the Kerrigan.name server is behind, checks every
+/// Runs one lookup and, while the Kerrigan NameSpace server is behind, checks every
 /// 15 seconds whether it has caught up. Pops with the verified result.
 class KerriganNameLookupDialog extends StatefulWidget {
   const KerriganNameLookupDialog({
@@ -144,7 +146,8 @@ class KerriganNameLookupDialog extends StatefulWidget {
   final Duration giveUpAfter;
 
   @override
-  State<KerriganNameLookupDialog> createState() => _KerriganNameLookupDialogState();
+  State<KerriganNameLookupDialog> createState() =>
+      _KerriganNameLookupDialogState();
 }
 
 class _KerriganNameLookupDialogState extends State<KerriganNameLookupDialog> {
@@ -190,7 +193,11 @@ class _KerriganNameLookupDialogState extends State<KerriganNameLookupDialog> {
       _apply(await widget.resolver.lookup(widget.name), run);
     } catch (e, s) {
       if (run != _run || !mounted) return;
-      Logging.instance.w("Kerrigan.name lookup failed", error: e, stackTrace: s);
+      Logging.instance.w(
+        "Kerrigan NameSpace lookup failed",
+        error: e,
+        stackTrace: s,
+      );
       _fail(e);
     }
   }

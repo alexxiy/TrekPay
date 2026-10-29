@@ -67,7 +67,7 @@ String restoreFailureText(Object error, NodeModel node) {
     TimeoutException() ||
     HttpException() ||
     TlsException() => l10n.restoreNodeUnreachable(name),
-    _ => "$error",
+    _ => "$error".replaceFirst("Exception: ", ""),
   };
 }
 
@@ -206,9 +206,10 @@ class KerriganBridgeClient {
     return client;
   }
 
-  /// Close the connections; pending requests still finish.
-  void close() {
-    _httpClient?.close();
+  /// Close the connections; pending requests still finish, unless
+  /// [force].
+  void close({bool force = false}) {
+    _httpClient?.close(force: force);
     _httpClient = null;
   }
 
@@ -597,16 +598,25 @@ class KerriganBridgeClient {
   // Streaming (shield data, sapling params)
   // ---------------------------------------------------------------------------
 
-  /// Raw byte stream of `/getshielddata?startBlock=N` (the bridge's `raw`
-  /// format: length-prefixed Sapling txs (type 10), each block closed by
-  /// a 0x5d footer carrying height and time).
+  /// Raw byte stream of `/getshielddata?startBlock=N`: by default the
+  /// bridge's `raw` format (length-prefixed Sapling txs (type 10), each
+  /// block closed by a 0x5d footer carrying height and time). With
+  /// [compact], its `compact` format: each block opened by a 0x5d header
+  /// with its height, then one packet per tx with only the Sapling parts a
+  /// wallet scans (proofs and signatures left out). A server without that
+  /// format sends the default one, and the stream parser reads both.
   ///
   /// Fails when no data arrives for [_timeout], so a stalled stream
   /// can't hold up the sync forever.
-  Stream<List<int>> shieldData(int startBlock) async* {
+  Stream<List<int>> shieldData(int startBlock, {bool compact = false}) async* {
     await _localNetworkReady();
     final request = await _http
-        .getUrl(_uri("/getshielddata", {"startBlock": "$startBlock"}))
+        .getUrl(
+          _uri("/getshielddata", {
+            "startBlock": "$startBlock",
+            if (compact) "format": "compact",
+          }),
+        )
         .timeout(_timeout);
     final response = await request.close().timeout(_timeout);
     if (response.statusCode != 200) {
@@ -617,6 +627,14 @@ class KerriganBridgeClient {
       );
     }
     yield* response.timeout(_timeout);
+  }
+
+  /// Txids of the block at [height], in block order (`getblock`
+  /// verbosity 1, via the bridge's RPC proxy).
+  Future<List<String>> blockTxids(int height) async {
+    final hash = await _rpc("getblockhash", [height]) as String;
+    final block = await _rpc("getblock", [hash, 1]) as Map;
+    return [for (final txid in block["tx"] as List) txid as String];
   }
 
   /// Download [url] to [file], reporting `(received, total)`; more than

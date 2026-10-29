@@ -34,7 +34,7 @@ class _Rpc {
   String? lieRoot;
 }
 
-/// The anchor contract, a few endpoints and a Kerrigan.name server.
+/// The anchor contract, a few endpoints and a Kerrigan NameSpace server.
 class _Net {
   _Net({List<int>? heights}) {
     for (final (i, h) in (heights ?? [100, 100, 100, 100, 100]).indexed) {
@@ -248,7 +248,10 @@ void main() {
         r.httpStatus = 403;
       }
       final future = net.resolver().lookup("alice.krgn");
-      await expectLater(future, _throwsKind(KerriganNameError.chainUnavailable));
+      await expectLater(
+        future,
+        _throwsKind(KerriganNameError.chainUnavailable),
+      );
       await future.catchError((Object e) {
         expect((e as KerriganNameException).isTransient, isTrue);
         expect(e.message, contains("Only 1 of 5"));
@@ -422,7 +425,10 @@ void main() {
     test("no answer at all is worth waiting out", () async {
       final net = _Net()..serverDown = true;
       final future = net.resolver().lookup("alice.krgn");
-      await expectLater(future, _throwsKind(KerriganNameError.indexerUnreachable));
+      await expectLater(
+        future,
+        _throwsKind(KerriganNameError.indexerUnreachable),
+      );
       await future.catchError((Object e) {
         expect((e as KerriganNameException).isTransient, isTrue);
         return const KerriganNameNotRegistered("");
@@ -432,10 +438,7 @@ void main() {
 
   test("only valid names are looked up", () async {
     final net = _Net();
-    await expectLater(
-      net.resolver().lookup("Alice.krgn"),
-      throwsArgumentError,
-    );
+    await expectLater(net.resolver().lookup("Alice.krgn"), throwsArgumentError);
     await expectLater(
       net.resolver().lookup("a/../b.krgn"),
       throwsArgumentError,
@@ -443,10 +446,21 @@ void main() {
     expect(net.log, isEmpty);
   });
 
-  // Kerrigan.name has no service yet, so names are off on every network.
-  test("no network has names yet", () {
+  test("only mainnet has names", () {
     for (final network in CryptoCurrencyNetwork.values) {
-      expect(KerriganNameService.forCoin(Kerrigan(network)), isNull);
+      expect(
+        KerriganNameService.forCoin(Kerrigan(network)),
+        network == CryptoCurrencyNetwork.main
+            ? same(KerriganNameService.mainnet)
+            : isNull,
+      );
     }
+  });
+
+  test("mainnet: the live indexer and the KNSAnchor contract, epoch 1", () {
+    final service = KerriganNameService.mainnet;
+    expect(service.indexer.host, "indexer.kerrigan-name.space");
+    expect(service.anchor, "0xca90886d9999cef4e15da8b4af061a52c366238d");
+    expect(service.epochs, {1});
   });
 }

@@ -6,6 +6,7 @@ import 'package:paymint/services/kerrigan_name/kerrigan_name_resolver.dart';
 import 'package:paymint/services/kerrigan_name/kerrigan_names_identity.dart';
 import 'package:paymint/services/kerrigan_name/kerrigan_names_protocol.dart';
 import 'package:paymint/services/kerrigan_name/kerrigan_names_registrar.dart';
+import 'package:paymint/wallets/crypto_currency/crypto_currency.dart';
 
 import 'kerrigan_name_fixtures.dart';
 
@@ -21,8 +22,8 @@ const _abandon =
     "abandon abandon abandon abandon abandon abandon abandon abandon "
     "abandon abandon abandon about";
 
-/// Public keys the PIVX.name web app (pivx-name-front, its vendored
-/// noble-ed25519) makes from these phrases.
+/// Public keys the Kerrigan NameSpace web app (kerrigan-name-front, its
+/// vendored noble-ed25519, as PIVX.name's) makes from these phrases.
 const _webKeys = {
   _abandon: "93a5f261984931e0df5c7434b16d468efb1953098d3cad4fa1506b9e052e7fc7",
   "legal winner thank year wave sausage worth useful legal winner thank "
@@ -34,11 +35,11 @@ const _webKeys = {
       "fa65ae17f70f9c861df38ffca5c7b30dbf731459a86869faeb7e300be8bd1a38",
 };
 
-/// Kerrigan.name has no registrar yet: a made-up one for mainnet.
+/// A made-up registrar for mainnet, so tests never reach the live one.
 final _service = KerriganNamesService(
   registrar: Uri.parse("https://registrar.test"),
   network: "mainnet",
-  marker: "PiNS",
+  marker: "KNS",
 );
 
 void main() {
@@ -65,7 +66,7 @@ void main() {
         type: c.KeyPairType.ed25519,
       );
       final messages = [
-        "PiNS:1:REG:alice.krgn:$liveTarget:${identity.publicKey}:1760000000",
+        "KNS:1:REG:alice.krgn:$liveTarget:${identity.publicKey}:1760000000",
         "in:${identity.publicKey}:1:10",
         "ünïcode ✓",
       ];
@@ -131,7 +132,7 @@ void main() {
         String? newOwner,
         BigInt? price,
       }) => kerriganNamesCommand(
-        marker: "PiNS",
+        marker: "KNS",
         op: op,
         name: "alice.krgn",
         nonce: 1760000000,
@@ -140,51 +141,55 @@ void main() {
         newOwner: newOwner,
         priceSats: price,
       );
-      for (final op in [KerriganNamesOp.reg, KerriganNamesOp.upd, KerriganNamesOp.buy]) {
+      for (final op in [
+        KerriganNamesOp.reg,
+        KerriganNamesOp.upd,
+        KerriganNamesOp.buy,
+      ]) {
         expect(
           cmd(op, target: liveTarget),
-          "PiNS:1:${op.code}:alice.krgn:$liveTarget:$key:1760000000",
+          "KNS:1:${op.code}:alice.krgn:$liveTarget:$key:1760000000",
         );
       }
       expect(
         cmd(KerriganNamesOp.chg, newOwner: other),
-        "PiNS:1:CHG:alice.krgn:$other:1760000000",
+        "KNS:1:CHG:alice.krgn:$other:1760000000",
       );
       expect(
         cmd(KerriganNamesOp.lst, price: BigInt.from(1250000000)),
-        "PiNS:1:LST:alice.krgn:$key:1250000000:1760000000",
+        "KNS:1:LST:alice.krgn:$key:1250000000:1760000000",
       );
-      expect(cmd(KerriganNamesOp.ult), "PiNS:1:ULT:alice.krgn:$key:1760000000");
+      expect(cmd(KerriganNamesOp.ult), "KNS:1:ULT:alice.krgn:$key:1760000000");
     });
 
     test("withdrawal and history messages", () {
       expect(
         kerriganNamesWithdrawMessage(
-          marker: "PiNS",
+          marker: "KNS",
           pubkey: key,
           address: liveTarget,
           amountSats: BigInt.from(95000000),
           nonce: 1760000000,
         ),
-        "PiNS:1:WDR:$key:$liveTarget:95000000:1760000000",
+        "KNS:1:WDR:$key:$liveTarget:95000000:1760000000",
       );
       expect(
         kerriganNamesHistoryMessage(
-          marker: "PiNS",
+          marker: "KNS",
           type: "ref",
           pubkey: key,
           page: 2,
           count: 10,
           nonce: 1760000000,
         ),
-        "PiNS:1:TXS:ref:$key:2:10:1760000000",
+        "KNS:1:TXS:ref:$key:2:10:1760000000",
       );
     });
 
     test("memo room", () {
       final longest = "${"a" * 58}.krgn";
       final command = kerriganNamesCommand(
-        marker: "PiNS",
+        marker: "KNS",
         op: KerriganNamesOp.reg,
         name: longest,
         nonce: 1760000000,
@@ -195,7 +200,7 @@ void main() {
       expect(kerriganNamesCommandFits("x" * (512 - 129)), isTrue);
       expect(kerriganNamesCommandFits("x" * (512 - 128)), isFalse);
       final room = kerriganNamesMaxTargetLength(
-        marker: "PiNS",
+        marker: "KNS",
         name: longest,
         op: KerriganNamesOp.reg,
         nonce: 1760000000,
@@ -383,6 +388,7 @@ void main() {
       expect(info.address, liveTarget);
       expect(info.paymentConfirmations, 40);
       expect(info.refundConfirmations, 120);
+      expect(info.chainLockConfirmations, isNull);
       await r.paymentInfo();
       expect(calls, ["GET getPaymentAddress"]);
     });
@@ -393,10 +399,25 @@ void main() {
         "network": "mainnet",
         "payment_confirmations": 10,
         "refund_confirmations": 0,
+        "chainlock_confirmations": 2,
       };
       final info = await registrar().paymentInfo();
       expect(info.paymentConfirmations, 10);
       expect(info.refundConfirmations, 120);
+      expect(info.chainLockConfirmations, 2);
+    });
+
+    test("only mainnet has a registrar, the live one", () {
+      for (final network in CryptoCurrencyNetwork.values) {
+        final service = KerriganNamesService.forCoin(Kerrigan(network));
+        if (network == CryptoCurrencyNetwork.main) {
+          expect(service?.registrar.host, "registrar.kerrigan-name.space");
+          expect(service?.network, "mainnet");
+          expect(service?.marker, "KNS");
+        } else {
+          expect(service, isNull);
+        }
+      }
     });
 
     test("a wrong payment address is refused, then asked again", () async {
@@ -406,7 +427,10 @@ void main() {
         "network": network,
       };
       final r = registrar();
-      await expectLater(r.paymentInfo(), throwsA(isA<KerriganNamesException>()));
+      await expectLater(
+        r.paymentInfo(),
+        throwsA(isA<KerriganNamesException>()),
+      );
       network = "mainnet";
       expect((await r.paymentInfo()).address, liveTarget);
 
@@ -450,7 +474,7 @@ void main() {
     });
 
     test("progress, by memo then by transaction", () async {
-      const memo = "PiNS:1:REG:alice.krgn:x:y:1:sig";
+      const memo = "KNS:1:REG:alice.krgn:x:y:1:sig";
       var seen = false;
       routes["check/alice.krgn"] = (body) {
         if (body!.containsKey("reg_id")) {
@@ -598,7 +622,7 @@ void main() {
                     "confirmations": 3,
                     "status": 2,
                     "tx_id": "cd" * 32,
-                    "memo": "PiNS:1:REG:…",
+                    "memo": "KNS:1:REG:…",
                   },
                 ],
               }
@@ -682,7 +706,10 @@ void main() {
           ),
         ),
       );
-      await expectLater(r.check("x.krgn"), throwsA(isA<KerriganNamesException>()));
+      await expectLater(
+        r.check("x.krgn"),
+        throwsA(isA<KerriganNamesException>()),
+      );
     });
 
     test("history text is cleaned, odd txids dropped", () async {
@@ -695,7 +722,7 @@ void main() {
             "confirmations": "7",
             "status": "1",
             "tx_id": "AB" * 32,
-            "memo": "PiNS:1:UPD:\u2066x",
+            "memo": "KNS:1:UPD:\u2066x",
           },
           {"domain_name": "bob.krgn", "tx_id": "zz", "status": 9},
         ],
@@ -712,7 +739,7 @@ void main() {
       expect(items[0].confirmations, 7);
       expect(items[0].status, KerriganNamesTxStatus.pendingProof);
       expect(items[0].txId, "ab" * 32);
-      expect(items[0].memo, "PiNS:1:UPD: x");
+      expect(items[0].memo, "KNS:1:UPD: x");
       expect(items[1].txId, "");
       expect(items[1].status, KerriganNamesTxStatus.rejected);
       // Not a name: never put in a lookup path.

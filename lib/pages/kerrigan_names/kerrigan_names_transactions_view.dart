@@ -17,7 +17,7 @@ import '../../widgets/stack_dialog.dart';
 import 'kerrigan_names_common.dart';
 import 'kerrigan_names_status_view.dart';
 
-/// The user's payments to Kerrigan.name (and where each stands) and their
+/// The user's payments to Kerrigan NameSpace (and where each stands) and their
 /// withdrawals. A payment in progress opens its status screen.
 class KerriganNamesTransactionsView extends ConsumerStatefulWidget {
   const KerriganNamesTransactionsView({super.key, required this.walletId});
@@ -44,7 +44,7 @@ class _KerriganNamesTransactionsViewState
   KerriganNamesPage<KerriganNamesIncoming>? _incoming;
   KerriganNamesPage<KerriganNamesRefund>? _refundList;
 
-  /// Sent from this wallet and not listed by Kerrigan.name yet.
+  /// Sent from this wallet and not listed by Kerrigan NameSpace yet.
   List<KerriganNamesSent> _sent = const [];
 
   KerriganWallet get _wallet =>
@@ -133,7 +133,9 @@ class _KerriganNamesTransactionsViewState
     } catch (e) {
       if (!mounted || request != _request) return;
       setState(
-        () => _error = l10n.kerriganNamesLoadTransactionsFailed(kerriganNamesError(e)),
+        () => _error = l10n.kerriganNamesLoadTransactionsFailed(
+          kerriganNamesError(e),
+        ),
       );
     } finally {
       if (mounted && request == _request) setState(() => _loading = false);
@@ -444,8 +446,10 @@ class _KerriganNamesTransactionsViewState
                           r.status?.label ??
                           l10n.kerriganNamesStatusCode("${r.rawStatus ?? "?"}"),
                       color: kerriganNamesReadable(switch (r.status) {
-                        KerriganNamesRefundStatus.paid => colors.accentColorGreen,
-                        KerriganNamesRefundStatus.error => colors.accentColorRed,
+                        KerriganNamesRefundStatus.paid =>
+                          colors.accentColorGreen,
+                        KerriganNamesRefundStatus.error =>
+                          colors.accentColorRed,
                         _ => colors.accentColorBlue,
                       }, colors),
                       icon: r.status == KerriganNamesRefundStatus.error

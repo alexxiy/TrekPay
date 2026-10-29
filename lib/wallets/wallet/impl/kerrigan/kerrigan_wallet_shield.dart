@@ -32,9 +32,8 @@ const kKerriganOpReturnPrefix = "OP_RETURN:";
 
 bool isKerriganOpReturn(String address) =>
     address.startsWith(kKerriganOpReturnPrefix) &&
-    RegExp(r"^[0-9a-f]{64}$").hasMatch(
-      address.substring(kKerriganOpReturnPrefix.length),
-    );
+    RegExp(r"^[0-9a-f]{64}$")
+        .hasMatch(address.substring(kKerriganOpReturnPrefix.length));
 
 /// `OP_RETURN <hash>` for an [isKerriganOpReturn] recipient (the hash in
 /// Kerrigan Core's internal byte order, as it looks for it).
@@ -127,7 +126,10 @@ String? _noteNullifier(UTXO utxo) {
 }
 
 extension _KerriganShield on KerriganWallet {
-  bool get _shieldSupported => libKerriganShield.isAvailable && !isViewOnly;
+  /// Spending needs the recovery phrase; a shield view only wallet
+  /// watches with its viewing key.
+  bool get _shieldSupported =>
+      libKerriganShield.isAvailable && (!isViewOnly || isShieldViewOnly);
 
   String get _network => cryptoCurrency.shieldNetwork;
 
@@ -150,9 +152,23 @@ extension _KerriganShield on KerriganWallet {
 
   /// Full viewing key: derived when the wallet's shield state loads and
   /// kept in memory only (it reveals every shield transaction, past and
-  /// future, so it isn't written to the state file).
-  Future<String> _extfvk() async =>
-      libKerriganShield.extendedFullViewingKey(extsk: await _extsk());
+  /// future, so it isn't written to the state file). A shield view only
+  /// wallet keeps its key in secure storage, like an xpub.
+  Future<String> _extfvk() async {
+    if (isShieldViewOnly) {
+      final data = await getViewOnlyWalletData();
+      return (data as SaplingViewingKeyViewOnlyWalletData).viewingKey;
+    }
+    return libKerriganShield.extendedFullViewingKey(extsk: await _extsk());
+  }
+
+  /// Row of the first address of the wallet's viewing key.
+  Future<Address> _defaultShieldAddressRow() async => _shieldAddressRow(
+    libKerriganShield.defaultAddress(
+      extfvk: await _extfvk(),
+      network: _network,
+    ),
+  );
 
   Future<KerriganShieldState> _createShieldState(
     int fromHeight, {
@@ -278,11 +294,8 @@ extension _KerriganShield on KerriganWallet {
   /// Where automatic shield change goes: the internal (change) key's
   /// address, as Kerrigan Core does. The scan tells change notes by their
   /// key, and a wallet restored in Kerrigan Core finds them too.
-  String _shieldChangeAddress(KerriganShieldState state) =>
-      libKerriganShield.changeAddress(
-        extfvk: state.extfvk,
-        network: state.network,
-      );
+  String _shieldChangeAddress(KerriganShieldState state) => libKerriganShield
+      .changeAddress(extfvk: state.extfvk, network: state.network);
 
   // ===========================================================================
   // Sync
@@ -303,34 +316,52 @@ extension _KerriganShield on KerriganWallet {
       void progress(int height) =>
           _syncProgress(0.1 + 0.85 * (height - scannedFrom) / span);
 
-      // The next batch downloads while the previous one is scanned (in a
-      // background isolate); batches are still scanned one after another.
-      var batch = <KerriganShieldBlock>[];
-      Future<void>? scanning;
-      try {
-        await for (final block in parseKerriganShieldStream(
-          bridge.shieldData(state.lastProcessedBlock + 1),
-        )) {
+      // A dropped connection resumes after the last saved batch.
+      await retryShieldStream(
+        position: () => state.lastProcessedBlock,
+        onRetry: (e) => Logging.instance.w(
+          "Kerrigan ${info.name}: shield stream failed after block "
+          "${state.lastProcessedBlock}, resuming: $e",
+        ),
+        attempt: () async {
+          // A cancel during a stalled stream lands here after the timeout.
           if (_recovering && _recoverCancelled) {
             throw Exception(l10n.restoreCancelled);
           }
-          progress(block.height);
-          batch.add(block);
-          if (batch.length >= _kShieldBatchBlocks) {
+          // The next batch downloads while the previous one is scanned (in
+          // a background isolate); batches are still scanned one after
+          // another.
+          var batch = <KerriganShieldBlock>[];
+          Future<void>? scanning;
+          try {
+            await for (final block in parseKerriganShieldStream(
+              bridge.shieldData(
+                state.lastProcessedBlock + 1,
+                compact: !_shieldFullStream,
+              ),
+            )) {
+              if (_recovering && _recoverCancelled) {
+                throw Exception(l10n.restoreCancelled);
+              }
+              progress(block.height);
+              batch.add(block);
+              if (batch.length >= _kShieldBatchBlocks) {
+                await scanning;
+                scanning = _processShieldBlocks(state, batch, walletTxids)
+                  // Errors surface at the next await, not as uncaught.
+                  ..ignore();
+                batch = [];
+              }
+            }
+          } finally {
+            // Never leave a scan running past this point, even on errors.
             await scanning;
-            scanning = _processShieldBlocks(state, batch, walletTxids)
-              // Errors surface at the next await, not as uncaught.
-              ..ignore();
-            batch = [];
           }
-        }
-      } finally {
-        // Never leave a scan running past this point, even on errors.
-        await scanning;
-      }
-      if (batch.isNotEmpty) {
-        await _processShieldBlocks(state, batch, walletTxids);
-      }
+          if (batch.isNotEmpty) {
+            await _processShieldBlocks(state, batch, walletTxids);
+          }
+        },
+      );
       progress(tip);
     }
 
@@ -342,8 +373,11 @@ extension _KerriganShield on KerriganWallet {
     await _writeShieldNoteRows(state);
 
     // With shield funds, fetch the proving parameters ahead of the first
-    // spend so sending doesn't wait on a ~50 MB download.
-    if (state.unspentNotes.isNotEmpty && !libKerriganShield.proverIsLoaded()) {
+    // spend so sending doesn't wait on a ~50 MB download. A view only
+    // wallet never spends.
+    if (!isViewOnly &&
+        state.unspentNotes.isNotEmpty &&
+        !libKerriganShield.proverIsLoaded()) {
       unawaited(
         _ensureProver().catchError(
           (Object e) =>
@@ -396,8 +430,12 @@ extension _KerriganShield on KerriganWallet {
     ].where((n) => !spent.contains(n["nullifier"])).toList();
     state.pendingSpent.removeWhere((_, nfs) => nfs.any(spent.contains));
 
-    for (final w in r["wallet_transactions"] as List) {
-      final wtx = Map<String, dynamic>.from(w as Map);
+    final walletTxs = [
+      for (final w in r["wallet_transactions"] as List)
+        Map<String, dynamic>.from(w as Map),
+    ];
+    await _findCompactTxids(walletTxs, relevant);
+    for (final wtx in walletTxs) {
       final txid = wtx["txid"] as String;
       // Its notes are in [unspentNotes] now.
       state.pendingIncoming.remove(txid);
@@ -440,6 +478,58 @@ extension _KerriganShield on KerriganWallet {
     state.commitmentTree = r["commitment_tree"] as String;
     state.lastProcessedBlock = relevant.last.height;
     await state.save(walletId);
+  }
+
+  /// Compact stream packets carry no txid (the library leaves it empty):
+  /// find each such wallet tx among its block's transactions by the
+  /// nullifiers and note commitments it revealed. Without a match the
+  /// stream and the chain disagree: the scan goes on from full
+  /// transactions (see [retryShieldStream]).
+  Future<void> _findCompactTxids(
+    List<Map<String, dynamic>> walletTxs,
+    List<KerriganShieldBlock> blocks,
+  ) async {
+    final blockParts = <int, Map<String, KerriganShieldParts>>{};
+    for (final wtx in walletTxs) {
+      if ((wtx["txid"] as String).isNotEmpty) continue;
+      final height = blocks[(wtx["block"] as num).toInt()].height;
+      final parts = blockParts[height] ??= await _blockShieldParts(height);
+      final nullifiers = List<String>.from(wtx["nullifiers"] as List);
+      final commitments = List<String>.from(wtx["commitments"] as List);
+      final txid = parts.entries
+          .where(
+            (e) =>
+                listEquals(e.value.nullifiers, nullifiers) &&
+                listEquals(e.value.commitments, commitments),
+          )
+          .firstOrNull
+          ?.key;
+      if (txid == null) {
+        _shieldFullStream = true;
+        throw KerriganCompactStreamMismatch(
+          "Kerrigan shield: no transaction of block $height matches the stream",
+        );
+      }
+      wtx["txid"] = txid;
+    }
+  }
+
+  /// [KerriganShieldParts] of every transaction in the block at [height],
+  /// from raw transactions checked against their txids.
+  Future<Map<String, KerriganShieldParts>> _blockShieldParts(int height) async {
+    final txids = await bridge.blockTxids(height);
+    final parts = <String, KerriganShieldParts>{};
+    for (var i = 0; i < txids.length; i += KerriganWallet._kParallelRequests) {
+      final ids = txids
+          .skip(i)
+          .take(KerriganWallet._kParallelRequests)
+          .toList();
+      final raws = await Future.wait(ids.map(bridge.rawTx));
+      for (final (j, txid) in ids.indexed) {
+        parts[txid] = kerriganVerifiedShieldParts(txid, raws[j]);
+      }
+    }
+    return parts;
   }
 
   Future<void> _storeShieldHistory(Set<String> txids) async {
@@ -609,12 +699,21 @@ extension _KerriganShield on KerriganWallet {
     final output = File("${dir.path}/sapling-output.params");
     final spend = File("${dir.path}/sapling-spend.params");
 
-    // The bridge serves them; Zcash's download server is the fallback
-    // (Kerrigan uses the Zcash Sapling parameters).
-    final sources = [
+    // From the wallet's node (the fastest bridge, unless the user chose a
+    // node); a file it can't give comes from the app's other bridges, then
+    // from Zcash's download server (Kerrigan uses the Zcash Sapling
+    // parameters).
+    final sources = {
       bridge.baseUri.toString(),
+      for (final node in cryptoCurrency.defaultNodes)
+        KerriganBridgeClient.fromParts(
+          host: node.host,
+          port: node.port,
+          useSSL: node.useSSL,
+          useTor: false,
+        ).baseUri.toString(),
       "https://download.z.cash/downloads",
-    ];
+    };
     // Sizes of the files whose hashes the prover checks.
     for (final (file, name, size, weight, base) in [
       (output, "sapling-output.params", 3592860, 0.07, 0.0),
@@ -708,7 +807,8 @@ extension _KerriganShield on KerriganWallet {
       for (final e
           in (txData.otherData == null
                   ? null
-                  : (jsonDecode(txData.otherData!) as Map)[kKerriganExtraOutputs]
+                  : (jsonDecode(txData.otherData!)
+                            as Map)[kKerriganExtraOutputs]
                         as List?) ??
               const [])
         (
@@ -836,7 +936,10 @@ extension _KerriganShield on KerriganWallet {
                 BigInt.from((state.nullifierNotes[nf]?["value"] as num?) ?? 0),
           )
         : usedInputs.fold(BigInt.zero, (p, i) => p + BigInt.from(i.utxo.value));
-    final extraTotal = extra.fold(BigInt.zero, (p, e) => p + BigInt.from(e.amount));
+    final extraTotal = extra.fold(
+      BigInt.zero,
+      (p, e) => p + BigInt.from(e.amount),
+    );
     final changeValue = inputsTotal - amount - fee - extraTotal;
     final tempInputs = [
       if (fromShield)
@@ -921,8 +1024,7 @@ extension _KerriganShield on KerriganWallet {
     if (changeIsOurs && isShieldAddress(changeAddress)) {
       shieldIn += changeValue;
     }
-    if (recipientIsOurs &&
-        isShieldAddress(recipient.address)) {
+    if (recipientIsOurs && isShieldAddress(recipient.address)) {
       shieldIn += amount;
     }
 
