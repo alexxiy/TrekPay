@@ -10,6 +10,7 @@
 
 import 'dart:typed_data';
 
+import 'package:decimal/decimal.dart';
 import 'package:intl/intl.dart';
 
 import '../l10n/l10n.dart';
@@ -43,20 +44,31 @@ abstract class Format {
       return dayAndYear;
     }
 
-    final minutes =
-        date.minute < 10 ? "0${date.minute}" : date.minute.toString();
+    final minutes = date.minute < 10
+        ? "0${date.minute}"
+        : date.minute.toString();
     return "$dayAndYear, ${date.hour}:$minutes";
   }
 
-  /// format date string as dd/mm/yy from DateTime object
-    /// [value] percent (12.5 for 12.5 %) with [decimals] digits, written the
-    /// app language's way: "12.50%", "12,50 %", "%12,50".
-    static String percent(double value, {int decimals = 2}) =>
-        NumberFormat.decimalPercentPattern(
-          decimalDigits: decimals,
-        ).format(value / 100);
+  /// [value] percent (12.5 for 12.5 %) with [decimals] digits, written the
+  /// app language's way: "12.50%", "12,50 %", "%12,50".
+  static String percent(double value, {int decimals = 2}) =>
+      NumberFormat.decimalPercentPattern(decimalDigits: decimals)
+          .format(value / 100);
 
-    static String formatDate(DateTime date) {
+  /// Decimals for a coin's unit price: two from 1 up, else enough for
+  /// three significant digits ("0.0159"), at most 10.
+  static int priceDecimals(Decimal price) {
+    if (price >= Decimal.one || price <= Decimal.zero) return 2;
+    var position = 1;
+    while (price.shift(position) < Decimal.one && position < 8) {
+      position++;
+    }
+    return position + 2;
+  }
+
+  /// format date string as dd/mm/yy from DateTime object
+  static String formatDate(DateTime date) {
     if (l10n.localeName != "en") return DateFormat.yMd().format(date);
 
     // prepend '0' if needed

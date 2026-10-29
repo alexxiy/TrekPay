@@ -10,7 +10,6 @@
 
 import 'dart:io';
 
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -20,6 +19,7 @@ import '../../../providers/providers.dart';
 import '../../../providers/wallet/public_private_balance_state_provider.dart';
 import '../../../providers/wallet/wallet_balance_toggle_state_provider.dart';
 import '../../../services/event_bus/events/global/wallet_sync_status_changed_event.dart';
+import '../../../services/price.dart';
 import '../../../themes/coin_icon_provider.dart';
 import '../../../themes/stack_colors.dart';
 import '../../../utilities/amount/amount.dart';
@@ -69,7 +69,7 @@ class WalletSummaryInfo extends ConsumerWidget {
       prefsChangeNotifierProvider.select((value) => value.currency),
     );
 
-    ({double change24h, Decimal value})? price;
+    CoinPrice? price;
     if (ref.watch(
       prefsChangeNotifierProvider.select((value) => value.externalCalls),
     )) {

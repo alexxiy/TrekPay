@@ -10,6 +10,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
@@ -23,9 +24,23 @@ import '../utilities/util.dart';
 import '../wallets/crypto_currency/crypto_currency.dart';
 import 'tor_service.dart';
 
+/// A coin's price in the chosen currency. [change24h] is in percent, null
+/// when the price source doesn't give it.
+typedef CoinPrice = ({Decimal value, double? change24h});
+
 class PriceAPI {
-  // coingecko coin ids
-  static const Map<Type, String> _coinToIdMap = {Kerrigan: "kerrigan"};
+  /// Kerrigan's price in US dollars: "last" is the volume-weighted last
+  /// trade on the exchanges that list KRGN, the price kerrigan.network
+  /// shows. There is no 24 hour change.
+  static final kerriganPriceUrl = Uri.parse(
+    "https://vote.kerrigan.network/api/price",
+  );
+
+  /// Currency rates against Bitcoin, to turn the dollar price into the
+  /// chosen currency.
+  static final exchangeRatesUrl = Uri.parse(
+    "https://api.coingecko.com/api/v3/exchange_rates",
+  );
 
   static const refreshInterval = 60;
 
@@ -49,120 +64,140 @@ class PriceAPI {
     _lastCalled = DateTime(1970);
   }
 
-  Future<void> _updateCachedPrices(
-    Map<CryptoCurrency, ({Decimal value, double change24h})> data,
-  ) async {
-    final Map<String, dynamic> map = {};
+  static ({InternetAddress host, int port})? get _proxyInfo =>
+      !AppConfig.hasFeature(AppFeature.tor)
+      ? null
+      : Prefs.instance.useTor
+      ? TorService.sharedInstance.getProxyInfo()
+      : null;
 
-    for (final coin in AppConfig.coins) {
-      final entry = data[coin];
-      if (entry == null) {
-        map[coin.prettyName] = ["0", 0.0];
-      } else {
-        map[coin.prettyName] = [entry.value.toString(), entry.change24h];
-      }
+  static Future<Map<dynamic, dynamic>> _getJson(HTTP client, Uri url) async {
+    final response = await client.get(
+      url: url,
+      headers: {'Content-Type': 'application/json'},
+      proxyInfo: _proxyInfo,
+    );
+    if (response.code != 200) {
+      throw HttpException("HTTP ${response.code}", uri: url);
     }
+    return jsonDecode(response.body) as Map;
+  }
 
+  static Decimal? _positive(Object? value) =>
+      value is num && value.isFinite && value > 0
+      ? Decimal.parse(value.toString())
+      : null;
+
+  /// One KRGN in US dollars, null when the answer has no usable price.
+  static Future<Decimal?> fetchKerriganUsd(HTTP client) async =>
+      _positive((await _getJson(client, kerriganPriceUrl))["last"]);
+
+  /// [usd] in [currency], a CoinGecko currency code ("eur", "btc", …), to
+  /// 12 decimals; null when CoinGecko has no rate for it.
+  static Future<Decimal?> fromUsd(
+    HTTP client,
+    Decimal usd,
+    String currency,
+  ) async {
+    final code = currency.toLowerCase();
+    if (code == "usd") return usd;
+    final rates = (await _getJson(client, exchangeRatesUrl))["rates"] as Map;
+    final to = _positive((rates[code] as Map?)?["value"]);
+    final dollar = _positive((rates["usd"] as Map?)?["value"]);
+    if (to == null || dollar == null) return null;
+    return (usd * to / dollar)
+        .toDecimal(scaleOnInfinitePrecision: 12)
+        .truncate(scale: 12);
+  }
+
+  Future<void> _updateCachedPrices(
+    String baseCurrency,
+    Map<CryptoCurrency, CoinPrice> data,
+  ) async {
     await DB.instance.put<dynamic>(
       boxName: DB.boxNamePriceCache,
       key: 'cache',
-      value: map,
+      value: {
+        for (final e in data.entries)
+          e.key.prettyName: [e.value.value.toString(), e.value.change24h],
+      },
+    );
+    await DB.instance.put<dynamic>(
+      boxName: DB.boxNamePriceCache,
+      key: 'cacheCurrency',
+      value: baseCurrency.toLowerCase(),
     );
   }
 
-  Map<CryptoCurrency, ({Decimal value, double change24h})> get _cachedPrices {
+  /// The prices last fetched, when they are in [baseCurrency].
+  Map<CryptoCurrency, CoinPrice> _cachedPrices(String baseCurrency) {
+    final currency = DB.instance.get<dynamic>(
+      boxName: DB.boxNamePriceCache,
+      key: 'cacheCurrency',
+    );
+    if (currency != baseCurrency.toLowerCase()) return {};
     final map =
         DB.instance.get<dynamic>(boxName: DB.boxNamePriceCache, key: 'cache')
             as Map? ??
         {};
-    // init with 0
-    final Map<CryptoCurrency, ({Decimal value, double change24h})> result = {};
-
+    final Map<CryptoCurrency, CoinPrice> result = {};
     for (final entry in map.entries) {
-      result[AppConfig.getCryptoCurrencyByPrettyName(entry.key as String)] = (
-        value: Decimal.parse(entry.value[0] as String),
-        change24h: entry.value[1] as double,
-      );
+      try {
+        result[AppConfig.getCryptoCurrencyByPrettyName(entry.key as String)] = (
+          value: Decimal.parse(entry.value[0] as String),
+          change24h: entry.value[1] as double?,
+        );
+      } catch (_) {
+        // a coin this build doesn't have
+      }
     }
-
     return result;
   }
 
-  String get _coinIds => AppConfig.coins
-      .where((e) => e.network == CryptoCurrencyNetwork.main)
-      .map((e) => _coinToIdMap[e.runtimeType])
-      .where((e) => e != null)
-      .join(",");
+  /// The coin with a price: mainnet Kerrigan (testnet and regtest coins
+  /// are worth nothing).
+  static CryptoCurrency? get _pricedCoin {
+    for (final coin in AppConfig.coins) {
+      if (coin is Kerrigan && coin.network == CryptoCurrencyNetwork.main) {
+        return coin;
+      }
+    }
+    return null;
+  }
 
-  Future<Map<CryptoCurrency, ({Decimal value, double change24h})>>
-  getPricesAnd24hChange({required String baseCurrency}) async {
+  Future<Map<CryptoCurrency, CoinPrice>> getPricesAnd24hChange({
+    required String baseCurrency,
+  }) async {
     final now = DateTime.now();
     if (_lastUsedBaseCurrency != baseCurrency ||
         now.difference(_lastCalled) > refreshIntervalDuration) {
       _lastCalled = now;
       _lastUsedBaseCurrency = baseCurrency;
     } else {
-      return _cachedPrices;
+      return _cachedPrices(baseCurrency);
     }
 
     final externalCalls = Prefs.instance.externalCalls;
     if ((!Util.isTestEnv && !externalCalls) ||
         !(await Prefs.instance.isExternalCallsSet())) {
       Logging.instance.i("User does not want to use external calls");
-      return _cachedPrices;
+      return _cachedPrices(baseCurrency);
     }
-    final Map<CryptoCurrency, ({Decimal value, double change24h})> result = {};
+    final coin = _pricedCoin;
+    if (coin == null) return {};
     try {
-      final uri = Uri.parse(
-        "https://api.coingecko.com/api/v3/coins/markets?vs_currency"
-        "=${baseCurrency.toLowerCase()}&ids=$_coinIds&order=market_cap_desc"
-        "&per_page=50&page=1&sparkline=false",
-      );
-
-      final coinGeckoResponse = await client.get(
-        url: uri,
-        headers: {'Content-Type': 'application/json'},
-        proxyInfo: !AppConfig.hasFeature(AppFeature.tor)
-            ? null
-            : Prefs.instance.useTor
-            ? TorService.sharedInstance.getProxyInfo()
-            : null,
-      );
-
-      final coinGeckoData = jsonDecode(coinGeckoResponse.body) as List<dynamic>;
-
-      for (final map in coinGeckoData) {
-        final String coinName = map["name"] as String;
-        late CryptoCurrency coin;
-        try {
-          coin = AppConfig.getCryptoCurrencyByPrettyName(
-            coinName == "Factor" ? "Fact0rn" : coinName,
-          );
-        } catch (e, s) {
-          Logging.instance.e(
-            "Failed to find matching app coin for $coinName. Moving on",
-            error: e,
-            stackTrace: s,
-          );
-          continue;
-        }
-
-        try {
-          final price = Decimal.parse(map["current_price"].toString());
-          final change24h = map["price_change_percentage_24h"] != null
-              ? double.parse(map["price_change_percentage_24h"].toString())
-              : 0.0;
-
-          result[coin] = (value: price, change24h: change24h);
-        } catch (_) {
-          result.remove(coin);
-        }
+      final usd = await fetchKerriganUsd(client);
+      final value = usd == null
+          ? null
+          : await fromUsd(client, usd, baseCurrency);
+      if (value == null) {
+        Logging.instance.w("No KRGN price in $baseCurrency");
+        return _cachedPrices(baseCurrency);
       }
-
-      // update cache
-      await _updateCachedPrices(result);
-
-      return _cachedPrices;
+      await _updateCachedPrices(baseCurrency, {
+        coin: (value: value, change24h: null),
+      });
+      return _cachedPrices(baseCurrency);
     } catch (e, s) {
       Logging.instance.e(
         "getPricesAnd24hChange($baseCurrency): ",
@@ -170,7 +205,7 @@ class PriceAPI {
         stackTrace: s,
       );
       // return previous cached values
-      return _cachedPrices;
+      return _cachedPrices(baseCurrency);
     }
   }
 
@@ -190,11 +225,7 @@ class PriceAPI {
       final response = await client.get(
         url: uri,
         headers: {'Content-Type': 'application/json'},
-        proxyInfo: !AppConfig.hasFeature(AppFeature.tor)
-            ? null
-            : Prefs.instance.useTor
-            ? TorService.sharedInstance.getProxyInfo()
-            : null,
+        proxyInfo: _proxyInfo,
       );
 
       final json = jsonDecode(response.body) as List<dynamic>;

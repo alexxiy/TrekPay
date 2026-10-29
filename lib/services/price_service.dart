@@ -10,7 +10,6 @@
 
 import 'dart:async';
 
-import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 
 import '../networking/http.dart';
@@ -22,13 +21,11 @@ class PriceService extends ChangeNotifier {
   final Duration updateInterval = const Duration(seconds: 60);
 
   Timer? _timer;
-  final Map<CryptoCurrency, ({Decimal value, double change24h})> _cachedPrices =
-      {};
+  final Map<CryptoCurrency, CoinPrice> _cachedPrices = {};
 
   final _priceAPI = PriceAPI(HTTP());
 
-  ({Decimal value, double change24h})? getPrice(CryptoCurrency coin) =>
-      _cachedPrices[coin];
+  CoinPrice? getPrice(CryptoCurrency coin) => _cachedPrices[coin];
 
   PriceService(this.baseTicker);
 

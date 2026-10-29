@@ -91,7 +91,7 @@ class Amount {
     return jsonEncode(toMap());
   }
 
-  String fiatString({required String locale}) {
+  String fiatString({required String locale, int decimals = 2}) {
     final wholeNumber = decimal.truncate();
 
     // get number symbols for decimal place and group separator
@@ -109,7 +109,8 @@ class Amount {
       (m) => "${m.group(0)}${numberSymbols?.GROUP_SEP ?? ","}",
     );
 
-    return "$wholeNumberString$separator${fraction.toStringAsFixed(2).substring(2)}";
+    final fractionDigits = fraction.toStringAsFixed(decimals).substring(2);
+    return "$wholeNumberString$separator$fractionDigits";
   }
 
   // ===========================================================================

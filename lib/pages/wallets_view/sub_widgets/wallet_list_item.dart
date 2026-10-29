@@ -128,22 +128,25 @@ class WalletListItem extends ConsumerWidget {
                     );
 
                     if (price != null) {
+                      final decimals = Format.priceDecimals(price.value);
                       priceString = price.value
-                          .toAmount(fractionDigits: 2)
+                          .toAmount(fractionDigits: decimals)
                           .fiatString(
                             locale: ref.watch(
                               localeServiceChangeNotifierProvider.select(
                                 (value) => value.locale,
                               ),
                             ),
+                            decimals: decimals,
                           );
-                      percentChange = price.change24h;
+                      // Null when the price source has no 24 hour change.
+                      final change = percentChange = price.change24h;
 
-                      if (percentChange > 0) {
+                      if (change != null && change > 0) {
                         percentChangedColor = Theme.of(context)
                             .extension<StackColors>()!
                             .accentColorGreen;
-                      } else if (percentChange < 0) {
+                      } else if (change != null && change < 0) {
                         percentChangedColor = Theme.of(context)
                             .extension<StackColors>()!
                             .accentColorRed;

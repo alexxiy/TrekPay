@@ -3,12 +3,11 @@ import 'dart:convert';
 import 'package:decimal/decimal.dart';
 import 'package:intl/intl.dart';
 
-import '../../app_config.dart';
 import '../../l10n/l10n.dart';
 import '../../models/isar/models/isar_models.dart';
 import '../../networking/http.dart';
 import '../../services/kerrigan_name/kerrigan_name_resolver.dart';
-import '../../services/tor_service.dart';
+import '../../services/price.dart';
 import '../../utilities/amount/amount.dart';
 import '../../utilities/assets.dart';
 import '../../utilities/logger.dart';
@@ -236,9 +235,9 @@ Future<TxData> prepareKerriganDonation(
 
 ({Decimal value, DateTime at})? _usdPrice;
 
-/// Kerrigan's price in US dollars from CoinGecko, under the rules of the
-/// app's prices (only with external calls on; through Tor when Tor is
-/// on). Null when it isn't known. Asked at most once a minute.
+/// Kerrigan's price in US dollars (the app's price source), under the
+/// rules of the app's prices (only with external calls on; through Tor
+/// when Tor is on). Null when it isn't known. Asked at most once a minute.
 Future<Decimal?> kerriganUsdPrice({HTTP client = const HTTP()}) async {
   final last = _usdPrice;
   if (last != null &&
@@ -250,21 +249,8 @@ Future<Decimal?> kerriganUsdPrice({HTTP client = const HTTP()}) async {
     return null;
   }
   try {
-    final response = await client.get(
-      url: Uri.parse(
-        "https://api.coingecko.com/api/v3/simple/price"
-        "?ids=kerrigan&vs_currencies=usd",
-      ),
-      headers: {'Content-Type': 'application/json'},
-      proxyInfo: !AppConfig.hasFeature(AppFeature.tor)
-          ? null
-          : Prefs.instance.useTor
-          ? TorService.sharedInstance.getProxyInfo()
-          : null,
-    );
-    final json = jsonDecode(response.body) as Map;
-    final value = Decimal.parse("${(json["kerrigan"] as Map)["usd"]}");
-    if (value <= Decimal.zero) return last?.value;
+    final value = await PriceAPI.fetchKerriganUsd(client);
+    if (value == null) return last?.value;
     _usdPrice = (value: value, at: DateTime.now());
     return value;
   } catch (e, s) {

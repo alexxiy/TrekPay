@@ -10,7 +10,6 @@
 
 import 'dart:io';
 
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
@@ -18,6 +17,7 @@ import 'package:flutter_svg/svg.dart';
 import '../../l10n/l10n.dart';
 import '../../pages/wallets_view/wallets_overview.dart';
 import '../../providers/providers.dart';
+import '../../services/price.dart';
 import '../../themes/coin_icon_provider.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/amount/amount.dart';
@@ -250,7 +250,7 @@ class TablePriceInfo extends ConsumerWidget {
   const TablePriceInfo({super.key, required this.coin, required this.price});
 
   final CryptoCurrency coin;
-  final ({Decimal value, double change24h}) price;
+  final CoinPrice price;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -258,21 +258,25 @@ class TablePriceInfo extends ConsumerWidget {
       prefsChangeNotifierProvider.select((value) => value.currency),
     );
 
-    final priceString = Amount.fromDecimal(price.value, fractionDigits: 2)
-        .fiatString(
+    final decimals = Format.priceDecimals(price.value);
+    final priceString =
+        Amount.fromDecimal(price.value, fractionDigits: decimals).fiatString(
           locale: ref
               .watch(localeServiceChangeNotifierProvider.notifier)
               .locale,
+          decimals: decimals,
         );
 
+    // Null when the price source has no 24 hour change.
+    final change = price.change24h;
     var percentChangedColor = Theme.of(context)
         .extension<StackColors>()!
         .textDark;
-    if (price.change24h > 0) {
+    if (change != null && change > 0) {
       percentChangedColor = Theme.of(context)
           .extension<StackColors>()!
           .accentColorGreen;
-    } else if (price.change24h < 0) {
+    } else if (change != null && change < 0) {
       percentChangedColor = Theme.of(context)
           .extension<StackColors>()!
           .accentColorRed;
@@ -287,11 +291,12 @@ class TablePriceInfo extends ConsumerWidget {
             color: Theme.of(context).extension<StackColors>()!.textSubtitle1,
           ),
         ),
-        Text(
-          Format.percent(price.change24h),
-          style: STextStyles.desktopTextExtraSmall(context)
-              .copyWith(color: percentChangedColor),
-        ),
+        if (change != null)
+          Text(
+            Format.percent(change),
+            style: STextStyles.desktopTextExtraSmall(context)
+                .copyWith(color: percentChangedColor),
+          ),
       ],
     );
   }

@@ -2016,13 +2016,13 @@
     }
   },
   "privacyChangeLater": "You can change it later in Settings",
-  "privacyEasyText": "CoinGecko enabled: (24 hour price change shown in-app, total wallet value shown in USD or other currency).",
+  "privacyEasyText": "Prices on: the KRGN price comes from vote.kerrigan.network and currency rates from CoinGecko; the total wallet value is shown in USD or another currency.",
   "privacyEasyRecommended": "Recommended for most crypto users.",
-  "privacyIncognitoText": "CoinGecko disabled (price changes not shown, no wallet value shown in other currencies).",
+  "privacyIncognitoText": "Prices off: no calls to price services, no wallet value shown in other currencies.",
   "privacyIncognitoRecommended": "Recommended for the privacy conscious.",
   "privacyEasy": "Easy Crypto",
   "@privacyEasy": {
-    "description": "A mode of the app: prices from CoinGecko on."
+    "description": "A mode of the app: prices on (vote.kerrigan.network and CoinGecko)."
   },
   "privacyRecommended": "Recommended",
   "privacyIncognito": "Incognito",
@@ -2401,7 +2401,7 @@
   },
   "advancedEasyCrypto": "Easy crypto",
   "@advancedEasyCrypto": {
-    "description": "A mode of the app: prices from CoinGecko on."
+    "description": "A mode of the app: prices on (vote.kerrigan.network and CoinGecko)."
   },
   "explorerManage": "Manage block explorers",
   "explorerOfCoin": "{coin} block explorer",
@@ -3242,7 +3242,7 @@
     }
   },
   "currencySelect": "Select currency",
-  "currencyText": "Choose the currency for approximate values of your balance and transactions. The rates come from CoinGecko and are only shown for reference.",
+  "currencyText": "Choose the currency for approximate values of your balance and transactions. The KRGN price comes from vote.kerrigan.network in US dollars, and CoinGecko's rates convert it to other currencies. The values are only shown for reference.",
   "currencyChange": "Change currency",
   "nodesSelectCoin": "Select a coin to see nodes",
   "passwordNewMismatch": "The new passwords don't match",
@@ -3762,7 +3762,7 @@
     "description": "A custom donation of $250 or more."
   },
   "donatePriceLoading": "Getting the Kerrigan price…",
-  "donateNoPrice": "Without the Kerrigan price, the dollar amounts can't be worked out: CoinGecko is off in Incognito mode, or can't be reached. Choose Custom to enter an amount in KRGN.",
+  "donateNoPrice": "Without the Kerrigan price, the dollar amounts can't be worked out: prices are off in Incognito mode, or the price service can't be reached. Choose Custom to enter an amount in KRGN.",
   "donateAvailable": "{amount} available",
   "@donateAvailable": {
     "placeholders": {
