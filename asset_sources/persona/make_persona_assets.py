@@ -31,14 +31,15 @@ BASE = 140
 DENSITIES = {"": 1.0, "1.5x": 1.5, "2.0x": 2.0, "3.0x": 3.0, "4.0x": 4.0}
 
 # Each Delta's box on the 2752 x 1536 sheet, clear of the title and the
-# captions under them.
+# captions under them. The light Delta's tip starts at y 266 and the
+# "MASCOT CONCEPT" caption ends at y 238.
 BOXES = {
-    "delta_public": (130, 300, 1290, 1400),
+    "delta_public": (130, 248, 1290, 1400),
     "delta_private": (1450, 230, 2680, 1400),
 }
 
 # Boxes (in the figure's box) whose own matte is added.
-EXTRA = {"delta_public": [(70, 380, 280, 600)]}
+EXTRA = {"delta_public": [(70, 432, 280, 652)]}
 
 session = new_session("birefnet-general")
 sheet = Image.open(SRC).convert("RGB")
