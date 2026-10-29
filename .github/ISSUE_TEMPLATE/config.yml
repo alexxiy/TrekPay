@@ -1,10 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Kerrigan Discord
-    url: https://discord.kerrigan.org/
-    about: Questions and help with your wallet
-  - name: Kerrigan on Telegram
-    url: https://t.me/KERRIGAN_official
+    url: https://discord.gg/V9P3UDjkFu
     about: Questions and help with your wallet
   - name: Email support
     url: mailto:support@trekpay.space

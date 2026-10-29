@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        :stop_sign: _For questions and help with your wallet, ask the Kerrigan community on [Discord](https://discord.kerrigan.org/), [Telegram](https://t.me/KERRIGAN_official) or [Reddit](https://www.reddit.com/r/kerrigan/), or email support@trekpay.space._
+        :stop_sign: _For questions and help with your wallet, ask the Kerrigan community on [Discord](https://discord.gg/V9P3UDjkFu), or email support@trekpay.space._
 
         :warning: **Never share your recovery phrase, private keys, PIN or backup password**, here or anywhere else. Nobody from TrekPay will ever ask for them.
   - type: checkboxes
