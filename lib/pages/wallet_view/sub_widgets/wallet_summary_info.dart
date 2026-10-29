@@ -8,8 +8,6 @@
  *
  */
 
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -28,6 +26,7 @@ import '../../../utilities/assets.dart';
 import '../../../utilities/enums/wallet_balance_toggle_state.dart';
 import '../../../utilities/text_styles.dart';
 import '../../../wallets/isar/providers/wallet_info_provider.dart';
+import '../../../widgets/outlined_coin_icon.dart';
 import 'wallet_balance_toggle_sheet.dart';
 import 'wallet_refresh_button.dart';
 
@@ -179,10 +178,11 @@ class WalletSummaryInfo extends ConsumerWidget {
         ),
         Column(
           children: [
-            SvgPicture.file(
-              File(ref.watch(coinIconProvider(coin))),
-              width: 24,
-              height: 24,
+            OutlinedCoinIcon(
+              path: ref.watch(coinIconProvider(coin)),
+              outline: Theme.of(context)
+                  .extension<StackColors>()!
+                  .textFavoriteCard,
             ),
             const Spacer(),
             WalletRefreshButton(

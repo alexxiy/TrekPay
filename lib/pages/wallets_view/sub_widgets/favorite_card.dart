@@ -8,12 +8,9 @@
  *
  */
 
-import 'dart:io';
-
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../../pages_desktop_specific/my_stack_view/wallet_view/desktop_wallet_view.dart';
@@ -30,6 +27,7 @@ import '../../../utilities/util.dart';
 import '../../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../../widgets/coin_card.dart';
 import '../../../widgets/conditional_parent.dart';
+import '../../../widgets/outlined_coin_icon.dart';
 import '../../wallet_view/wallet_view.dart';
 
 class FavoriteCard extends ConsumerStatefulWidget {
@@ -187,10 +185,11 @@ class _FavoriteCardState extends ConsumerState<FavoriteCard> {
                             overflow: TextOverflow.fade,
                           ),
                         ),
-                        SvgPicture.file(
-                          File(ref.watch(coinIconProvider(coin))),
-                          width: 24,
-                          height: 24,
+                        OutlinedCoinIcon(
+                          path: ref.watch(coinIconProvider(coin)),
+                          outline: Theme.of(context)
+                              .extension<StackColors>()!
+                              .textFavoriteCard,
                         ),
                       ],
                     ),
