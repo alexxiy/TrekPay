@@ -1,39 +1,43 @@
 """TrekPay launcher icon sources from the artwork
 (graphics/Kerrigan/GooglePlay/app_icon_appstore_1024x1024.png: the
-shielded Delta with the Kerrigan mark, no arms, on a navy backdrop with
-a violet glow).
+shielded Delta with the Kerrigan mark, no arms).
+
+Delta is cut out of the artwork (BiRefNet matte), its dark body lifted a
+little, and set on a violet backdrop with a soft lavender glow and a
+white outline, so it stands out on a phone's home screen.
 
 Writes 1024 px sources for flutter_launcher_icons, which scales them to
 every Android density (mdpi..xxxhdpi), every iOS size and the desktop
 icons:
 
-- icon.png                 iOS / Windows: the artwork, full bleed (the
+- icon.png                 iOS / Windows / Linux: full bleed (the
                            platforms apply their own corner mask).
 - macos-icon.png           macOS / Android legacy: rounded tile on
                            transparent with a small margin.
-- adaptive_foreground.png  Android 8+ foreground: Delta cut out.
-- adaptive_background.png  Android 8+ background: the backdrop and glow.
+- adaptive_foreground.png  Android 8+ foreground: Delta, glow, outline.
+- adaptive_background.png  Android 8+ background: the violet backdrop.
 - adaptive_monochrome.png  Android 13 themed icon: Delta's silhouette
                            with the eyes, mark and trims cut out.
 
-The backdrop is a radial gradient: it's rebuilt from the artwork's own
-background pixels (median colour per distance from the centre) and
-stretched so that the part a launcher shows matches the artwork. Delta
-(BiRefNet matte) sits on it as in the artwork, a little smaller so the
-wing tips stay inside round masks.
+With a store directory (Graphics/GooglePlay), also the store icons there:
+trekpay_app_icon_googleplay_512x512.png, trekpay_app_icon_appstore_1024x1024.png
+(no alpha; also asset_sources/other/playstore_icon/trekpay/app_icon-playstore.png)
+and trekpay_app_button_rounded_1024x1024.png (corners cut, for web pages
+and posts). The prefix keeps the artwork they're made from untouched.
 
-Usage: python make_icon.py <app_icon_appstore_1024x1024.png> <out dir>
+Usage: python make_icon.py <app_icon_appstore_1024x1024.png> <out dir> [store dir]
 (needs `pip install "rembg[cpu]" pillow numpy`)
 """
 import sys
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 from rembg import new_session, remove
 
 SRC = Path(sys.argv[1])
 OUT = Path(sys.argv[2])
+STORE = Path(sys.argv[3]) if len(sys.argv) > 3 else None
 OUT.mkdir(parents=True, exist_ok=True)
 S = 1024
 
@@ -45,48 +49,82 @@ matte = remove(art, session=new_session("birefnet-general"), only_mask=True)
 m = np.asarray(matte).astype(np.float32) / 255
 m = np.clip((m - 0.3) / 0.4, 0, 1)
 
-# --- backdrop: median colour per ring around the centre
-yy, xx = np.mgrid[0:S, 0:S].astype(np.float32) / S - 0.5
-r = np.sqrt(xx**2 + yy**2)
-bins = np.linspace(0, r.max() + 1e-6, 97)
-centres = (bins[:-1] + bins[1:]) / 2
-bgmask = m < 0.02
-profile = np.zeros((len(centres), 3), np.float32)
-known = np.zeros(len(centres), bool)
-for i in range(len(centres)):
-    sel = bgmask & (r >= bins[i]) & (r < bins[i + 1])
-    if sel.sum() > 30:
-        profile[i] = np.median(rgb[sel], axis=0)
-        known[i] = True
-# rings under Delta: interpolated from the known ones
-for c in range(3):
-    profile[:, c] = np.interp(centres, centres[known], profile[known, c])
-# a little smoothing so the rings don't show
-k = np.array([1, 2, 3, 2, 1], np.float32)
-k /= k.sum()
-for c in range(3):
-    padded = np.pad(profile[:, c], 2, mode="edge")
-    profile[:, c] = np.convolve(padded, k, mode="valid")
+# --- Delta brighter: the dark navy body lifted a little towards slate
+# violet, keeping the shading, outlines, eyes and mark.
+lum = rgb.mean(axis=2, keepdims=True)
+w = np.clip((90 - lum) / 40, 0, 1) * 0.30
+target = np.array((70, 70, 128), np.float32)[None, None] * np.clip(lum / 30, 0.6, 1.4)
+lit = rgb * (1 - w) + target * w
+delta = Image.fromarray(np.dstack([lit, m * 255]).clip(0, 255).round().astype(np.uint8), "RGBA")
+plain = Image.fromarray(np.dstack([rgb, m * 255]).round().astype(np.uint8), "RGBA")
+
+# Sizes are tuned for Delta 1014 px wide (the adaptive foreground).
+TUNED = 1014
 
 
-def backdrop(stretch: float) -> np.ndarray:
-    rr = np.minimum(r * stretch, centres[-1])
-    return np.dstack([np.interp(rr, centres, profile[:, c]) for c in range(3)])
+def placed(img, n, k):
+    """The artwork-sized `img` at k x n px, centred on an n px canvas."""
+    size = round(n * k)
+    cut = img.convert("RGBa").resize((size, size), Image.LANCZOS).convert("RGBA")
+    out = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    out.alpha_composite(cut, ((n - size) // 2, (n - size) // 2))
+    return out
 
 
-# Launchers show the middle 72 of the layer's 108 dp.
-adaptive_bg = backdrop(108 / 72)
-Image.fromarray(np.clip(adaptive_bg, 0, 255).astype(np.uint8)).save(
-    OUT / "adaptive_background.png", optimize=True
-)
+def dilated(alpha, radius):
+    """Round dilation of a silhouette by `radius` px, antialiased."""
+    mask = np.asarray(alpha) > 110
+    n = mask.shape[0]
+    pad = np.pad(mask, radius)
+    out = np.zeros_like(mask)
+    for dy in range(-radius, radius + 1):
+        w = int((radius**2 - dy**2) ** 0.5)
+        for dx in range(-w, w + 1):
+            out |= pad[radius + dy : radius + dy + n, radius + dx : radius + dx + n]
+    return Image.fromarray((out * 255).astype(np.uint8), "L").filter(ImageFilter.GaussianBlur(1.6))
 
-# Delta RGBA (original colours, matte alpha)
-delta = Image.fromarray(np.dstack([rgb, m * 255]).round().astype(np.uint8), "RGBA")
 
-# --- icon.png: the artwork as it is
-art.save(OUT / "icon.png", optimize=True)
+def sticker(n, k):
+    """Delta at k x n px on an n px canvas, with its glow and outline."""
+    d = placed(delta, n, k)
+    u = n * k / TUNED
+    al = d.getchannel("A")
+    grow = round(40 * u) | 1
+    glow_a = al.filter(ImageFilter.MaxFilter(grow)).filter(ImageFilter.GaussianBlur(30 * u))
+    glow = Image.new("RGBA", (n, n), (236, 222, 255, 0))
+    glow.putalpha(glow_a.point(lambda v: min(255, int(v * 1.4))))
+    line = Image.new("RGBA", (n, n), (255, 255, 255, 0))
+    line.putalpha(dilated(al, round(12 * u)))
+    glow.alpha_composite(line)
+    glow.alpha_composite(d)
+    return glow
 
-# --- macos-icon.png: rounded tile, ~6% margin
+
+def backdrop(n, scale=1.0):
+    """The violet radial backdrop on n px; `scale` < 1 shows only the
+    middle of the adaptive layer (launchers show its middle 72 of 108 dp)."""
+    yy, xx = np.mgrid[0:n, 0:n].astype(np.float32) / n - 0.5
+    r = np.sqrt(xx**2 + yy**2) * scale
+    t = np.clip(r / 0.62, 0, 1) ** 1.2
+    c, e = np.array((176, 120, 240), np.float32), np.array((96, 54, 176), np.float32)
+    img = c[None, None] * (1 - t[..., None]) + e[None, None] * t[..., None]
+    return Image.fromarray(img.round().clip(0, 255).astype(np.uint8), "RGB")
+
+
+# --- adaptive layers: Delta 99% of the layer (the layer is inset 16% and
+# its middle 2/3 shows)
+backdrop(S).save(OUT / "adaptive_background.png", optimize=True)
+fg = sticker(S, 0.99)
+fg.save(OUT / "adaptive_foreground.png", optimize=True)
+
+# --- icon.png: what a launcher shows of the adaptive icon, full bleed
+# (Delta 0.99 x 0.68 of the layer, the layer 108/72 of the icon)
+icon = backdrop(S, 72 / 108).convert("RGBA")
+icon.alpha_composite(sticker(S, 0.99 * 0.68 * 108 / 72))
+icon = icon.convert("RGB")
+icon.save(OUT / "icon.png", optimize=True)
+
+
 def rounded(img, radius_frac, scale=4):
     big = Image.new("L", (S * scale, S * scale), 0)
     ImageDraw.Draw(big).rounded_rectangle(
@@ -96,31 +134,34 @@ def rounded(img, radius_frac, scale=4):
     out.putalpha(big.resize((S, S), Image.LANCZOS))
     return out
 
+
+# --- macos-icon.png: rounded tile, ~6% margin
 inner = round(S * 0.88)
-tile = rounded(art, 0.2237).convert("RGBa").resize((inner, inner), Image.LANCZOS).convert("RGBA")
+tile = rounded(icon, 0.2237).convert("RGBa").resize((inner, inner), Image.LANCZOS).convert("RGBA")
 mac = Image.new("RGBA", (S, S), (0, 0, 0, 0))
 mac.alpha_composite(tile, ((S - inner) // 2, (S - inner) // 2))
 mac.save(OUT / "macos-icon.png", optimize=True)
 
-# --- adaptive foreground: Delta where it is in the artwork, at 90% around
-# the centre (the layer is inset 16% and its middle 2/3 shows)
-small = round(S * 0.90)
-cut = delta.convert("RGBa").resize((small, small), Image.LANCZOS).convert("RGBA")
-fg = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-fg.alpha_composite(cut, ((S - small) // 2, (S - small) // 2))
-fg.save(OUT / "adaptive_foreground.png", optimize=True)
-
-# --- monochrome: silhouette, the glowing parts (eyes, mark, trims) cut out
-f = np.asarray(fg).astype(np.float32)
+# --- monochrome: Delta's silhouette, the glowing parts (eyes, mark,
+# trims) cut out
+f = np.asarray(placed(plain, S, 0.99)).astype(np.float32)
 alpha = f[..., 3] / 255
-bright = f[..., :3].max(axis=2)
-hole = np.clip((bright - 140) / 50, 0, 1)
-mono_a = alpha * (1 - hole)
+hole = np.clip((f[..., :3].max(axis=2) - 140) / 50, 0, 1)
 mono = Image.merge(
     "LA",
-    (Image.new("L", (S, S), 255), Image.fromarray((mono_a * 255).astype(np.uint8))),
+    (Image.new("L", (S, S), 255), Image.fromarray((alpha * (1 - hole) * 255).astype(np.uint8))),
 )
 mono.save(OUT / "adaptive_monochrome.png", optimize=True)
+
+# --- store icons
+if STORE:
+    STORE.mkdir(parents=True, exist_ok=True)
+    icon.resize((512, 512), Image.LANCZOS).convert("RGBA").save(
+        STORE / "trekpay_app_icon_googleplay_512x512.png", optimize=True
+    )
+    icon.save(STORE / "trekpay_app_icon_appstore_1024x1024.png", optimize=True)
+    rounded(icon, 0.2237).save(STORE / "trekpay_app_button_rounded_1024x1024.png", optimize=True)
+
 
 # --- preview sheet: Android circle / squircle, iOS, legacy, themed
 def adaptive_preview(shape, layer_fg, layer_bg):
@@ -139,6 +180,7 @@ def adaptive_preview(shape, layer_fg, layer_bg):
     canvas.putalpha(mk.resize((256, 256), Image.LANCZOS))
     return canvas
 
+
 themed_bg = Image.new("RGB", (S, S), (40, 40, 52))
 themed_fg = Image.merge(
     "RGBA",
@@ -149,11 +191,11 @@ themed_fg = Image.merge(
         mono.getchannel("A"),
     ),
 )
+bg = Image.open(OUT / "adaptive_background.png")
 sheet = Image.new("RGBA", (256 * 5 + 60, 300), (236, 236, 240, 255))
-sheet.alpha_composite(adaptive_preview("circle", fg, Image.open(OUT / "adaptive_background.png")), (10, 20))
-sheet.alpha_composite(adaptive_preview("squircle", fg, Image.open(OUT / "adaptive_background.png")), (276, 20))
-ios = rounded(art, 0.2237).resize((256, 256), Image.LANCZOS)
-sheet.alpha_composite(ios, (542, 20))
+sheet.alpha_composite(adaptive_preview("circle", fg, bg), (10, 20))
+sheet.alpha_composite(adaptive_preview("squircle", fg, bg), (276, 20))
+sheet.alpha_composite(rounded(icon, 0.2237).resize((256, 256), Image.LANCZOS), (542, 20))
 sheet.alpha_composite(mac.resize((256, 256), Image.LANCZOS), (808, 20))
 sheet.alpha_composite(adaptive_preview("circle", themed_fg, themed_bg), (1074, 20))
 sheet.convert("RGB").save(OUT / "preview.png")
