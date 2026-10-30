@@ -64,8 +64,18 @@ class _KerriganMasternodeDetailsViewState
   final _serviceController = TextEditingController();
   final _serviceFocus = FocusNode();
 
+  /// Register was pressed with no server address: the field says so.
+  bool _serviceRequired = false;
+
   /// Refresh asked the network and hasn't heard back yet.
   bool _checking = false;
+
+  void _openSite() => unawaited(
+    launchUrl(
+      Uri.parse(_kMasternodeSpaceUrl),
+      mode: LaunchMode.externalApplication,
+    ),
+  );
 
   KerriganWallet get _wallet =>
       ref.read(pWallets).getWallet(widget.walletId) as KerriganWallet;
@@ -175,9 +185,9 @@ class _KerriganMasternodeDetailsViewState
       await _warn(error ?? l10n.mnBuildFailed);
       return;
     }
-    final fee = ref.read(pAmountFormatter(wallet.cryptoCurrency)).format(
-      tx.fee,
-    );
+    final fee = ref
+        .read(pAmountFormatter(wallet.cryptoCurrency))
+        .format(tx.fee);
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => StackDialog(
@@ -239,15 +249,17 @@ class _KerriganMasternodeDetailsViewState
   Future<void> _register(KerriganMasternode mn) async {
     final service = _service();
     if (service == null) return;
+    if (service.isEmpty) {
+      setState(() => _serviceRequired = true);
+      _serviceFocus.requestFocus();
+      return;
+    }
     _serviceFocus.unfocus();
     await _providerTx(
       building: l10n.mnPreparingRegistration,
-      build: () =>
-          _wallet.prepareMasternodeRegistration(mn, service: service),
+      build: () => _wallet.prepareMasternodeRegistration(mn, service: service),
       title: l10n.mnRegisterTitle(mn.label),
-      message: service.isEmpty
-          ? l10n.mnRegisterNoServer
-          : l10n.mnRegisterWithServer(service),
+      message: l10n.mnRegisterWithServer(service),
       done: l10n.mnRegistrationSent,
     );
   }
@@ -261,8 +273,7 @@ class _KerriganMasternodeDetailsViewState
     _serviceFocus.unfocus();
     await _providerTx(
       building: l10n.mnPreparingUpdate,
-      build: () =>
-          _wallet.prepareMasternodeServiceUpdate(mn, service: service),
+      build: () => _wallet.prepareMasternodeServiceUpdate(mn, service: service),
       title: l10n.mnSetServerTitle,
       message: l10n.mnServedBy(mn.label, service),
       done: l10n.mnUpdateSent,
@@ -311,43 +322,169 @@ class _KerriganMasternodeDetailsViewState
   /// Shorter in config lines, which then fit a phone's width.
   static const _hiddenSecretInCode = "••••••••••••";
 
-  Widget _row(String label, String value, {bool secret = false}) {
+  /// [label] over [value], with a copy button. A [secret] value stays
+  /// hidden until [_revealSecret]. Without a value, [missing] says why.
+  Widget _value(
+    String label,
+    String? value, {
+    bool secret = false,
+    String? missing,
+  }) {
+    final colors = Theme.of(context).extension<StackColors>()!;
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: STextStyles.w500_12(context)
+                    .copyWith(color: colors.textSubtitle1),
+              ),
+              const SizedBox(height: 4),
+              if (value == null)
+                Text(missing ?? "", style: STextStyles.itemSubtitle(context))
+              else
+                SelectableText(
+                  secret && !_showSecret ? _hiddenSecret : value,
+                  style: STextStyles.w600_14(context),
+                ),
+            ],
+          ),
+        ),
+        if (value != null && secret)
+          CustomTextButton(
+            text: _showSecret ? l10n.commonHide : l10n.commonShow,
+            onTap: _showSecret
+                ? () => setState(() => _showSecret = false)
+                : _revealSecret,
+          ),
+        if (value != null && (!secret || _showSecret)) ...[
+          const SizedBox(width: 8),
+          IconCopyButton(data: value, secret: secret),
+        ],
+      ],
+    );
+  }
+
+  /// A tinted box, so it stands out on the sheet.
+  Widget _box(Widget child) {
+    final colors = Theme.of(context).extension<StackColors>()!;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.textFieldDefaultBG,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: child,
+    );
+  }
+
+  /// A card titled [title] holding [children], split by thin lines.
+  Widget _block(String title, List<Widget> children, {double gap = 20}) {
     final colors = Theme.of(context).extension<StackColors>()!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: RoundedWhiteContainer(
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: STextStyles.w500_12(context)
-                        .copyWith(color: colors.textSubtitle1),
-                  ),
-                  const SizedBox(height: 4),
-                  SelectableText(
-                    secret && !_showSecret ? _hiddenSecret : value,
-                    style: STextStyles.w600_14(context),
-                  ),
-                ],
-              ),
-            ),
-            if (secret)
-              CustomTextButton(
-                text: _showSecret ? l10n.commonHide : l10n.commonShow,
-                onTap: _showSecret
-                    ? () => setState(() => _showSecret = false)
-                    : _revealSecret,
-              ),
-            if (!secret || _showSecret) ...[
-              const SizedBox(width: 8),
-              IconCopyButton(data: value, secret: secret),
+            Text(title, style: STextStyles.w600_16(context)),
+            const SizedBox(height: 14),
+            for (final (i, child) in children.indexed) ...[
+              if (i > 0)
+                Divider(
+                  height: gap,
+                  thickness: 1,
+                  color: colors.textFieldDefaultBG,
+                ),
+              child,
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// Step [n] of a how-to: a numbered [title] over its [body].
+  Widget _step(int n, Widget title, List<Widget> body) {
+    final colors = Theme.of(context).extension<StackColors>()!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 22,
+              height: 22,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: colors.buttonBackPrimary,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                "$n",
+                style: STextStyles.w600_12(context)
+                    .copyWith(color: colors.buttonTextPrimary),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: title,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ...body,
+      ],
+    );
+  }
+
+  /// [text] with "masternode.space" in it as a link to the site.
+  Widget _siteTitle(String text) {
+    const site = "masternode.space";
+    final style = STextStyles.w600_14(context);
+    final at = text.indexOf(site);
+    if (at < 0) return Text(text, style: style);
+    final linkColor = STextStyles.richLink(context).color;
+    return Text.rich(
+      TextSpan(
+        style: style,
+        children: [
+          TextSpan(text: text.substring(0, at)),
+          // One piece, so the icon never wraps away from the name.
+          WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: _openSite,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      site,
+                      style: style.copyWith(
+                        color: linkColor,
+                        decoration: TextDecoration.underline,
+                        decorationColor: linkColor,
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                    Icon(Icons.open_in_new_rounded, size: 15, color: linkColor),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          TextSpan(text: text.substring(at + site.length)),
+        ],
       ),
     );
   }
@@ -356,7 +493,12 @@ class _KerriganMasternodeDetailsViewState
   /// [_revealSecret].
   Widget _codeBlock(String Function(String secret) code, String secret) {
     final colors = Theme.of(context).extension<StackColors>()!;
-    return RoundedWhiteContainer(
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.textFieldDefaultBG,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -425,12 +567,12 @@ class _KerriganMasternodeDetailsViewState
   }
 
   String? get _serviceError => _serviceController.text.trim().isEmpty
-      ? null
+      ? (_serviceRequired ? l10n.mnEnterIp : null)
       : _wallet.masternodeServiceError(_serviceController.text);
 
-  /// What masternode.space asks for: the BLS (operator) [secret], and
-  /// the ProTx hash or the collateral output. Without the secret (a host's
-  /// operator key) it says how to get one.
+  /// What masternode.space asks for: the BLS (operator) [secret], plus
+  /// either the ProTx hash or the collateral output. Without the secret
+  /// (an operator key made outside this wallet) it says how to get one.
   Future<void> _showHostingDetails(
     KerriganMasternode mn,
     String? secret,
@@ -457,42 +599,73 @@ class _KerriganMasternodeDetailsViewState
         child: SafeArea(
           child: SingleChildScrollView(
             child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                l10n.mnHostTitle,
-                style: STextStyles.pageTitleH2(context),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                secret != null
-                    ? l10n.mnHostTextKerrigan
-                    : l10n.mnHostTextNoSecret(l10n.mnChangeOperator),
-                style: STextStyles.itemSubtitle(context),
-              ),
-              const SizedBox(height: 16),
-              if (secret != null)
-                _row(l10n.mnOperatorSecretForHost, secret, secret: true),
-              if (proTxHash != null) _row(l10n.mnProTxHash, proTxHash),
-              _row(l10n.mnCollateralTx, mn.txid),
-              _row(l10n.mnOutputIndex, "${mn.vout}"),
-              const SizedBox(height: 8),
-              SecondaryButton(
-                label: l10n.mnCopyAll,
-                onPressed: () => _copy(all, l10n.mnHostingCopied),
-              ),
-              const SizedBox(height: 8),
-              PrimaryButton(
-                label: l10n.mnOpenMasternodeSpace,
-                onPressed: () => launchUrl(
-                  Uri.parse(_kMasternodeSpaceUrl),
-                  mode: LaunchMode.externalApplication,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(l10n.mnHostTitle, style: STextStyles.pageTitleH2(context)),
+                const SizedBox(height: 8),
+                Text(
+                  secret != null
+                      ? l10n.mnHostTextKerrigan
+                      : mn.keyIndex == null
+                      ? l10n.mnKeysElsewhere
+                      : l10n.mnHostTextNoSecret(l10n.mnChangeOperator),
+                  style: STextStyles.itemSubtitle(context),
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                if (secret != null) ...[
+                  _box(
+                    _value(l10n.mnOperatorSecretForHost, secret, secret: true),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    l10n.mnHostOneOf,
+                    style: STextStyles.smallMed12(context),
+                  ),
+                  const SizedBox(height: 8),
+                  _box(
+                    _value(
+                      l10n.mnProTxHash,
+                      proTxHash,
+                      missing: l10n.mnProTxAfterRegistering,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Text(
+                      l10n.mnOr,
+                      textAlign: TextAlign.center,
+                      style: STextStyles.smallMed12(context)
+                          .copyWith(color: colors.textSubtitle1),
+                    ),
+                  ),
+                  _box(
+                    Column(
+                      children: [
+                        _value(l10n.mnCollateralTx, mn.txid),
+                        Divider(
+                          height: 20,
+                          thickness: 1,
+                          color: colors.popupBG,
+                        ),
+                        _value(l10n.mnOutputIndex, "${mn.vout}"),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SecondaryButton(
+                    label: l10n.mnCopyAll,
+                    onPressed: () => _copy(all, l10n.mnHostingCopied),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                PrimaryButton(
+                  label: l10n.mnOpenMasternodeSpace,
+                  onPressed: _openSite,
+                ),
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -541,35 +714,28 @@ class _KerriganMasternodeDetailsViewState
   List<Widget> _registerSection(KerriganMasternode mn) {
     final wallet = _wallet;
     return [
-      _section(
-        l10n.mnRegisterSection,
-        subtitle: l10n.mnRegisterSectionText,
-        [
-          _field(
-            controller: _serviceController,
-            focus: _serviceFocus,
-            hint: l10n.mnServerIpExample,
-            error: _serviceError,
-            keyboardType: TextInputType.url,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            l10n.mnOperatorFromWallet,
-            style: STextStyles.smallMed12(context),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l10n.mnOperatorWalletText,
-            style: STextStyles.itemSubtitle(context),
-          ),
-          const SizedBox(height: 12),
-          PrimaryButton(
-            label: l10n.mnRegister,
-            enabled: !wallet.isViewOnly && _serviceError == null,
-            onPressed: () => _register(mn),
-          ),
-        ],
-      ),
+      _section(l10n.mnRegisterSection, subtitle: l10n.mnRegisterSectionText, [
+        _field(
+          controller: _serviceController,
+          focus: _serviceFocus,
+          hint: l10n.mnServerIpExample,
+          error: _serviceError,
+          keyboardType: TextInputType.url,
+        ),
+        const SizedBox(height: 12),
+        Text(l10n.mnOperatorFromWallet, style: STextStyles.smallMed12(context)),
+        const SizedBox(height: 4),
+        Text(
+          l10n.mnOperatorWalletText,
+          style: STextStyles.itemSubtitle(context),
+        ),
+        const SizedBox(height: 12),
+        PrimaryButton(
+          label: l10n.mnRegister,
+          enabled: !wallet.isViewOnly && _serviceError == null,
+          onPressed: () => _register(mn),
+        ),
+      ]),
     ];
   }
 
@@ -617,17 +783,13 @@ class _KerriganMasternodeDetailsViewState
         ],
       ),
       if (mn.keyIndex != null)
-        _section(
-          l10n.mnOperator,
-          subtitle: l10n.mnOperatorText,
-          [
-            SecondaryButton(
-              label: l10n.mnChangeOperator,
-              enabled: !wallet.isViewOnly,
-              onPressed: () => _changeOperator(mn),
-            ),
-          ],
-        ),
+        _section(l10n.mnOperator, subtitle: l10n.mnOperatorText, [
+          SecondaryButton(
+            label: l10n.mnChangeOperator,
+            enabled: !wallet.isViewOnly,
+            onPressed: () => _changeOperator(mn),
+          ),
+        ]),
     ];
   }
 
@@ -669,6 +831,8 @@ class _KerriganMasternodeDetailsViewState
                     final operatorSecret = mn.walletOperates || !registered
                         ? _keys?.operator?.secret
                         : null;
+                    // Also for one registered before the wallet knew it.
+                    final proTxHash = mn.proTxHash ?? state?.proTxHash;
                     return ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
@@ -687,8 +851,7 @@ class _KerriganMasternodeDetailsViewState
                                     status: _checking
                                         ? KerriganMasternodeStatus.checking
                                         : state?.status ??
-                                              KerriganMasternodeStatus
-                                                  .checking,
+                                              KerriganMasternodeStatus.checking,
                                   ),
                                 ],
                               ),
@@ -756,110 +919,120 @@ class _KerriganMasternodeDetailsViewState
                           ..._registerSection(mn)
                         else
                           ..._registeredSections(mn, state),
-                        const SizedBox(height: 16),
-                        Text(
-                          l10n.mnEasiest,
-                          style: STextStyles.w600_14(context),
-                        ),
                         const SizedBox(height: 8),
-                        Text(
-                          l10n.mnEasiestTextKerrigan,
-                          style: STextStyles.itemSubtitle(context),
-                        ),
-                        const SizedBox(height: 12),
-                        PrimaryButton(
-                          label: l10n.mnShowWhatNeeded,
-                          onPressed: () async {
-                            if ((operatorSecret == null ||
-                                    await _revealSecret()) &&
-                                mounted) {
-                              await _showHostingDetails(
-                                mn,
-                                operatorSecret,
-                                mn.proTxHash ?? state?.proTxHash,
-                              );
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          l10n.mnOwnServer,
-                          style: STextStyles.w600_14(context),
-                        ),
-                        const SizedBox(height: 8),
-                        if (operatorSecret != null) ...[
-                          Text(
-                            (mn.service ?? state?.service) == null
-                                ? l10n.mnOwnServerTextReplaceIp(
-                                    wallet.masternodePortOf(null),
-                                  )
-                                : l10n.mnOwnServerText(
-                                    wallet.masternodePortOf(
-                                      mn.service ?? state?.service,
-                                    ),
-                                  ),
-                            style: STextStyles.itemSubtitle(context),
-                          ),
-                          const SizedBox(height: 8),
-                          _codeBlock(
-                            (secret) => wallet.masternodeKerriganConf(
-                              mn.copyWith(service: mn.service ?? state?.service),
-                              secret,
-                            ),
-                            operatorSecret,
-                          ),
-                          if (mn.type == KerriganMasternodeType.broodNode) ...[
-                            const SizedBox(height: 12),
+                        _block(l10n.mnHowToHost, gap: 32, [
+                          _step(1, _siteTitle(l10n.mnEasiest), [
                             Text(
-                              l10n.mnBroodNodeIdentityText,
+                              l10n.mnEasiestTextKerrigan,
                               style: STextStyles.itemSubtitle(context),
                             ),
-                            const SizedBox(height: 8),
-                            _codeBlock(
-                              wallet.broodNodeIdentityCommand,
-                              operatorSecret,
+                            const SizedBox(height: 12),
+                            SecondaryButton(
+                              label: l10n.mnShowWhatNeeded,
+                              onPressed: () async {
+                                if ((operatorSecret == null ||
+                                        await _revealSecret()) &&
+                                    mounted) {
+                                  await _showHostingDetails(
+                                    mn,
+                                    operatorSecret,
+                                    proTxHash,
+                                  );
+                                }
+                              },
                             ),
-                          ],
-                        ] else
-                          Text(
-                            l10n.mnOperatorFromHostText(l10n.mnChangeOperator),
-                            style: STextStyles.itemSubtitle(context),
+                          ]),
+                          _step(
+                            2,
+                            Text(
+                              l10n.mnOwnServer,
+                              style: STextStyles.w600_14(context),
+                            ),
+                            [
+                              if (operatorSecret != null) ...[
+                                Text(
+                                  (mn.service ?? state?.service) == null
+                                      ? l10n.mnOwnServerTextReplaceIp(
+                                          wallet.masternodePortOf(null),
+                                        )
+                                      : l10n.mnOwnServerText(
+                                          wallet.masternodePortOf(
+                                            mn.service ?? state?.service,
+                                          ),
+                                        ),
+                                  style: STextStyles.itemSubtitle(context),
+                                ),
+                                const SizedBox(height: 8),
+                                _codeBlock(
+                                  (secret) => wallet.masternodeKerriganConf(
+                                    mn.copyWith(
+                                      service: mn.service ?? state?.service,
+                                    ),
+                                    secret,
+                                  ),
+                                  operatorSecret,
+                                ),
+                                if (mn.type ==
+                                    KerriganMasternodeType.broodNode) ...[
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    l10n.mnBroodNodeIdentityText,
+                                    style: STextStyles.itemSubtitle(context),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _codeBlock(
+                                    wallet.broodNodeIdentityCommand,
+                                    operatorSecret,
+                                  ),
+                                ],
+                              ] else
+                                Text(
+                                  mn.keyIndex == null
+                                      ? l10n.mnKeysElsewhere
+                                      : l10n.mnOperatorFromHostText(
+                                          l10n.mnChangeOperator,
+                                        ),
+                                  style: STextStyles.itemSubtitle(context),
+                                ),
+                            ],
                           ),
-                        const SizedBox(height: 24),
-                        _row(l10n.mnCollateralAddress, mn.address),
-                        _row(l10n.mnCollateralTx, mn.txid),
-                        _row(l10n.mnOutputIndex, "${mn.vout}"),
-                        _row(
-                          l10n.mnPayoutAddress,
-                          state?.payoutAddress ?? mn.payoutAddress,
-                        ),
-                        if (mn.proTxHash != null)
-                          _row(l10n.mnProTxHash, mn.proTxHash!),
-                        if ((state?.ownerAddress ?? _keys?.owner ?? "")
-                            .isNotEmpty)
-                          _row(
-                            l10n.mnOwnerAddress,
-                            state?.ownerAddress ?? _keys!.owner,
+                        ]),
+                        _block(l10n.mnDetails, [
+                          if (proTxHash != null)
+                            _value(l10n.mnProTxHash, proTxHash),
+                          _value(l10n.mnCollateralAddress, mn.address),
+                          _value(l10n.mnCollateralTx, mn.txid),
+                          _value(l10n.mnOutputIndex, "${mn.vout}"),
+                          _value(
+                            l10n.mnPayoutAddress,
+                            state?.payoutAddress ?? mn.payoutAddress,
                           ),
-                        if ((state?.votingAddress ?? _keys?.voting ?? "")
-                            .isNotEmpty)
-                          _row(
-                            l10n.mnVotingAddress,
-                            state?.votingAddress ?? _keys!.voting,
-                          ),
-                        if ((state?.operatorPublicKey ?? operatorPublic) !=
-                            null)
-                          _row(
-                            l10n.mnOperatorPublicKey,
-                            state?.operatorPublicKey ?? operatorPublic!,
-                          ),
-                        if (operatorSecret != null)
-                          _row(
-                            l10n.mnOperatorSecretKey,
-                            operatorSecret,
-                            secret: true,
-                          ),
-                        const SizedBox(height: 16),
+                          if ((state?.ownerAddress ?? _keys?.owner ?? "")
+                              .isNotEmpty)
+                            _value(
+                              l10n.mnOwnerAddress,
+                              state?.ownerAddress ?? _keys!.owner,
+                            ),
+                          if ((state?.votingAddress ?? _keys?.voting ?? "")
+                              .isNotEmpty)
+                            _value(
+                              l10n.mnVotingAddress,
+                              state?.votingAddress ?? _keys!.voting,
+                            ),
+                          if ((state?.operatorPublicKey ?? operatorPublic) !=
+                              null)
+                            _value(
+                              l10n.mnOperatorPublicKey,
+                              state?.operatorPublicKey ?? operatorPublic!,
+                            ),
+                          if (operatorSecret != null)
+                            _value(
+                              l10n.mnOperatorSecretKey,
+                              operatorSecret,
+                              secret: true,
+                            ),
+                        ]),
+                        const SizedBox(height: 8),
                         SecondaryButton(
                           label: l10n.mnRemove,
                           onPressed: () => _remove(mn),

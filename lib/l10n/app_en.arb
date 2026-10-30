@@ -3884,7 +3884,10 @@
   },
   "mnWaitCollateral": "Wait for the collateral to be confirmed",
   "mnRegisterFirst": "Register the masternode first",
-  "mnHostSetsServer": "Your host holds this masternode's operator key; they set its server",
+  "mnHostSetsServer": "This masternode's operator key (BLS) was made outside this wallet, so its server is set there",
+  "@mnHostSetsServer": {
+    "description": "An error when setting the server of such a masternode. BLS is a key type: keep it."
+  },
   "mnNoOwnerKey": "This wallet doesn't hold the masternode's owner key",
   "govGrowthFundRelease": "Growth fund release",
   "@govGrowthFundRelease": {
@@ -4178,7 +4181,6 @@
       }
     }
   },
-  "mnRegisterNoServer": "The masternode goes on the network without a server; it gets no rewards until its server is set.",
   "mnRegisterWithServer": "The masternode goes on the network with server {server}.",
   "@mnRegisterWithServer": {
     "description": "{server}: an IP address and port, e.g. \"203.0.113.5:7120\".",
@@ -4214,25 +4216,49 @@
   "@mnOperatorSecretForHost": {
     "description": "What masternode.space calls the operator secret key (a BLS key): keep \"BLS\"."
   },
-  "mnHostTextKerrigan": "masternode.space asks for the BLS secret key and either the ProTx hash or the collateral transaction with its output index. Your collateral never leaves this wallet. They then tell you the server's IP address: enter it on this page to register the masternode (or to update its server).",
+  "mnHostTextKerrigan": "masternode.space asks for the BLS secret key plus one of the two options below. Your collateral never leaves this wallet. They then tell you the server's IP address: enter it on this page to register the masternode (or to update its server).",
   "@mnHostTextKerrigan": {
     "description": "masternode.space is a website: keep it as is."
   },
-  "mnHostTextNoSecret": "This masternode uses an operator key from its host, so this wallet has no BLS secret key for masternode.space. Switch it to a key made by this wallet first with \"{button}\".",
+  "mnHostTextNoSecret": "This wallet doesn't have this masternode's operator key (BLS), so it has nothing to give masternode.space. Switch to a key made here first with \"{button}\".",
   "@mnHostTextNoSecret": {
-    "description": "In the masternode.space sheet, for a masternode registered with an operator key from its host. {button}: the \"Change operator key\" button. masternode.space is a website and BLS a key type: keep them as is.",
+    "description": "In the masternode.space sheet, for a masternode registered with an operator key this wallet didn't make. {button}: the \"Change operator key\" button. masternode.space is a website and BLS a key type: keep them as is.",
     "placeholders": {
       "button": {
         "type": "String"
       }
     }
   },
+  "mnKeysElsewhere": "This masternode was registered with another wallet's keys: set up its server from that wallet.",
+  "@mnKeysElsewhere": {
+    "description": "For a masternode whose owner and operator keys are in another wallet."
+  },
+  "mnHostOneOf": "Plus one of these:",
+  "@mnHostOneOf": {
+    "description": "In the masternode.space sheet, under the BLS secret key and above two options: the ProTx hash, or the collateral transaction with its output index."
+  },
+  "mnOr": "or",
+  "@mnOr": {
+    "description": "Between the two options in the masternode.space sheet."
+  },
+  "mnProTxAfterRegistering": "Appears once the masternode is registered",
+  "@mnProTxAfterRegistering": {
+    "description": "In place of the ProTx hash of a masternode not registered yet."
+  },
+  "mnHowToHost": "How to host your masternode",
+  "@mnHowToHost": {
+    "description": "A block title over the two ways to run the masternode's server."
+  },
+  "mnDetails": "Masternode details",
+  "@mnDetails": {
+    "description": "A block title over the masternode's hashes, addresses and keys."
+  },
   "mnRemoveTextKerrigan": "TrekPay forgets this masternode and unfreezes its collateral, so it can be spent. Spending the collateral ends the masternode on the network.",
   "@mnRemoveTextKerrigan": {
     "description": "TrekPay is the app's name."
   },
   "mnRegisterSection": "Register on the network",
-  "mnRegisterSectionText": "Registering puts the masternode on the network with its server's address and the operator key the server runs with. Get the server ready first (see below); you may also register now without a server and set it later.",
+  "mnRegisterSectionText": "Registering puts the masternode on the network with its server's IP address and the operator key the server runs with. Get the server ready first (see below).",
   "mnOperatorFromWallet": "Operator key made by this wallet",
   "mnOperatorWalletText": "The server runs with this wallet's operator secret key (shown below). Your recovery phrase and wallet backups bring it back.",
   "mnBroodNodeIdentityText": "A BroodNode also takes this key as its identity: with kerrigand stopped, run this command on the server once, then start kerrigand again.",
@@ -4243,7 +4269,10 @@
   "mnServerRevive": "Enter the server's address to revive the masternode. The server must run Kerrigan Core with this masternode's operator secret key.",
   "mnServerStart": "Enter the server's address to start the masternode. The server must run Kerrigan Core with this masternode's operator secret key.",
   "mnServerMoved": "Moved to another server? Enter its address.",
-  "mnHostSetsServerNote": "Your host holds this masternode's operator key and sets its server.",
+  "mnHostSetsServerNote": "This masternode's operator key (BLS) was made outside this wallet: by your host, or by the wallet that set it up. Its server is set there.",
+  "@mnHostSetsServerNote": {
+    "description": "Under the Server title, for a masternode registered with an operator key this wallet didn't make. BLS is a key type: keep it."
+  },
   "mnSetServer": "Set server",
   "mnUpdateServer": "Update server",
   "mnOperator": "Operator",
@@ -4300,9 +4329,9 @@
       }
     }
   },
-  "mnOperatorFromHostText": "This masternode's operator key comes from its host. To run it yourself, give it a new operator key made by this wallet (\"{button}\").",
+  "mnOperatorFromHostText": "This wallet doesn't have this masternode's operator key (BLS). To run it yourself, switch to a key made here with \"{button}\".",
   "@mnOperatorFromHostText": {
-    "description": "{button}: the \"Change operator key\" button.",
+    "description": "{button}: the \"Change operator key\" button. BLS is a key type: keep it.",
     "placeholders": {
       "button": {
         "type": "String"
