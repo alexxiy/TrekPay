@@ -6,13 +6,13 @@ set -x -e
 APP_BUILD_PLATFORM=$1
 
 export NEW_NAME="TrekPay"
-export NEW_APP_ID="alexxiy.trekpay"
-export NEW_APP_ID_CAMEL="alexxiy.trekpay"
-export NEW_APP_ID_SNAKE="alexxiy.trekpay"
+export NEW_APP_ID="alexxiy.kerrigan"
+export NEW_APP_ID_CAMEL="alexxiy.kerrigan"
+export NEW_APP_ID_SNAKE="alexxiy.kerrigan"
 # Linux: Flatpak IDs need three parts, and on Wayland a window finds its
 # icon through a .desktop file named after its ID, so every Linux package
 # (tarball, AppImage, Flatpak) uses this one.
-export NEW_LINUX_APP_ID="alexxiy.trekpay.TrekPay"
+export NEW_LINUX_APP_ID="alexxiy.kerrigan.TrekPay"
 export NEW_BASIC_NAME="trekpay"
 
 NEW_PUBSPEC_NAME="paymint" # package name used across lib/ imports

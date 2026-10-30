@@ -2,9 +2,9 @@
 Name=TrekPay
 Comment=Self-custodial Kerrigan wallet
 Exec=trekpay %u
-Icon=alexxiy.trekpay.TrekPay
+Icon=alexxiy.kerrigan.TrekPay
 Type=Application
 Categories=Office;Finance;
 Keywords=Kerrigan;KRGN;wallet;crypto;masternode;
 MimeType=x-scheme-handler/kerrigan;
-StartupWMClass=alexxiy.trekpay.TrekPay
+StartupWMClass=alexxiy.kerrigan.TrekPay

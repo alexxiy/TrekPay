@@ -2,10 +2,10 @@
 #
 # Put next to this file before building:
 #   bundle/            the Linux release bundle (build/linux/x64/release/bundle)
-#   alexxiy.trekpay.TrekPay.png  a 512x512 app icon (asset_sources/icon/trekpay/icon.png, resized)
+#   alexxiy.kerrigan.TrekPay.png  a 512x512 app icon (asset_sources/icon/trekpay/icon.png, resized)
 #
-#   flatpak-builder --user --install build-dir alexxiy.trekpay.TrekPay.yaml
-app-id: alexxiy.trekpay.TrekPay
+#   flatpak-builder --user --install build-dir alexxiy.kerrigan.TrekPay.yaml
+app-id: alexxiy.kerrigan.TrekPay
 runtime: org.freedesktop.Platform
 runtime-version: '26.08'
 sdk: org.freedesktop.Sdk
@@ -36,12 +36,12 @@ modules:
       - cp -r bundle/lib bundle/data /app/lib/trekpay/
       # Wrapper so the Flatpak command resolves to the binary.
       - install -Dm755 trekpay.sh /app/bin/trekpay
-      - install -Dm644 alexxiy.trekpay.TrekPay.desktop
-          /app/share/applications/alexxiy.trekpay.TrekPay.desktop
-      - install -Dm644 alexxiy.trekpay.TrekPay.metainfo.xml
-          /app/share/metainfo/alexxiy.trekpay.TrekPay.metainfo.xml
-      - install -Dm644 alexxiy.trekpay.TrekPay.png
-          /app/share/icons/hicolor/512x512/apps/alexxiy.trekpay.TrekPay.png
+      - install -Dm644 alexxiy.kerrigan.TrekPay.desktop
+          /app/share/applications/alexxiy.kerrigan.TrekPay.desktop
+      - install -Dm644 alexxiy.kerrigan.TrekPay.metainfo.xml
+          /app/share/metainfo/alexxiy.kerrigan.TrekPay.metainfo.xml
+      - install -Dm644 alexxiy.kerrigan.TrekPay.png
+          /app/share/icons/hicolor/512x512/apps/alexxiy.kerrigan.TrekPay.png
     sources:
       - type: dir
         path: .

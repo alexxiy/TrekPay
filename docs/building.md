@@ -51,7 +51,7 @@ cd ..
 
 Run the configure step again after you change a template, `configure_trekpay.sh` or the version. The generated platform files are not tracked in git.
 
-The app ID is `alexxiy.trekpay`. On Linux it is `alexxiy.trekpay.TrekPay`: Flatpak IDs need three parts, and every Linux package uses the same one so Wayland desktops find the app's icon. The app name, links, IDs and supported networks are in `scripts/app_config/configure_trekpay.sh`.
+The app ID is `alexxiy.kerrigan`. On Linux it is `alexxiy.kerrigan.TrekPay`: Flatpak IDs need three parts, and every Linux package uses the same one so Wayland desktops find the app's icon. The app name, links, IDs and supported networks are in `scripts/app_config/configure_trekpay.sh`.
 
 ## Build the APK
 
@@ -162,7 +162,7 @@ mkdir -p build/linux/x64/release/secp256k1
 ln -s lib64 build/linux/x64/release/secp256k1/lib
 ```
 
-Packaging files are in `flatpak/` (`alexxiy.trekpay`, runtime `org.freedesktop.Platform` 26.08) and `appimage/trekpay/`. Both start from the release bundle; `.github/workflows/build.yaml` shows the full steps.
+Packaging files are in `flatpak/` (`alexxiy.kerrigan`, runtime `org.freedesktop.Platform` 26.08) and `appimage/trekpay/`. Both start from the release bundle; `.github/workflows/build.yaml` shows the full steps.
 
 `kerrigan:` payment links: the app runs as a single instance (unless started with `-d <dir>`), so starting it again with a link hands the link to the running window. The desktop entries of both packages register the `kerrigan` scheme. To open links with a plain bundle, install a desktop entry for it, e.g. `~/.local/share/applications/trekpay.desktop` with `Exec=/path/to/bundle/trekpay %u` and `MimeType=x-scheme-handler/kerrigan;`, then run `xdg-mime default trekpay.desktop x-scheme-handler/kerrigan`.
 

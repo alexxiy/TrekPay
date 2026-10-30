@@ -212,16 +212,16 @@ jobs:
         run: |
           tar -xzf "linux/trekpay-$VERSION-linux-aarch64.tar.gz" -C flatpak/
           convert asset_sources/icon/trekpay/icon.png -resize 512x512 \
-            flatpak/alexxiy.trekpay.TrekPay.png
+            flatpak/alexxiy.kerrigan.TrekPay.png
 
       - name: Build Flatpak
         run: |
           flatpak-builder --user --force-clean --repo=flatpak-repo \
-            build-flatpak flatpak/alexxiy.trekpay.TrekPay.yaml
+            build-flatpak flatpak/alexxiy.kerrigan.TrekPay.yaml
           mkdir -p out
           flatpak build-bundle flatpak-repo \
             --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo \
-            "out/trekpay-$VERSION-aarch64.flatpak" alexxiy.trekpay.TrekPay
+            "out/trekpay-$VERSION-aarch64.flatpak" alexxiy.kerrigan.TrekPay
 
       - uses: actions/upload-artifact@v7
         with:
