@@ -4,13 +4,13 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
   <name>TrekPay</name>
-  <summary>Non-custodial Kerrigan wallet</summary>
+  <summary>Self-custodial Kerrigan wallet</summary>
   <developer id="space.trekpay">
     <name>TrekPay developers</name>
   </developer>
   <description>
     <p>
-      TrekPay is a non-custodial wallet for Kerrigan. Your recovery phrase and
+      TrekPay is a self-custodial wallet for Kerrigan. Your recovery phrase and
       keys stay on your device.
     </p>
     <ul>
@@ -23,4 +23,7 @@
   <launchable type="desktop-id">alexxiy.trekpay.TrekPay.desktop</launchable>
   <url type="homepage">https://trekpay.space</url>
   <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="1.0.0" date="2026-10-30"/>
+  </releases>
 </component>

@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=TrekPay
-Comment=Non-custodial Kerrigan wallet
+Comment=Self-custodial Kerrigan wallet
 Exec=trekpay %u
 Icon=trekpay
 Type=Application
