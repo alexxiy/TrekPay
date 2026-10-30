@@ -79,10 +79,14 @@ def backdrop(n, scale=1.0):
 
 # Wing tips 30.5 dp from the centre: inside the 66 dp safe circle.
 TIPS_DP = 30.5
+# flutter_launcher_icons insets the adaptive foreground (and monochrome)
+# by 16% on each side, so the layer is drawn 1 / 0.68 bigger to end up
+# with the tips at TIPS_DP on the phone.
+INSET = 0.16
 
 # --- adaptive layers (108 dp)
 backdrop(S).save(OUT / "adaptive_background.png", optimize=True)
-fg = placed(S, TIPS_DP / 108 * S)
+fg = placed(S, TIPS_DP / (108 * (1 - 2 * INSET)) * S)
 fg.save(OUT / "adaptive_foreground.png", optimize=True)
 
 # --- icon.png: what a launcher shows of the adaptive icon, full bleed (72 dp)
@@ -125,8 +129,10 @@ if STORE:
 
 # --- preview sheet: Android circle / squircle, iOS, legacy, themed
 def adaptive_preview(shape, layer_fg, layer_bg):
+    """What a launcher shows: the foreground inset like on the phone."""
     canvas = layer_bg.convert("RGBA").copy()
-    canvas.alpha_composite(layer_fg)
+    k = round(S * (1 - 2 * INSET))
+    canvas.alpha_composite(layer_fg.resize((k, k), Image.LANCZOS), ((S - k) // 2, (S - k) // 2))
     vis = round(S * 72 / 108)
     off = (S - vis) // 2
     canvas = canvas.crop((off, off, off + vis, off + vis)).resize((256, 256), Image.LANCZOS)
