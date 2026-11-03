@@ -1,0 +1,39 @@
+TrekPay ist eine Kerrigan-Wallet in Eigenverwahrung, bei der Sie die Kontrolle behalten. Ihre Wiederherstellungsphrase und Ihre Schlüssel bleiben auf Ihrem Gerät. Sie brauchen kein Konto, und niemand außer Ihnen kann Ihre Coins bewegen. TrekPay verwahrt nie Ihre Coins, tauscht keine Kryptowährungen und wickelt weder Bargeld noch Bankzahlungen ab.
+
+Privatsphäre
+• Shield-Transaktionen: KRGN ins Shield und aus dem Shield verschieben und privat senden, auf Wunsch mit verschlüsseltem Memo.
+• Tor für alle Verbindungen, wenn Sie möchten.
+• Keine Werbung und kein Tracking.
+
+Schnelle Zahlungen, Masternodes und Governance
+• InstantSend: Das Masternode-Netzwerk sichert Zahlungen ab, sodass sie in Sekunden endgültig sind.
+• Masternodes und BroodNodes: Registrieren Sie sie in der Wallet und verfolgen Sie Status und Belohnungen.
+• Governance: Vorschläge durchsehen, mit Ihren Masternodes abstimmen und eigene Vorschläge einreichen.
+
+Kerrigan NameSpace
+• Registrieren Sie einen einfachen Namen wie meinname.kerrigan (oder .krgn, .private, .secure, .safe) und teilen Sie ihn statt einer langen Adresse.
+• Lassen Sie Ihren Namen auf eine beliebige Shield-Adresse zeigen, Ihre eigene oder die einer anderen Person, und ändern Sie das jederzeit. Zahlungen gehen weiter an denselben Namen.
+• Übertragen Sie einen Namen an eine andere Person oder bieten Sie ihn auf dem Marktplatz von Kerrigan NameSpace an, wo Sie auch Namen anderer finden.
+• Ihre Namen gehören zu Ihrer Wiederherstellungsphrase, daher öffnet dieselbe Phrase sie auch auf kerrigan-name.space.
+• Zahlen Sie an einen KNS-Namen statt an eine Adresse. TrekPay prüft vor dem Senden, wohin der Name zeigt.
+• KNS-Namen betreibt Kerrigan NameSpace, ein von dieser Wallet getrennter Dienst.
+
+Im Alltag
+• QR-Codes scannen und kerrigan:-Zahlungslinks öffnen.
+• Adressbuch und Coin Control.
+• Nachrichten signieren und prüfen.
+• Ein übersichtlicher Verlauf: Masternode-Belohnungen, Zahlungen aus Vorschlägen und Shield-Transaktionen sind gekennzeichnet, und Sie können nach jeder Art filtern.
+• Mehrere Konten aus einer Wiederherstellungsphrase und Nur-Ansicht-Wallets aus einem erweiterten öffentlichen Schlüssel oder einem Shield-Viewing-Key.
+• In 14 Sprachen verfügbar. TrekPay folgt der Sprache Ihres Telefons, oder Sie wählen eine in den Einstellungen.
+
+Backups und Sicherheit
+• Stellen Sie Wallets mit Ihrer Wiederherstellungsphrase aus 12 oder 24 Wörtern wieder her, auf Wunsch mit Passphrase.
+• Verschlüsselte Backups Ihrer Wallets und Einstellungen sowie automatische Backups.
+• Sperre per PIN und Biometrie sowie eine Notfall-PIN, die die App nur mit den Wallets Ihrer Wahl öffnet.
+
+Ihr eigener Server, wenn Sie möchten
+TrekPay verbindet sich standardmäßig mit eigenen Bridge-Servern in Europa, den USA und Singapur und nutzt den schnellsten. Sie können jederzeit zu Ihrem eigenen kerrigan-bridge-Server wechseln.
+
+Schreiben Sie Ihre Wiederherstellungsphrase auf und bewahren Sie sie an einem sicheren Ort auf. Wer sie hat, kontrolliert Ihre Coins, und niemand, auch nicht das TrekPay-Team, kann sie für Sie wiederherstellen.
+
+TrekPay ist Open Source unter der GPLv3-Lizenz.

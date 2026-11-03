@@ -1,0 +1,1 @@
+Primeira versão do TrekPay, uma carteira Kerrigan de autocustódia. Sua frase de recuperação e suas chaves ficam no seu dispositivo. Envie KRGN com InstantSend, mova suas moedas para o Shield, pague a nomes Kerrigan, registre masternodes e BroodNodes e vote em propostas. Servidores na Europa, nos EUA e em Singapura, ou o seu próprio. Disponível em 14 idiomas, inclusive árabe.

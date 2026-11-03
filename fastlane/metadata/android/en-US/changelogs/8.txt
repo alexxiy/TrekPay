@@ -1,0 +1,1 @@
+First release of TrekPay, a self-custodial Kerrigan wallet. Your recovery phrase and keys stay on your device. Send KRGN with InstantSend, shield your coins, pay to KNS names, register masternodes and BroodNodes, and vote on proposals. Servers in Europe, the US and Singapore, or your own. Available in 14 languages, including Arabic.

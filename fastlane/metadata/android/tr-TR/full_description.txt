@@ -1,0 +1,39 @@
+TrekPay, kontrolü sizde tutan bir Kerrigan cüzdanıdır. Kurtarma ifadeniz ve anahtarlarınız cihazınızda kalır. Hesap oluşturmanız gerekmez ve coin'lerinizi sizden başka kimse hareket ettiremez. TrekPay coin'lerinizi asla tutmaz, kripto para takası yapmaz, nakit veya banka ödemeleriyle uğraşmaz.
+
+Gizlilik
+• Shield işlemleri: KRGN'leri Shield'e taşıyın, Shield'den çıkarın ve gizlice gönderin; isterseniz şifreli bir memo ekleyin.
+• Tüm bağlantılar için isteğe bağlı Tor.
+• Reklam yok, takip yok.
+
+Hızlı ödemeler, masternode'lar ve yönetişim
+• InstantSend: masternode ağı ödemeleri kilitler, böylece saniyeler içinde kesinleşir.
+• Masternode'lar ve BroodNode'lar: cüzdandan kaydedin, durumlarını ve ödüllerini takip edin.
+• Yönetişim: teklifleri inceleyin, masternode'larınızla oy verin ve kendi teklifinizi sunun.
+
+Kerrigan NameSpace
+• Kolay bir ad kaydedin, örneğin adiniz.kerrigan (ya da .krgn, .private, .secure, .safe), ve uzun bir adres yerine onu paylaşın.
+• Adınızı size ya da başkasına ait herhangi bir Shield adresine yönlendirin ve istediğiniz zaman değiştirin. İnsanlar aynı ada ödeme yapmaya devam eder.
+• Bir adı başka birine devredin ya da Kerrigan NameSpace pazar yerinde satışa çıkarın; orada başkalarının adlarını da bulabilirsiniz.
+• Adlarınız kurtarma ifadenize bağlıdır, bu yüzden aynı ifade onları kerrigan-name.space'te de açar.
+• Adres yerine bir Kerrigan adına ödeme yapın. TrekPay göndermeden önce adın nereyi gösterdiğini kontrol eder.
+• Kerrigan adları, bu cüzdandan ayrı bir hizmet olan Kerrigan NameSpace tarafından işletilir.
+
+Günlük kullanım
+• QR kodlarını tarayın ve kerrigan: ödeme bağlantılarını açın.
+• Adres defteri ve coin kontrolü.
+• Mesajları imzalayın ve doğrulayın.
+• Anlaşılır bir geçmiş: masternode ödülleri, teklif ödemeleri ve Shield işlemleri etiketlenir ve her türe göre filtreleyebilirsiniz.
+• Tek bir kurtarma ifadesinden birden fazla hesap ve genişletilmiş açık anahtardan ya da Shield görüntüleme anahtarından salt görüntüleme cüzdanları.
+• 14 dilde kullanılabilir. TrekPay telefonunuzun dilini izler ya da Ayarlar'dan bir dil seçebilirsiniz.
+
+Yedekler ve güvenlik
+• 12 veya 24 kelimelik kurtarma ifadenizle, isterseniz bir parola ifadesiyle birlikte geri yükleyin.
+• Cüzdanlarınızın ve ayarlarınızın şifreli yedekleri ve otomatik yedekleme.
+• PIN ve biyometrik kilit, ayrıca uygulamayı yalnızca seçtiğiniz cüzdanlarla açan bir zorlama PIN'i.
+
+İsterseniz kendi sunucunuz
+TrekPay varsayılan olarak Avrupa, ABD ve Singapur'daki kendi bridge sunucularına bağlanır ve en hızlısını kullanır. İstediğiniz zaman kendi kerrigan-bridge sunucunuza geçebilirsiniz.
+
+Kurtarma ifadenizi yazıp güvenli bir yerde saklayın. Ona sahip olan coin'lerinizi kontrol eder ve TrekPay ekibi dahil hiç kimse onu sizin için geri getiremez.
+
+TrekPay, GPLv3 lisansı altında açık kaynaklıdır.

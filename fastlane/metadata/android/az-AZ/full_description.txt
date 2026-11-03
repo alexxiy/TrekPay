@@ -1,0 +1,39 @@
+TrekPay nəzarəti sizdə saxlayan Kerrigan pulqabısıdır. Bərpa ifadəniz və açarlarınız cihazınızda qalır. Hesab yaratmağa ehtiyac yoxdur və sizdən başqa heç kim coinlərinizi köçürə bilməz. TrekPay heç vaxt coinlərinizi saxlamır, kriptovalyuta mübadiləsi aparmır, nağd pul və ya bank ödənişləri ilə işləmir.
+
+Məxfilik
+• Shield əməliyyatları: KRGN-ləri Shield-ə köçürün, Shield-dən çıxarın və məxfi göndərin, istəsəniz şifrələnmiş memo ilə.
+• Bütün bağlantılar üçün istəyə bağlı Tor.
+• Reklam yoxdur, izləmə yoxdur.
+
+Sürətli ödənişlər, masternodlar və idarəetmə
+• InstantSend: masternod şəbəkəsi ödənişləri kilidləyir və onlar saniyələr ərzində qətiləşir.
+• Masternodlar və BroodNode-lar: onları pulqabıdan qeydiyyatdan keçirin, statusunu və mükafatlarını izləyin.
+• İdarəetmə: təkliflərə baxın, masternodlarınızla səs verin və öz təklifinizi göndərin.
+
+Kerrigan NameSpace
+• Asan bir ad qeydiyyatdan keçirin, məsələn, adiniz.kerrigan (və ya .krgn, .private, .secure, .safe), və uzun ünvan əvəzinə onu paylaşın.
+• Adınızı istənilən Shield ünvanına, özünüzün və ya başqasının, yönəldin və istədiyiniz vaxt dəyişin. İnsanlar eyni ada ödəməyə davam edir.
+• Adı başqasına ötürün və ya Kerrigan NameSpace bazarında satışa çıxarın; orada başqalarının adlarını da tapa bilərsiniz.
+• Adlarınız bərpa ifadənizə bağlıdır, buna görə eyni ifadə onları kerrigan-name.space-də də açır.
+• Ünvan əvəzinə Kerrigan adına ödəyin. TrekPay göndərməzdən əvvəl adın hara yönəldiyini yoxlayır.
+• Kerrigan adlarını bu pulqabıdan ayrı xidmət olan Kerrigan NameSpace idarə edir.
+
+Gündəlik istifadə
+• QR kodları skan edin və kerrigan: ödəniş linklərini açın.
+• Ünvan kitabı və coin nəzarəti.
+• Mesajları imzalayın və yoxlayın.
+• Aydın tarixçə: masternod mükafatları, təklif ödənişləri və Shield əməliyyatları işarələnir və hər növə görə filtr edə bilərsiniz.
+• Bir bərpa ifadəsindən bir neçə hesab və genişləndirilmiş açıq açardan və ya Shield baxış açarından yalnız baxış pulqabıları.
+• 14 dildə mövcuddur. TrekPay telefonunuzun dilini izləyir, ya da Parametrlər bölməsində dil seçə bilərsiniz.
+
+Ehtiyat nüsxələr və təhlükəsizlik
+• 12 və ya 24 sözlük bərpa ifadənizlə, istəsəniz parol ifadəsi ilə birlikdə bərpa edin.
+• Pulqabılarınızın və parametrlərinizin şifrələnmiş ehtiyat nüsxələri, həmçinin avtomatik ehtiyat nüsxələr.
+• PIN və biometrik kilid, həmçinin tətbiqi yalnız seçdiyiniz pulqabılarla açan təzyiq PIN-i.
+
+İstəsəniz, öz serveriniz
+TrekPay standart olaraq Avropa, ABŞ və Sinqapurdakı öz bridge serverlərinə qoşulur və ən sürətlisindən istifadə edir. İstənilən vaxt öz kerrigan-bridge serverinizə keçə bilərsiniz.
+
+Bərpa ifadənizi yazıb təhlükəsiz yerdə saxlayın. Ona sahib olan hər kəs coinlərinizə nəzarət edir və heç kim, TrekPay komandası da daxil olmaqla, onu sizin üçün bərpa edə bilməz.
+
+TrekPay GPLv3 lisenziyası ilə açıq mənbəlidir.

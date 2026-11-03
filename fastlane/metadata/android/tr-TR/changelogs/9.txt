@@ -1,0 +1,1 @@
+TrekPay'in ilk sürümü: anahtarları sizde olan bir Kerrigan cüzdanı. Kurtarma ifadeniz ve anahtarlarınız cihazınızda kalır. InstantSend ile KRGN gönderin, coin'lerinizi Shield'e taşıyın, Kerrigan adlarına ödeme yapın, masternode ve BroodNode kaydedin, tekliflere oy verin. Avrupa, ABD ve Singapur'da sunucular ya da kendi sunucunuz. Arapça dahil 14 dilde.

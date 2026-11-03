@@ -1,0 +1,39 @@
+TrekPay es una billetera Kerrigan de autocustodia que te deja el control. Tu frase de recuperación y tus claves se quedan en tu dispositivo. No tienes que crear ninguna cuenta y nadie más puede mover tus monedas. TrekPay nunca guarda tus monedas, no intercambia criptomonedas y no maneja efectivo ni pagos bancarios.
+
+Privacidad
+• Transacciones Shield: mueve KRGN a Shield, sácalos de Shield y envíalos de forma privada, con un memo cifrado opcional.
+• Tor opcional para todas las conexiones.
+• Sin anuncios y sin rastreo.
+
+Pagos rápidos, masternodes y gobernanza
+• InstantSend: la red de masternodes asegura los pagos, que quedan firmes en segundos.
+• Masternodes y BroodNodes: regístralos desde la billetera y sigue su estado y sus recompensas.
+• Gobernanza: explora las propuestas, vota con tus masternodes y presenta las tuyas.
+
+Kerrigan NameSpace
+• Registra un nombre fácil como tunombre.kerrigan (o .krgn, .private, .secure, .safe) y compártelo en lugar de una dirección larga.
+• Haz que tu nombre apunte a cualquier dirección Shield, tuya o de otra persona, y cámbiala cuando quieras. La gente sigue pagando al mismo nombre.
+• Transfiere un nombre a otra persona o ponlo en el mercado de Kerrigan NameSpace, donde también encontrarás nombres de otros.
+• Tus nombres pertenecen a tu frase de recuperación, así que la misma frase también los abre en kerrigan-name.space.
+• Paga a un nombre Kerrigan en lugar de a una dirección. TrekPay comprueba a dónde apunta el nombre antes de enviar.
+• Los nombres Kerrigan los gestiona Kerrigan NameSpace, un servicio independiente de esta billetera.
+
+Uso diario
+• Escanea códigos QR y abre enlaces de pago kerrigan:.
+• Libreta de direcciones y control de monedas.
+• Firma y verifica mensajes.
+• Un historial claro: las recompensas de masternode, los pagos de propuestas y las transacciones Shield están etiquetados, y puedes filtrar por cada tipo.
+• Varias cuentas con una sola frase de recuperación y billeteras de solo lectura a partir de una clave pública extendida o una clave de visualización Shield.
+• Disponible en 14 idiomas. TrekPay sigue el idioma de tu teléfono, o puedes elegir uno en Configuración.
+
+Copias de seguridad y protección
+• Restaura con tu frase de recuperación de 12 o 24 palabras, con una frase de contraseña opcional.
+• Copias de seguridad cifradas de tus billeteras y tu configuración, además de copias automáticas.
+• Bloqueo con PIN y biometría, y un PIN de coacción que abre la app solo con las billeteras que elijas.
+
+Tu propio servidor, si quieres
+TrekPay se conecta de forma predeterminada a sus propios servidores bridge en Europa, EE. UU. y Singapur, y usa el más rápido. Puedes cambiar a tu propio servidor kerrigan-bridge en cualquier momento.
+
+Guarda tu frase de recuperación por escrito en un lugar seguro. Quien la tenga controla tus monedas, y nadie, ni siquiera el equipo de TrekPay, puede restaurarla por ti.
+
+TrekPay es de código abierto bajo la licencia GPLv3.

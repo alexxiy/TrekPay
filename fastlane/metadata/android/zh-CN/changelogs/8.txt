@@ -1,0 +1,1 @@
+TrekPay 首次发布，这是一款自托管 Kerrigan 钱包。您的助记词和密钥只保存在您的设备上。使用 InstantSend 发送 KRGN，将币转入 Shield，向 Kerrigan 名称付款，注册主节点和 BroodNode，并为提案投票。可使用欧洲、美国和新加坡的服务器，也可以使用自己的服务器。支持 14 种语言，包括阿拉伯语。

@@ -1,0 +1,39 @@
+TrekPay là ví Kerrigan tự lưu ký giúp bạn luôn nắm quyền kiểm soát. Cụm từ khôi phục và khóa của bạn luôn nằm trên thiết bị của bạn. Không cần tạo tài khoản, và không ai khác có thể di chuyển coin của bạn. TrekPay không bao giờ giữ coin của bạn, không trao đổi tiền mã hóa và không xử lý tiền mặt hay thanh toán ngân hàng.
+
+Quyền riêng tư
+• Giao dịch Shield: chuyển KRGN vào Shield, rút khỏi Shield và gửi riêng tư, kèm memo mã hóa nếu muốn.
+• Tùy chọn dùng Tor cho mọi kết nối.
+• Không quảng cáo, không theo dõi.
+
+Thanh toán nhanh, masternode và quản trị
+• InstantSend: mạng masternode khóa khoản thanh toán, nên nó trở thành cuối cùng chỉ trong vài giây.
+• Masternode và BroodNode: đăng ký ngay từ ví và theo dõi trạng thái cùng phần thưởng.
+• Quản trị: xem các đề xuất, bỏ phiếu bằng masternode của bạn và gửi đề xuất của riêng bạn.
+
+Kerrigan NameSpace
+• Đăng ký một tên dễ nhớ như tenban.kerrigan (hoặc .krgn, .private, .secure, .safe) và chia sẻ nó thay cho địa chỉ dài.
+• Trỏ tên của bạn tới bất kỳ địa chỉ Shield nào, của bạn hay của người khác, và đổi bất cứ lúc nào. Mọi người vẫn thanh toán cho cùng một tên.
+• Chuyển tên cho người khác, hoặc đăng bán trên Chợ tên của Kerrigan NameSpace, nơi bạn cũng tìm được tên của người khác.
+• Tên của bạn gắn với cụm từ khôi phục, nên cùng cụm từ đó cũng mở được chúng trên kerrigan-name.space.
+• Thanh toán cho tên Kerrigan thay vì địa chỉ. TrekPay kiểm tra tên trỏ tới đâu trước khi bạn gửi.
+• Tên Kerrigan do Kerrigan NameSpace vận hành, một dịch vụ tách biệt với ví này.
+
+Dùng hằng ngày
+• Quét mã QR và mở liên kết thanh toán kerrigan:.
+• Sổ địa chỉ và kiểm soát coin.
+• Ký và xác minh tin nhắn.
+• Lịch sử rõ ràng: phần thưởng masternode, khoản chi đề xuất và giao dịch Shield đều được gắn nhãn, và bạn có thể lọc theo từng loại.
+• Nhiều tài khoản từ một cụm từ khôi phục, và ví chỉ xem từ khóa công khai mở rộng hoặc khóa xem Shield.
+• Có 14 ngôn ngữ. TrekPay theo ngôn ngữ của điện thoại, hoặc bạn chọn một ngôn ngữ trong Cài đặt.
+
+Sao lưu và bảo mật
+• Khôi phục bằng cụm từ khôi phục 12 hoặc 24 từ, kèm passphrase nếu muốn.
+• Bản sao lưu mã hóa cho ví và cài đặt của bạn, cùng sao lưu tự động.
+• Khóa bằng PIN và sinh trắc học, cùng PIN khẩn cấp mở ứng dụng chỉ với những ví bạn chọn.
+
+Máy chủ của riêng bạn, nếu muốn
+Theo mặc định, TrekPay kết nối với các máy chủ bridge của mình ở châu Âu, Mỹ và Singapore và dùng máy chủ nhanh nhất. Bạn có thể chuyển sang máy chủ kerrigan-bridge của riêng mình bất cứ lúc nào.
+
+Hãy ghi cụm từ khôi phục ra giấy và cất ở nơi an toàn. Ai có nó sẽ kiểm soát coin của bạn, và không ai, kể cả đội ngũ TrekPay, có thể khôi phục nó giúp bạn.
+
+TrekPay là phần mềm nguồn mở theo giấy phép GPLv3.
