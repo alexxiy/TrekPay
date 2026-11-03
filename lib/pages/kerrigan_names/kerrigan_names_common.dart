@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../db/hive/db.dart';
 import '../../l10n/l10n.dart';
 import '../../notifications/show_flush_bar.dart';
+import '../../services/kerrigan_name/kerrigan_name.dart';
 import '../../services/kerrigan_name/kerrigan_names_protocol.dart';
 import '../../services/kerrigan_name/kerrigan_names_registrar.dart';
 import '../../themes/stack_colors.dart';
@@ -297,7 +298,7 @@ class KerriganNamesAppBar extends StatelessWidget
     final colors = Theme.of(context).extension<StackColors>()!;
     final inset = Util.isDesktop ? 20.0 : 10.0;
     Widget action(Widget child) => Padding(
-      padding: EdgeInsets.only(top: inset, bottom: inset, right: 10),
+      padding: EdgeInsetsDirectional.only(top: inset, bottom: inset, end: 10),
       child: AspectRatio(aspectRatio: 1, child: child),
     );
     return AppBar(
@@ -959,6 +960,7 @@ class _KerriganNamesSearchFieldState extends State<KerriganNamesSearchField> {
     borderRadius: BorderRadius.circular(Constants.size.circularBorderRadius),
     child: TextField(
       controller: _controller,
+      textDirection: TextDirection.ltr,
       focusNode: _focus,
       autocorrect: false,
       enableSuggestions: false,
@@ -989,6 +991,251 @@ class _KerriganNamesSearchFieldState extends State<KerriganNamesSearchField> {
           ),
     ),
   );
+}
+
+// =============================================================================
+// Filters
+
+/// The search field with a filter button on its right.
+class KerriganNamesSearchBar extends StatelessWidget {
+  const KerriganNamesSearchBar({
+    super.key,
+    required this.search,
+    required this.filter,
+    required this.open,
+    required this.onToggle,
+  });
+
+  final KerriganNamesSearchField search;
+  final KerriganNamesFilter filter;
+
+  /// Whether the filters show.
+  final bool open;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<StackColors>()!;
+    final active = filter != kKerriganNamesNoFilter;
+    final radius = BorderRadius.circular(Constants.size.circularBorderRadius);
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: search),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 52,
+            child: Tooltip(
+              message: l10n.kerriganNamesFilters,
+              child: Material(
+                color: open
+                    ? colors.textFieldActiveBG
+                    : colors.textFieldDefaultBG,
+                borderRadius: radius,
+                child: InkWell(
+                  borderRadius: radius,
+                  onTap: onToggle,
+                  child: Semantics(
+                    button: true,
+                    toggled: open,
+                    label: l10n.kerriganNamesFilters,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(
+                          Icons.tune_rounded,
+                          size: 22,
+                          color: open || active
+                              ? colors.accentColorBlue
+                              : colors.textDark,
+                        ),
+                        // Filters in use, even with the panel closed.
+                        if (active)
+                          PositionedDirectional(
+                            top: 10,
+                            end: 10,
+                            child: Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: colors.accentColorBlue,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Status (when [withStatus]), zone and order of a names list, as chips.
+class KerriganNamesFilterPanel extends StatelessWidget {
+  const KerriganNamesFilterPanel({
+    super.key,
+    required this.filter,
+    required this.zones,
+    required this.onChanged,
+    this.withStatus = false,
+  });
+
+  final KerriganNamesFilter filter;
+
+  /// The registrar's zones, bare ("kerrigan").
+  final List<String> zones;
+  final ValueChanged<KerriganNamesFilter> onChanged;
+  final bool withStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<StackColors>()!;
+    final f = filter;
+    Widget title(String text) => Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(text, style: STextStyles.w600_12(context)),
+    );
+    Widget chips(List<Widget> children) => Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Wrap(spacing: 8, runSpacing: 8, children: children),
+    );
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 0),
+      decoration: BoxDecoration(
+        color: colors.popupBG,
+        borderRadius: BorderRadius.circular(
+          Constants.size.circularBorderRadius,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.kerriganNamesFilters,
+                  style: STextStyles.w600_14(context),
+                ),
+              ),
+              TextButton(
+                onPressed: f == kKerriganNamesNoFilter
+                    ? null
+                    : () => onChanged(kKerriganNamesNoFilter),
+                child: Text(l10n.commonReset),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          if (withStatus) ...[
+            title(l10n.kerriganNamesFilterStatus),
+            chips([
+              for (final (status, label) in [
+                (KerriganNamesStatusFilter.all, l10n.kerriganNamesFilterAll),
+                (
+                  KerriganNamesStatusFilter.onSale,
+                  l10n.kerriganNamesFilterOnSale,
+                ),
+                (KerriganNamesStatusFilter.active, l10n.kerriganNamesActive),
+              ])
+                _KerriganNamesChip(
+                  label: label,
+                  selected: f.status == status,
+                  onTap: () =>
+                      onChanged((status: status, zone: f.zone, sort: f.sort)),
+                ),
+            ]),
+          ],
+          title(l10n.kerriganNamesZone),
+          chips([
+            _KerriganNamesChip(
+              label: l10n.kerriganNamesFilterAll,
+              selected: f.zone == null,
+              onTap: () =>
+                  onChanged((status: f.status, zone: null, sort: f.sort)),
+            ),
+            for (final zone in zones)
+              _KerriganNamesChip(
+                label: ".$zone",
+                color: _zoneColors[".$zone"],
+                selected: f.zone == zone,
+                onTap: () =>
+                    onChanged((status: f.status, zone: zone, sort: f.sort)),
+              ),
+          ]),
+          title(l10n.kerriganNamesSortBy),
+          chips([
+            for (final (sort, label) in [
+              (KerriganNamesSort.nameAsc, l10n.kerriganNamesSortNameAsc),
+              (KerriganNamesSort.nameDesc, l10n.kerriganNamesSortNameDesc),
+              (KerriganNamesSort.priceAsc, l10n.kerriganNamesSortPriceAsc),
+              (KerriganNamesSort.priceDesc, l10n.kerriganNamesSortPriceDesc),
+              (KerriganNamesSort.newest, l10n.kerriganNamesSortNewest),
+              (KerriganNamesSort.oldest, l10n.kerriganNamesSortOldest),
+            ])
+              _KerriganNamesChip(
+                label: label,
+                selected: f.sort == sort,
+                onTap: () =>
+                    onChanged((status: f.status, zone: f.zone, sort: sort)),
+              ),
+          ]),
+        ],
+      ),
+    );
+  }
+}
+
+class _KerriganNamesChip extends StatelessWidget {
+  const _KerriganNamesChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.color,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  /// The text's colour when not selected (a zone's).
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<StackColors>()!;
+    final radius = BorderRadius.circular(100);
+    return Semantics(
+      selected: selected,
+      child: Material(
+        color: selected ? colors.accentColorBlue : colors.textFieldDefaultBG,
+        borderRadius: radius,
+        child: InkWell(
+          borderRadius: radius,
+          onTap: selected ? null : onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Text(
+              label,
+              style: STextStyles.w600_12(context).copyWith(
+                color: selected
+                    ? colors.buttonTextPrimary
+                    : color ?? colors.textDark,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Loading, an error with Retry, or an empty list's [empty].
@@ -1087,6 +1334,16 @@ String kerriganNamesAmount(
 String kerriganNamesShortId(String id) => id.length > 12
     ? "${id.substring(0, 6)}…${id.substring(id.length - 6)}"
     : id;
+
+/// The zones names are registered in, as the registrar serves them, or the
+/// app's own when it can't be asked (a list or a check then says why).
+Future<List<String>> kerriganNamesZones(KerriganWallet wallet) async {
+  try {
+    return await KerriganNamesRegistrar.forCoin(wallet.cryptoCurrency)!.zones();
+  } catch (_) {
+    return kKerriganNameZones;
+  }
+}
 
 /// What went wrong, for the user: the registrar's own words when it
 /// refused, else the error.

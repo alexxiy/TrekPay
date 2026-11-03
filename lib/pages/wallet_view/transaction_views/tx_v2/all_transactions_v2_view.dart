@@ -425,10 +425,10 @@ class _AllTransactionsV2ViewState extends ConsumerState<AllTransactionsV2View> {
               ),
               actions: [
                 Padding(
-                  padding: const EdgeInsets.only(
+                  padding: const EdgeInsetsDirectional.only(
                     top: 10,
                     bottom: 10,
-                    right: 20,
+                    end: 20,
                   ),
                   child: AspectRatio(
                     aspectRatio: 1,
@@ -517,9 +517,10 @@ class _AllTransactionsV2ViewState extends ConsumerState<AllTransactionsV2View> {
                                 ),
                                 suffixIcon: _searchController.text.isNotEmpty
                                     ? Padding(
-                                        padding: const EdgeInsets.only(
-                                          right: 0,
-                                        ),
+                                        padding:
+                                            const EdgeInsetsDirectional.only(
+                                              end: 0,
+                                            ),
                                         child: UnconstrainedBox(
                                           child: Row(
                                             children: [

@@ -117,7 +117,8 @@ class WalletOptionsButton extends ConsumerWidget {
               onWalletKeysPressed: showKeys
                   ? () => Navigator.of(context).pop(_WalletOptions.walletKeys)
                   : null,
-              onAddAccountPressed: wallet is KerriganWallet && !wallet.isViewOnly
+              onAddAccountPressed:
+                  wallet is KerriganWallet && !wallet.isViewOnly
                   ? () => Navigator.of(context).pop(_WalletOptions.addAccount)
                   : null,
               walletId: walletId,
@@ -208,9 +209,9 @@ class WalletOptionsPopupMenu extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Stack(
       children: [
-        Positioned(
+        PositionedDirectional(
           top: 24,
-          left: MediaQuery.of(context).size.width - 234,
+          start: MediaQuery.of(context).size.width - 234,
           child: Container(
             width: 220,
             decoration: BoxDecoration(

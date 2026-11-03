@@ -226,7 +226,11 @@ class _KerriganCreateProposalViewState
         ),
         if (note != null || maxLength != null)
           Padding(
-            padding: const EdgeInsets.only(left: 12, right: 4, top: 4),
+            padding: const EdgeInsetsDirectional.only(
+              start: 12,
+              end: 4,
+              top: 4,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -263,9 +267,8 @@ class _KerriganCreateProposalViewState
       side: BorderSide(
         color: selected ? colors.accentColorBlue : colors.textFieldDefaultBG,
       ),
-      labelStyle: STextStyles.w600_12(
-        context,
-      ).copyWith(color: selected ? colors.accentColorBlue : colors.textDark),
+      labelStyle: STextStyles.w600_12(context)
+          .copyWith(color: selected ? colors.accentColorBlue : colors.textDark),
       onSelected: (_) => onTap(),
     );
   }
@@ -336,9 +339,7 @@ class _KerriganCreateProposalViewState
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      escrow
-                          ? l10n.govEscrowReleaseHint
-                          : l10n.govProposalHint,
+                      escrow ? l10n.govEscrowReleaseHint : l10n.govProposalHint,
                       style: secondary,
                     ),
                     const SizedBox(height: 16),
@@ -365,7 +366,9 @@ class _KerriganCreateProposalViewState
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(child: Text(l10n.govPaymentGoesTo, style: label)),
+                        Expanded(
+                          child: Text(l10n.govPaymentGoesTo, style: label),
+                        ),
                         CustomTextButton(
                           text: _payOther
                               ? l10n.govUseMyAddress

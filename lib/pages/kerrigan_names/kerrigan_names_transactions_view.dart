@@ -12,6 +12,7 @@ import '../../themes/stack_colors.dart';
 import '../../utilities/text_styles.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
 import '../../widgets/background.dart';
+import '../../widgets/middle_ellipsis_text.dart';
 import '../../widgets/rounded_white_container.dart';
 import '../../widgets/stack_dialog.dart';
 import 'kerrigan_names_common.dart';
@@ -265,11 +266,17 @@ class _KerriganNamesTransactionsViewState
     );
   }
 
+  /// "2026-11-03 UTC".
+  static String _day(DateTime d) =>
+      "${d.year}-${d.month.toString().padLeft(2, "0")}-"
+      "${d.day.toString().padLeft(2, "0")} UTC";
+
   Widget _card({
     required String name,
     required String op,
     required Widget status,
     String? confirmations,
+    String? details,
     String? txId,
     String? memo,
     String? note,
@@ -321,6 +328,10 @@ class _KerriganNamesTransactionsViewState
                     ],
                   ],
                 ),
+                if (details != null && details.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(details, style: secondary),
+                ],
                 if (note != null) ...[
                   const SizedBox(height: 6),
                   Text(note, style: secondary),
@@ -355,6 +366,7 @@ class _KerriganNamesTransactionsViewState
   }
 
   List<Widget> _incomingList() {
+    final wallet = _wallet;
     final list = _incoming;
     final items = list?.items ?? const <KerriganNamesIncoming>[];
     final listed = {for (final t in items) t.txId};
@@ -395,6 +407,16 @@ class _KerriganNamesTransactionsViewState
               "${t.confirmations}/$_refundConfirmations",
             _ => null,
           },
+          details: [
+            if (t.time != null) _day(t.time!),
+            if (t.amount > BigInt.zero)
+              kerriganNamesAmount(t.amount, ref, wallet),
+            // What a listing asked for the name.
+            if (t.price > BigInt.zero)
+              l10n.kerriganNamesListedForShort(
+                kerriganNamesAmount(t.price, ref, wallet),
+              ),
+          ].join("  ·  "),
           txId: t.txId,
           memo: t.memo,
           onTap:
@@ -421,9 +443,6 @@ class _KerriganNamesTransactionsViewState
     final wallet = _wallet;
     final secondary = STextStyles.w500_12(context)
         .copyWith(color: colors.textSubtitle1);
-    String day(DateTime d) =>
-        "${d.year}-${d.month.toString().padLeft(2, "0")}-"
-        "${d.day.toString().padLeft(2, "0")} UTC";
     return [
       for (final r in _refundList?.items ?? const <KerriganNamesRefund>[])
         Padding(
@@ -461,15 +480,44 @@ class _KerriganNamesTransactionsViewState
                 const SizedBox(height: 6),
                 Text(
                   [
-                    if (r.date != null) day(r.date!),
+                    if (r.date != null) _day(r.date!),
                     if (r.fee.isNotEmpty) l10n.kerriganNamesFeePercent(r.fee),
                   ].join("  ·  "),
                   style: secondary,
                 ),
+                if (r.address.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(6),
+                    onTap: () => kerriganNamesCopy(
+                      context,
+                      r.address,
+                      l10n.commonAddress,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        children: [
+                          Text(
+                            l10n.kerriganNamesRefundSentTo,
+                            style: secondary,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: MiddleEllipsisText(
+                              r.address,
+                              style: STextStyles.w500_12(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
                 if (r.txId.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Align(
-                    alignment: Alignment.centerLeft,
+                    alignment: AlignmentDirectional.centerStart,
                     child: _txIdRow(r.txId),
                   ),
                 ],

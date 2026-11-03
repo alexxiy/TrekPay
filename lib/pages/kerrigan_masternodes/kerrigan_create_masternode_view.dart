@@ -346,7 +346,7 @@ class _KerriganCreateMasternodeViewState
         ),
         if (error != null)
           Padding(
-            padding: const EdgeInsets.only(left: 12, top: 4),
+            padding: const EdgeInsetsDirectional.only(start: 12, top: 4),
             child: Text(
               error,
               style: STextStyles.label(context)
@@ -563,8 +563,7 @@ class _KerriganCreateMasternodeViewState
               PrimaryButton(
                 label: widget.existing ? l10n.mnAdd : l10n.mnSendCollateral,
                 enabled:
-                    aliasError == null &&
-                    (!widget.existing || _picked != null),
+                    aliasError == null && (!widget.existing || _picked != null),
                 onPressed: _create,
               ),
             ],

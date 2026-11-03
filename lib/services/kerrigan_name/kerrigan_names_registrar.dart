@@ -51,7 +51,8 @@ class KerriganNamesException implements Exception {
   String toString() => message;
 }
 
-/// Where payments for commands go.
+/// Where payments for commands go, and the zones names are registered in
+/// (bare, "kerrigan", in the registrar's order).
 typedef KerriganNamesPaymentInfo = ({
   String address,
   int paymentConfirmations,
@@ -59,30 +60,45 @@ typedef KerriganNamesPaymentInfo = ({
   // Either count drops to this once a ChainLock covers the payment's
   // block; null when the registrar doesn't say.
   int? chainLockConfirmations,
+  List<String> zones,
 });
 
-/// What a name lookup on the registrar found.
+/// What a name lookup on the registrar found. [updatePrice] is what any
+/// command on the name but a registration or a purchase costs.
 sealed class KerriganNamesAvailability {
-  const KerriganNamesAvailability(this.name);
+  const KerriganNamesAvailability(this.name, this.updatePrice);
 
   final String name;
+  final BigInt updatePrice;
 }
 
-/// Free: [price] registers it.
+/// Free: [price] registers it. [pending]: someone's registration of it is
+/// paid and on its way, and only the first one paid gets the name.
 final class KerriganNamesAvailable extends KerriganNamesAvailability {
-  const KerriganNamesAvailable(super.name, this.price);
+  const KerriganNamesAvailable(
+    super.name,
+    super.updatePrice,
+    this.price, {
+    required this.pending,
+  });
 
   final BigInt price;
+  final bool pending;
 }
 
 /// Registered and not for sale.
 final class KerriganNamesTaken extends KerriganNamesAvailability {
-  const KerriganNamesTaken(super.name);
+  const KerriganNamesTaken(super.name, super.updatePrice);
 }
 
 /// Listed on the marketplace for [price], by [owner] (public key).
 final class KerriganNamesListed extends KerriganNamesAvailability {
-  const KerriganNamesListed(super.name, this.price, this.owner);
+  const KerriganNamesListed(
+    super.name,
+    super.updatePrice,
+    this.price,
+    this.owner,
+  );
 
   final BigInt price;
   final String? owner;
@@ -151,19 +167,82 @@ typedef KerriganNamesDomain = ({
   BigInt price,
 
   /// Price of an update (destination, owner, listing).
-  BigInt? updatePrice,
+  BigInt updatePrice,
 
   /// Where it points (the user's own names).
   String? address,
 
-  /// The owner's key (marketplace, when asked with a key).
+  /// The owner's key (marketplace).
   String? owner,
 });
+
+/// Which of the user's names a list holds (the marketplace holds only
+/// names on sale).
+enum KerriganNamesStatusFilter {
+  all("all"),
+  onSale("listed"),
+  active("not_listed");
+
+  const KerriganNamesStatusFilter(this.key);
+
+  /// The registrar's `status`.
+  final String key;
+}
+
+/// The order of a names list. Newest and oldest go by when a name last
+/// changed (the user's names) or was put on sale (the marketplace).
+enum KerriganNamesSort {
+  nameAsc,
+  nameDesc,
+  priceAsc,
+  priceDesc,
+  newest,
+  oldest;
+
+  /// The registrar's `sort`, for the user's names ([my]) or the
+  /// marketplace.
+  String key({required bool my}) => switch (this) {
+    nameAsc || nameDesc => "name",
+    priceAsc || priceDesc => "price",
+    newest || oldest => my ? "updated" : "listed",
+  };
+
+  /// The registrar's `order`.
+  String get order => switch (this) {
+    nameAsc || priceAsc || oldest => "asc",
+    nameDesc || priceDesc || newest => "desc",
+  };
+}
+
+/// What a names list holds, and in which order. A null [zone] (bare,
+/// "kerrigan") is every zone.
+typedef KerriganNamesFilter = ({
+  KerriganNamesStatusFilter status,
+  String? zone,
+  KerriganNamesSort sort,
+});
+
+/// Everything, by name.
+const KerriganNamesFilter kKerriganNamesNoFilter = (
+  status: KerriganNamesStatusFilter.all,
+  zone: null,
+  sort: KerriganNamesSort.nameAsc,
+);
 
 /// A command paid to the registrar, from the user's history.
 typedef KerriganNamesIncoming = ({
   String name,
   String op,
+
+  /// When the payment's block was made; null for payments the registrar
+  /// stored before it kept the time.
+  DateTime? time,
+
+  /// What was paid.
+  BigInt amount,
+
+  /// The listing price a listing sets; zero for the other commands.
+  BigInt price,
   int confirmations,
   KerriganNamesTxStatus? status,
   int? rawStatus,
@@ -213,12 +292,23 @@ typedef KerriganNamesRefund = ({
 
   /// Service fee, in percent.
   String fee,
+
+  /// Where it was sent.
+  String address,
   String txId,
   KerriganNamesRefundStatus? status,
   int? rawStatus,
 });
 
 typedef KerriganNamesPage<T> = ({int count, List<T> items});
+
+/// A page of the marketplace: [count] names on sale in all, and [next],
+/// the place after [items] to go on from (null on the last page).
+typedef KerriganNamesMarketPage = ({
+  int count,
+  List<KerriganNamesDomain> items,
+  String? next,
+});
 
 /// Refunded payments the user can withdraw, the service fee a withdrawal
 /// pays (percent), and the least balance a withdrawal may ask for, fee
@@ -259,10 +349,6 @@ class KerriganNamesRegistrar {
   final KerriganNameTransport _transport;
 
   Future<KerriganNamesPaymentInfo>? _paymentInfo;
-  Future<Map<int, BigInt>>? _updatePrices;
-  DateTime? _updatePricesAt;
-
-  static const _pricesMaxAge = Duration(minutes: 5);
 
   Future<Object?> _call(String path, [Map<String, dynamic>? body]) async {
     final url = service.registrar.replace(path: "/v1.0/$path");
@@ -361,8 +447,26 @@ class KerriganNamesRegistrar {
         final int v when v > 0 && v < 10000 => v,
         _ => null,
       },
+      zones: _zones(r["zones"]),
     );
   }
+
+  /// The registrar's zones that the app knows. The app checks names, and
+  /// their proofs, against its own zones (the circuit's), so one it doesn't
+  /// know isn't offered. Without the list, the app's own.
+  static List<String> _zones(Object? served) {
+    if (served == null) return kKerriganNameZones;
+    if (served is! List) _malformed();
+    final zones = [
+      for (final z in served)
+        if (z is String && kKerriganNameZones.contains(z)) z,
+    ];
+    if (zones.isEmpty) _malformed();
+    return List.unmodifiable(zones.toSet());
+  }
+
+  /// The zones names can be registered in, in the registrar's order.
+  Future<List<String>> zones() async => (await paymentInfo()).zones;
 
   /// The lookup path of [name]. Names from the registrar's own lists go
   /// there too, so one that isn't a name never reaches a URL.
@@ -373,20 +477,31 @@ class KerriganNamesRegistrar {
     return "check/$name";
   }
 
-  /// Whether [name] is free, taken or for sale.
+  /// Whether [name] is free, taken or for sale, and what updating it
+  /// costs.
   Future<KerriganNamesAvailability> check(String name) async {
     final r = await _call(_checkPath(name), {"with_pubkey": true});
     if (r is! Map || r["exists"] is! bool) _malformed();
+    final updatePrice = _sats(r["update_price"]);
+    if (updatePrice == null || updatePrice <= BigInt.zero) _malformed();
     final price = _sats(r["price"]);
     if (r["exists"] == false) {
-      if (price == null || price <= BigInt.zero) _malformed();
-      return KerriganNamesAvailable(name, price);
+      final pending = r["reg_pending"];
+      if (price == null || price <= BigInt.zero || pending is! bool) {
+        _malformed();
+      }
+      return KerriganNamesAvailable(name, updatePrice, price, pending: pending);
     }
     if (price != null && price > BigInt.zero) {
       final owner = r["pubkey"];
-      return KerriganNamesListed(name, price, owner is String ? owner : null);
+      return KerriganNamesListed(
+        name,
+        updatePrice,
+        price,
+        owner is String ? owner : null,
+      );
     }
-    return KerriganNamesTaken(name);
+    return KerriganNamesTaken(name, updatePrice);
   }
 
   /// The payment carrying [memo] for [name], once the registrar has seen
@@ -404,14 +519,9 @@ class KerriganNamesRegistrar {
     return _progress(r);
   }
 
+  /// Nothing known yet comes back as an empty object.
   static KerriganNamesProgress _progress(Object? r) {
-    // Nothing known yet comes back as an empty list.
-    if (r is! Map) {
-      if (r is List && r.isEmpty) {
-        return (txId: null, status: null, confirmations: null, seconds: null);
-      }
-      _malformed();
-    }
+    if (r is! Map) _malformed();
     final txId = r["tx_id"];
     return (
       txId: txId is String && txId.isNotEmpty ? txId : null,
@@ -421,100 +531,101 @@ class KerriganNamesRegistrar {
     );
   }
 
-  /// Price of an update by label length (the longest key covers longer
-  /// labels), for 5 minutes.
-  Future<Map<int, BigInt>> updatePrices() async {
-    final at = _updatePricesAt;
-    if (_updatePrices == null ||
-        at == null ||
-        DateTime.now().difference(at) > _pricesMaxAge) {
-      _updatePricesAt = DateTime.now();
-      _updatePrices = _fetchUpdatePrices();
-    }
-    final pending = _updatePrices!;
-    try {
-      return await pending;
-    } catch (_) {
-      if (identical(_updatePrices, pending)) _updatePrices = null;
-      rethrow;
-    }
-  }
-
-  Future<Map<int, BigInt>> _fetchUpdatePrices() async {
-    final r = await _call("prices", {"type": "upd"});
-    if (r is! Map || r.isEmpty) _malformed();
-    final prices = <int, BigInt>{};
-    for (final e in r.entries) {
-      final length = int.tryParse("${e.key}");
-      final price = _sats(e.value);
-      if (length == null || price == null || price <= BigInt.zero) {
-        _malformed();
-      }
-      prices[length] = price;
-    }
-    return prices;
-  }
-
-  /// What an update of [name] costs.
-  Future<BigInt> updatePriceFor(String name) async {
-    final prices = await updatePrices();
-    final length = splitKerriganName(name).label.length;
-    final longest = prices.keys.reduce((a, b) => a > b ? a : b);
-    final price = prices[length >= longest ? longest : length];
-    if (price == null) _malformed();
-    return price;
-  }
-
-  /// The names [pubkey] owns, those matching [search] when given.
+  /// The names [pubkey] owns that match [search] and [filter], page
+  /// [page] of them.
   Future<KerriganNamesPage<KerriganNamesDomain>> myNames({
     required String pubkey,
     int page = 1,
     String search = "",
-  }) => _domains({
-    "type": "my",
-    "page": page,
-    "count": kKerriganNamesListPageSize,
-    "pubkey": pubkey,
-    if (search.isNotEmpty) "search": search,
-  });
+    KerriganNamesFilter filter = kKerriganNamesNoFilter,
+  }) async {
+    final r = await _domains(
+      my: true,
+      body: {"pubkey": pubkey, "page": page},
+      search: search,
+      filter: filter,
+    );
+    return (count: r.count, items: r.items);
+  }
 
-  /// Names for sale. With [pubkey], each comes with its owner's key, so the
+  /// Names for sale that match [search] and [filter]: the first page, or
+  /// the one after [after] (the `next` of the page before, in the same
+  /// order). Each comes with its owner's key, so the
   /// user's own listings can be told apart.
-  Future<KerriganNamesPage<KerriganNamesDomain>> marketplace({
-    String? pubkey,
-    int page = 1,
+  Future<KerriganNamesMarketPage> marketplace({
+    String? after,
     String search = "",
-  }) => _domains({
-    "type": "marketplace",
-    "page": page,
-    "count": kKerriganNamesListPageSize,
-    "pubkey": ?pubkey,
-    if (search.isNotEmpty) "search": search,
-  });
+    KerriganNamesFilter filter = kKerriganNamesNoFilter,
+  }) => _domains(
+    my: false,
+    body: {"after": ?after},
+    search: search,
+    // Everything on the marketplace is on sale.
+    filter: (
+      status: KerriganNamesStatusFilter.all,
+      zone: filter.zone,
+      sort: filter.sort,
+    ),
+  );
 
-  Future<KerriganNamesPage<KerriganNamesDomain>> _domains(
-    Map<String, dynamic> body,
-  ) async {
-    final r = await _call("domains", body);
+  Future<KerriganNamesMarketPage> _domains({
+    required bool my,
+    required Map<String, dynamic> body,
+    required String search,
+    required KerriganNamesFilter filter,
+  }) async {
+    final sort = filter.sort.key(my: my);
+    final order = filter.sort.order;
+    final zone = filter.zone ?? "";
+    final status = filter.status.key;
+    final r = await _call("domains", {
+      "type": my ? "my" : "marketplace",
+      ...body,
+      "count": kKerriganNamesListPageSize,
+      if (search.isNotEmpty) "search": search,
+      "sort": sort,
+      "order": order,
+      "zone": zone,
+      "status": status,
+    });
     if (r is! Map) _malformed();
+    // The registrar says what it applied: one that doesn't know an option
+    // leaves it out without a word, and its list wouldn't be the one asked
+    // for.
+    if (r["sort"] != sort ||
+        r["order"] != order ||
+        r["zone"] != zone ||
+        r["status"] != status) {
+      _malformed();
+    }
     final list = r["domains"];
-    if (list is! List) _malformed();
+    final count = _int(r["count"]);
+    if (list is! List || count == null) _malformed();
     final items = <KerriganNamesDomain>[];
     for (final d in list) {
       if (d is! Map) _malformed();
       final name = d["domain"];
       if (name is! String || !isValidKerriganName(name)) continue;
+      final updatePrice = _sats(d["tx_price"]);
+      if (updatePrice == null || updatePrice <= BigInt.zero) _malformed();
       final address = d["address"];
       final owner = d["pubkey"];
       items.add((
         name: name,
         price: _sats(d["price"]) ?? BigInt.zero,
-        updatePrice: _sats(d["tx_price"]),
+        updatePrice: updatePrice,
         address: address is String ? address : null,
         owner: owner is String ? owner : null,
       ));
     }
-    return (count: _int(r["count"]) ?? items.length, items: items);
+    // The marketplace's place to go on from: null on the last page.
+    final next = r["next"];
+    if (!my &&
+        (!r.containsKey("next") ||
+            next != null && (next is! String || next.isEmpty))) {
+      _malformed();
+    }
+    return (count: count, items: items, next: next is String ? next : null);
   }
 
   /// Refunds waiting for [pubkey], and the withdrawal fee.
@@ -572,9 +683,13 @@ class KerriganNamesRegistrar {
     final items = <KerriganNamesIncoming>[];
     for (final t in r.items) {
       final status = _int(t["status"]);
+      final time = _int(t["time"]);
       items.add((
         name: _text(t["domain_name"]),
         op: _text(t["op"]),
+        time: _utc(time),
+        amount: _sats(t["amount"]) ?? BigInt.zero,
+        price: _sats(t["price"]) ?? BigInt.zero,
         confirmations: _int(t["confirmations"]) ?? 0,
         status: KerriganNamesTxStatus.fromCode(status),
         rawStatus: status,
@@ -599,11 +714,10 @@ class KerriganNamesRegistrar {
       final date = _int(t["date"]);
       final status = _int(t["status"]);
       items.add((
-        date: date == null
-            ? null
-            : DateTime.fromMillisecondsSinceEpoch(date * 1000, isUtc: true),
+        date: _utc(date),
         amount: _sats(t["amount"]) ?? BigInt.zero,
         fee: _text(t["fee"]).replaceAll("%", ""),
+        address: _text(t["address"]),
         txId: _txId(t["tx_id"]),
         status: KerriganNamesRefundStatus.fromCode(status),
         rawStatus: status,
@@ -641,6 +755,13 @@ class KerriganNamesRegistrar {
 }
 
 int? _int(Object? v) => v is int ? v : int.tryParse("${v ?? ""}");
+
+/// Unix [seconds] as a UTC time; null for none, or for one no date can
+/// hold.
+DateTime? _utc(int? seconds) =>
+    seconds == null || seconds <= 0 || seconds > 8640000000000
+    ? null
+    : DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
 
 /// Server text of a history entry, safe to show (no control or direction
 /// characters). A memo is up to 512 bytes, so nothing is cut.

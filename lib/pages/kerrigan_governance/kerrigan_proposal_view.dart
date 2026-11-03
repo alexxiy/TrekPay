@@ -203,7 +203,9 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                             if (!p.isValid) ...[
                               const SizedBox(height: 8),
                               Text(
-                                l10n.govInvalid(p.invalidReason ?? l10n.govUnknownReason),
+                                l10n.govInvalid(
+                                  p.invalidReason ?? l10n.govUnknownReason,
+                                ),
                                 style: STextStyles.w500_12(context)
                                     .copyWith(color: colors.textError),
                               ),
@@ -230,10 +232,7 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                             if (p.type ==
                                 KerriganProposalType.escrowRelease) ...[
                               const SizedBox(height: 8),
-                              Text(
-                                l10n.govEscrowReleaseText,
-                                style: secondary,
-                              ),
+                              Text(l10n.govEscrowReleaseText, style: secondary),
                             ],
                           ],
                         ),
@@ -244,7 +243,10 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(l10n.govVotes, style: STextStyles.w600_14(context)),
+                            Text(
+                              l10n.govVotes,
+                              style: STextStyles.w600_14(context),
+                            ),
                             const SizedBox(height: 10),
                             KerriganVotesBar(
                               yeas: p.yeas,
@@ -259,7 +261,10 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                             ),
                             if (p.abstains > 0) ...[
                               const SizedBox(height: 4),
-                              Text(l10n.govAbstained(p.abstains), style: secondary),
+                              Text(
+                                l10n.govAbstained(p.abstains),
+                                style: secondary,
+                              ),
                             ],
                           ],
                         ),
@@ -324,7 +329,8 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
                                         ),
                                       if (more)
                                         Align(
-                                          alignment: Alignment.centerLeft,
+                                          alignment:
+                                              AlignmentDirectional.centerStart,
                                           child: Padding(
                                             padding: const EdgeInsets.only(
                                               top: 6,
@@ -584,7 +590,9 @@ class _VoteSheetState extends State<_VoteSheet> {
               ),
               if (_results.isEmpty && selectable.isNotEmpty)
                 CustomTextButton(
-                  text: allSelected ? l10n.commonSelectNone : l10n.commonSelectAll,
+                  text: allSelected
+                      ? l10n.commonSelectNone
+                      : l10n.commonSelectAll,
                   onTap: () => setState(
                     () => allSelected
                         ? _selected.removeAll(selectable)
@@ -621,10 +629,7 @@ class _VoteSheetState extends State<_VoteSheet> {
           ),
           const SizedBox(height: 4),
         ],
-        Text(
-          l10n.govVoteExplainedKerrigan,
-          style: secondary,
-        ),
+        Text(l10n.govVoteExplainedKerrigan, style: secondary),
         const SizedBox(height: 16),
         if (_finished)
           PrimaryButton(

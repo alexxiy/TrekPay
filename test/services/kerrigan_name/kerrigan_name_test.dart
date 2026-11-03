@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paymint/services/kerrigan_name/kerrigan_name.dart';
@@ -90,6 +91,23 @@ void main() {
         "ktestsapling1${liveTarget.substring(3)}",
       ]) {
         expect(isStrictKerriganNameTarget(bad), isFalse, reason: bad);
+      }
+    });
+
+    test("the prefix the app tells people is the one targets really have", () {
+      expect(liveTarget, startsWith(kKerriganNameTargetPrefix));
+      final arbs = Directory("lib/l10n")
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.endsWith(".arb"));
+      expect(arbs, hasLength(14));
+      for (final arb in arbs) {
+        final texts = jsonDecode(arb.readAsStringSync()) as Map;
+        expect(
+          texts["kerriganNamesShieldOnly"],
+          contains(kKerriganNameTargetPrefix),
+          reason: arb.path,
+        );
       }
     });
   });

@@ -9,6 +9,7 @@ import '../../l10n/l10n.dart';
 import '../../providers/global/barcode_scanner_provider.dart';
 import '../../providers/global/wallets_provider.dart';
 import '../../route_generator.dart';
+import '../../services/kerrigan_name/kerrigan_name.dart';
 import '../../services/kerrigan_name/kerrigan_names_protocol.dart';
 import '../../services/kerrigan_name/kerrigan_names_registrar.dart';
 import '../../themes/stack_colors.dart';
@@ -43,7 +44,7 @@ class KerriganNamesFlow {
     required this.op,
     required this.name,
     required this.returnTo,
-    this.price,
+    required this.price,
     this.currentAddress,
     this.listedPrice,
   });
@@ -55,9 +56,9 @@ class KerriganNamesFlow {
   /// The screen to come back to once paid (its route name).
   final String returnTo;
 
-  /// What a registration or a purchase costs. Other commands cost an
-  /// update, looked up when needed.
-  final BigInt? price;
+  /// What the command costs, as the registrar said: the price of a
+  /// registration or a purchase, an update's for the others.
+  final BigInt price;
 
   /// Where the name points now (a change of destination).
   final String? currentAddress;
@@ -66,15 +67,21 @@ class KerriganNamesFlow {
   final BigInt? listedPrice;
 
   String get title => switch (op) {
-    KerriganNamesOp.reg => l10n.kerriganNamesFlowRegister(kerriganNamesUnbroken(name)),
-    KerriganNamesOp.buy => l10n.kerriganNamesFlowBuy(kerriganNamesUnbroken(name)),
+    KerriganNamesOp.reg => l10n.kerriganNamesFlowRegister(
+      kerriganNamesUnbroken(name),
+    ),
+    KerriganNamesOp.buy => l10n.kerriganNamesFlowBuy(
+      kerriganNamesUnbroken(name),
+    ),
     KerriganNamesOp.upd => l10n.kerriganNamesFlowChangeDestination,
     KerriganNamesOp.chg => l10n.kerriganNamesFlowChangeOwner,
     KerriganNamesOp.lst =>
       listedPrice == null
           ? l10n.kerriganNamesFlowList
           : l10n.kerriganNamesFlowChangePrice,
-    KerriganNamesOp.ult => l10n.kerriganNamesFlowUnlist(kerriganNamesUnbroken(name)),
+    KerriganNamesOp.ult => l10n.kerriganNamesFlowUnlist(
+      kerriganNamesUnbroken(name),
+    ),
   };
 }
 
@@ -148,7 +155,6 @@ Future<KerriganNamesPayment?> _sign(
     whileFutureAlt: () async {
       final registrar = KerriganNamesRegistrar.forCoin(wallet.cryptoCurrency)!;
       final info = await registrar.paymentInfo();
-      final amount = flow.price ?? await registrar.updatePriceFor(flow.name);
       final identity = await wallet.namesIdentity();
       final command = kerriganNamesCommand(
         marker: registrar.service.marker,
@@ -166,13 +172,16 @@ Future<KerriganNamesPayment?> _sign(
       return KerriganNamesPayment(
         flow: flow,
         address: info.address,
-        amount: amount,
+        amount: flow.price,
         memo: "$command:${await identity.sign(command)}",
       );
     },
   );
   if (payment == null && context.mounted) {
-    await showKerriganNamesError(context, error ?? l10n.kerriganNamesSigningFailed);
+    await showKerriganNamesError(
+      context,
+      error ?? l10n.kerriganNamesSigningFailed,
+    );
   }
   return payment;
 }
@@ -181,8 +190,9 @@ Future<void> _openPayment(BuildContext context, KerriganNamesPayment payment) =>
     Navigator.of(context).push(
       RouteGenerator.getRoute<void>(
         shouldUseMaterialRoute: RouteGenerator.useMaterialPageRoute,
-        builder: (_) =>
-            DesktopPageColumn(child: KerriganNamesPaymentView(payment: payment)),
+        builder: (_) => DesktopPageColumn(
+          child: KerriganNamesPaymentView(payment: payment),
+        ),
         settings: const RouteSettings(name: KerriganNamesPaymentView.routeName),
       ),
     );
@@ -208,7 +218,8 @@ class KerriganNamesTargetView extends ConsumerStatefulWidget {
 /// What the target screen's text field takes.
 enum _Input { key, price, address }
 
-class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetView> {
+class _KerriganNamesTargetViewState
+    extends ConsumerState<KerriganNamesTargetView> {
   final _text = TextEditingController();
   final _focus = FocusNode();
 
@@ -219,8 +230,6 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
   /// the wallet's.
   bool _custom = false;
   String? _ownKey;
-  BigInt? _cost;
-  String? _costError;
   bool _touched = false;
 
   KerriganNamesFlow get _flow => widget.flow;
@@ -256,24 +265,6 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
         final key = await kerriganNamesPublicKey(wallet);
         if (mounted) setState(() => _ownKey = key);
       } catch (_) {}
-    }
-    await _loadCost();
-  }
-
-  Future<void> _loadCost() async {
-    if (!mounted) return;
-    final price = _flow.price;
-    if (price != null) {
-      setState(() => _cost = price);
-      return;
-    }
-    setState(() => _costError = null);
-    try {
-      final registrar = KerriganNamesRegistrar.forCoin(_wallet.cryptoCurrency)!;
-      final cost = await registrar.updatePriceFor(_flow.name);
-      if (mounted) setState(() => _cost = cost);
-    } catch (e) {
-      if (mounted) setState(() => _costError = kerriganNamesError(e));
     }
   }
 
@@ -311,7 +302,7 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
           return l10n.kerriganNamesAlreadyPointsHere(_flow.name);
         }
         if (!isValidKerriganNamesTarget(target)) {
-          return target.startsWith("ps1")
+          return target.startsWith(kKerriganNameTargetPrefix)
               ? l10n.kerriganNamesInvalidShieldAddress
               : l10n.kerriganNamesShieldOnly;
         }
@@ -403,6 +394,7 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
             borderRadius: BorderRadius.circular(8),
             child: TextField(
               controller: _text,
+              textDirection: TextDirection.ltr,
               focusNode: _focus,
               autocorrect: false,
               enableSuggestions: false,
@@ -432,7 +424,11 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
         ),
         if (error != null && error.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(left: 12, right: 4, top: 4),
+            padding: const EdgeInsetsDirectional.only(
+              start: 12,
+              end: 4,
+              top: 4,
+            ),
             child: Text(
               error,
               style: STextStyles.label(context)
@@ -449,7 +445,7 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
     final wallet = _wallet;
     final secondary = STextStyles.itemSubtitle(context);
     final op = _flow.op;
-    final cost = _cost;
+    final cost = _flow.price;
     final error = _error;
     final listedPrice = _flow.listedPrice;
     final listed = listedPrice == null
@@ -481,7 +477,6 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
     };
 
     final costLine = switch (op) {
-      _ when cost == null => null,
       KerriganNamesOp.reg => l10n.kerriganNamesCostRegistration(
         kerriganNamesAmount(cost, ref, wallet),
       ),
@@ -575,7 +570,10 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
                       ),
                       if (_touched && targetError != null)
                         Padding(
-                          padding: const EdgeInsets.only(left: 12, top: 4),
+                          padding: const EdgeInsetsDirectional.only(
+                            start: 12,
+                            top: 4,
+                          ),
                           child: Text(
                             targetError,
                             style: STextStyles.label(context)
@@ -606,7 +604,10 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
                         hint: l10n.kerriganNamesPrice,
                         input: _Input.price,
                         suffix: Padding(
-                          padding: const EdgeInsets.only(right: 14, top: 14),
+                          padding: const EdgeInsetsDirectional.only(
+                            end: 14,
+                            top: 14,
+                          ),
                           child: Text(
                             _unit.unitForCoin(wallet.cryptoCurrency),
                             style: STextStyles.w600_14(context)
@@ -616,7 +617,10 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
                       ),
                       if (listed != null)
                         Padding(
-                          padding: const EdgeInsets.only(left: 12, top: 4),
+                          padding: const EdgeInsetsDirectional.only(
+                            start: 12,
+                            top: 4,
+                          ),
                           child: Text(
                             l10n.kerriganNamesListedNow(listed),
                             style: STextStyles.label(context)
@@ -625,28 +629,11 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
                         ),
                     ],
                     const SizedBox(height: 16),
-                    if (costLine != null)
-                      Text(
-                        costLine,
-                        style: STextStyles.w500_12(context)
-                            .copyWith(color: colors.textSubtitle1),
-                      )
-                    else if (_costError != null)
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              _costError!,
-                              style: STextStyles.w500_12(context)
-                                  .copyWith(color: colors.textError),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: _loadCost,
-                            child: Text(l10n.commonTryAgain),
-                          ),
-                        ],
-                      ),
+                    Text(
+                      costLine,
+                      style: STextStyles.w500_12(context)
+                          .copyWith(color: colors.textSubtitle1),
+                    ),
                   ],
                 ),
               ),
@@ -654,7 +641,7 @@ class _KerriganNamesTargetViewState extends ConsumerState<KerriganNamesTargetVie
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: PrimaryButton(
                   label: l10n.commonNext,
-                  enabled: error == null && cost != null,
+                  enabled: error == null,
                   onPressed: _next,
                 ),
               ),
@@ -684,7 +671,8 @@ class KerriganNamesPaymentView extends ConsumerStatefulWidget {
       _KerriganNamesPaymentViewState();
 }
 
-class _KerriganNamesPaymentViewState extends ConsumerState<KerriganNamesPaymentView> {
+class _KerriganNamesPaymentViewState
+    extends ConsumerState<KerriganNamesPaymentView> {
   KerriganFunding _funding = kKerriganAutoFunding;
 
   KerriganNamesPayment get _payment => widget.payment;
@@ -825,7 +813,8 @@ class _KerriganNamesPaymentViewState extends ConsumerState<KerriganNamesPaymentV
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<StackColors>()!;
-    final wallet = ref.watch(pWallets).getWallet(_flow.walletId) as KerriganWallet;
+    final wallet =
+        ref.watch(pWallets).getWallet(_flow.walletId) as KerriganWallet;
     final amount = _amount(wallet);
     return Background(
       child: Scaffold(

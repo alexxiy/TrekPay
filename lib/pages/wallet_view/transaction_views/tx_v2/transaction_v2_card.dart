@@ -256,7 +256,7 @@ class _TransactionCardStateV2 extends ConsumerState<TransactionCardV2> {
                                 _transaction.onChainNote!,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.left,
+                                textAlign: TextAlign.start,
                                 style: STextStyles.label(context),
                               ),
                             ),

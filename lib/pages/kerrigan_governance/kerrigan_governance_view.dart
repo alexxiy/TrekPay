@@ -317,7 +317,7 @@ class _KerriganGovernanceViewState
         children: [
           for (final f in _Filter.values)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsetsDirectional.only(end: 8),
               child: ChoiceChip(
                 label: Text(
                   "${f.label} "
@@ -593,7 +593,7 @@ class _PendingCard extends ConsumerWidget {
           if (failed) ...[
             Text(p.error!, style: secondary.copyWith(color: colors.textError)),
             Align(
-              alignment: Alignment.centerRight,
+              alignment: AlignmentDirectional.centerEnd,
               child: CustomTextButton(text: l10n.commonRemove, onTap: onRemove),
             ),
           ] else
@@ -656,9 +656,7 @@ class _LoadError extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          forbidden
-              ? l10n.govNodeNoData
-              : text,
+          forbidden ? l10n.govNodeNoData : text,
           textAlign: TextAlign.center,
           style: STextStyles.itemSubtitle(context),
         ),

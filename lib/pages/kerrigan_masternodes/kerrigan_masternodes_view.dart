@@ -135,11 +135,10 @@ class _KerriganMasternodesViewState
                 const SizedBox(height: 8),
                 SecondaryButton(
                   label: l10n.mnAddExisting,
-                  onPressed: () =>
-                      _open(KerriganCreateMasternodeView.routeName, (
-                        walletId: widget.walletId,
-                        existing: true,
-                      )),
+                  onPressed: () => _open(
+                    KerriganCreateMasternodeView.routeName,
+                    (walletId: widget.walletId, existing: true),
+                  ),
                 ),
               ],
             ),
@@ -244,9 +243,8 @@ class KerriganMasternodesSummary extends ConsumerWidget {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   label,
-                  style: STextStyles.w500_12(
-                    context,
-                  ).copyWith(color: colors.textSubtitle1),
+                  style: STextStyles.w500_12(context)
+                      .copyWith(color: colors.textSubtitle1),
                 ),
               ),
             ],
@@ -307,21 +305,19 @@ class KerriganMasternodeCard extends ConsumerWidget {
             children: [
               Text(
                 label,
-                style: STextStyles.w500_12(
-                  context,
-                ).copyWith(color: colors.textSubtitle1),
+                style: STextStyles.w500_12(context)
+                    .copyWith(color: colors.textSubtitle1),
               ),
               const SizedBox(width: 12),
               // A long value (some translations) takes a second line.
               Expanded(
                 child: Text(
                   value,
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.end,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: STextStyles.w500_12(
-                    context,
-                  ).copyWith(color: colors.textDark),
+                  style: STextStyles.w500_12(context)
+                      .copyWith(color: colors.textDark),
                 ),
               ),
             ],
@@ -360,11 +356,16 @@ class KerriganMasternodeCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 6),
                 Divider(height: 16, color: colors.backgroundAppBar),
-                row(l10n.mnServer, state?.service ?? mn.service ?? l10n.mnNotSet),
+                row(
+                  l10n.mnServer,
+                  state?.service ?? mn.service ?? l10n.mnNotSet,
+                ),
                 row(
                   l10n.mnCollateral,
-                  "${fmt.format(wallet.masternodeCollateral(mn.type))} · "
-                      "${mn.txid.substring(0, 8)}…:${mn.vout}",
+                  // One left-to-right piece in Arabic too (\u2066 … \u2069),
+                  // otherwise the coin ticker ends up away from the amount.
+                  "\u2066${fmt.format(wallet.masternodeCollateral(mn.type))} · "
+                  "${mn.txid.substring(0, 8)}…:${mn.vout}\u2069",
                 ),
                 if (mn.type == KerriganMasternodeType.broodNode)
                   row(l10n.mnType, KerriganMasternodeType.broodNode.label),
@@ -489,11 +490,10 @@ class KerriganMasternodeStatusTag extends StatelessWidget {
   final KerriganMasternode masternode;
 
   @override
-  Widget build(BuildContext context) =>
-      FutureBuilder<KerriganMasternodeState>(
-        future: wallet.masternodeState(masternode),
-        builder: (context, snapshot) => KerriganMasternodeStatusPill(
-          status: snapshot.data?.status ?? KerriganMasternodeStatus.checking,
-        ),
-      );
+  Widget build(BuildContext context) => FutureBuilder<KerriganMasternodeState>(
+    future: wallet.masternodeState(masternode),
+    builder: (context, snapshot) => KerriganMasternodeStatusPill(
+      status: snapshot.data?.status ?? KerriganMasternodeStatus.checking,
+    ),
+  );
 }

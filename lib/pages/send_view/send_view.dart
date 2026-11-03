@@ -17,11 +17,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:tuple/tuple.dart';
 
 import '../../l10n/l10n.dart';
 import '../../models/input.dart';
-import '../../models/isar/models/isar_models.dart';
 import '../../models/send_view_auto_fill_data.dart';
 import '../../providers/global/address_book_service_provider.dart';
 import '../../providers/providers.dart';
@@ -36,7 +34,6 @@ import '../../utilities/amount/amount.dart';
 import '../../utilities/amount/amount_formatter.dart';
 import '../../utilities/amount/amount_input_formatter.dart';
 import '../../utilities/amount/amount_unit.dart';
-import '../../utilities/assets.dart';
 import '../../utilities/barcode_scanner_interface.dart';
 import '../../utilities/clipboard_interface.dart';
 import '../../utilities/constants.dart';
@@ -59,17 +56,14 @@ import '../../widgets/icon_widgets/qrcode_icon.dart';
 import '../../widgets/icon_widgets/x_icon.dart';
 import '../../widgets/kerrigan_memo_field.dart';
 import '../../widgets/rounded_container.dart';
-import '../../widgets/rounded_white_container.dart';
 import '../../widgets/stack_dialog.dart';
 import '../../widgets/stack_text_field.dart';
 import '../../widgets/textfield_icon_button.dart';
 import '../address_book_views/address_book_view.dart';
-import '../coin_control/coin_control_view.dart';
 import 'confirm_transaction_view.dart';
 import 'sub_widgets/building_transaction_dialog.dart';
-import 'sub_widgets/kerrigan_change_address_sheet.dart';
+import 'sub_widgets/kerrigan_funding_card.dart';
 import 'sub_widgets/kerrigan_name_lookup.dart';
-import 'sub_widgets/dual_balance_selection_sheet.dart';
 
 class SendView extends ConsumerStatefulWidget {
   const SendView({
@@ -479,11 +473,7 @@ class _SendViewState extends ConsumerState<SendView> {
         break;
     }
 
-    final coinControlEnabled = ref
-        .read(prefsChangeNotifierProvider)
-        .enableCoinControl;
-
-    if (!coinControlEnabled || selectedUTXOs.isEmpty) {
+    if (selectedUTXOs.isEmpty) {
       // confirm send all
       if (amount == availableBalance) {
         bool? shouldSendAll;
@@ -604,9 +594,7 @@ class _SendViewState extends ConsumerState<SendView> {
           ],
           memo: memo,
           feeRateType: FeeRateType.average,
-          utxos: (coinControlEnabled && selectedUTXOs.isNotEmpty)
-              ? selectedUTXOs
-              : null,
+          utxos: selectedUTXOs.isNotEmpty ? selectedUTXOs : null,
           otherData: kerriganOtherData.isEmpty
               ? null
               : jsonEncode(kerriganOtherData),
@@ -704,11 +692,8 @@ class _SendViewState extends ConsumerState<SendView> {
     setState(() {});
   }
 
-  String _getSendAllTitle(
-    bool showCoinControl,
-    Set<StandardInput> selectedUTXOs,
-  ) {
-    if (showCoinControl && selectedUTXOs.isNotEmpty) {
+  String _getSendAllTitle(Set<StandardInput> selectedUTXOs) {
+    if (selectedUTXOs.isNotEmpty) {
       return l10n.sendAllSelected;
     }
 
@@ -731,13 +716,13 @@ class _SendViewState extends ConsumerState<SendView> {
     });
   }
 
-  Future<void> _sendAllTapped(bool showCoinControl) async {
+  Future<void> _sendAllTapped() async {
     // Kerrigan never takes the fee out of the amount silently: sending
     // everything ticks "Subtract fee from amount" where the user sees it.
     if (!_kerriganSubtractFee) _setKerriganSubtractFee(true);
     final Amount amount;
 
-    if (showCoinControl && selectedUTXOs.isNotEmpty) {
+    if (selectedUTXOs.isNotEmpty) {
       amount = _selectedUtxosAmount(selectedUTXOs);
     } else {
       switch (ref.read(publicPrivateBalanceStateProvider)) {
@@ -755,6 +740,44 @@ class _SendViewState extends ConsumerState<SendView> {
         .read(pAmountFormatter(coin))
         .format(amount, withUnitName: false);
     _cryptoAmountChanged();
+  }
+
+  /// What chosen coins must cover: the amount, and the fee on top unless
+  /// it comes out of the amount or everything is sent.
+  Amount? _kerriganCoinsTarget() {
+    final amount = ref.read(pSendAmount);
+    if (amount == null || _kerriganSubtractFee) return amount;
+    final spendable =
+        ref.read(publicPrivateBalanceStateProvider) == BalanceType.private
+        ? ref.read(pWalletBalanceSecondary(walletId)).spendable
+        : ref.read(pWalletBalance(walletId)).spendable;
+    return amount == spendable ? amount : amount + _currentFee;
+  }
+
+  /// The funding card's choice: which balance pays, with which coins, and
+  /// where the change goes.
+  void _setKerriganFunding(KerriganFunding funding) {
+    final balance = funding.fromShield
+        ? BalanceType.private
+        : BalanceType.public;
+    if (balance != ref.read(publicPrivateBalanceStateProvider)) {
+      // The listener in build clears the coins and updates the fee.
+      ref.read(publicPrivateBalanceStateProvider.notifier).state = balance;
+      return;
+    }
+    setState(() {
+      selectedUTXOs = funding.coins.map(StandardInput.new).toSet();
+      if (funding.fromShield) {
+        _kerriganShieldChangeAddress = funding.changeAddress;
+      } else {
+        _kerriganChangeAddress = funding.changeAddress;
+      }
+      // Shield fees depend on the notes spent.
+      _calculateFeesFuture = calculateFees(
+        ref.read(pSendAmount) ??
+            0.toAmountAsRaw(fractionDigits: coin.fractionDigits),
+      );
+    });
   }
 
   /// Chosen change address for a send from [balance] (null: automatic).
@@ -857,11 +880,6 @@ class _SendViewState extends ConsumerState<SendView> {
     );
 
     final balType = ref.watch(publicPrivateBalanceStateProvider);
-
-    // Coin control covers shield notes too.
-    final showCoinControl = ref.watch(
-      prefsChangeNotifierProvider.select((value) => value.enableCoinControl),
-    );
 
     ref.listen(publicPrivateBalanceStateProvider, (previous, next) {
       selectedUTXOs = {};
@@ -1000,7 +1018,7 @@ class _SendViewState extends ConsumerState<SendView> {
                                                       STextStyles.titleBold12(
                                                         context,
                                                       ).copyWith(fontSize: 10),
-                                                  textAlign: TextAlign.right,
+                                                  textAlign: TextAlign.end,
                                                 ),
                                                 if (price != null)
                                                   Text(
@@ -1008,7 +1026,7 @@ class _SendViewState extends ConsumerState<SendView> {
                                                     style: STextStyles.subtitle(
                                                       context,
                                                     ).copyWith(fontSize: 8),
-                                                    textAlign: TextAlign.right,
+                                                    textAlign: TextAlign.end,
                                                   ),
                                               ],
                                             ),
@@ -1028,7 +1046,7 @@ class _SendViewState extends ConsumerState<SendView> {
                                 Text(
                                   l10n.sendSendTo,
                                   style: STextStyles.smallMed12(context),
-                                  textAlign: TextAlign.left,
+                                  textAlign: TextAlign.start,
                                 ),
                               ],
                             ),
@@ -1040,6 +1058,7 @@ class _SendViewState extends ConsumerState<SendView> {
                               child: TextField(
                                 key: const Key("sendViewAddressFieldKey"),
                                 controller: sendToController,
+                                textDirection: TextDirection.ltr,
                                 readOnly: false,
                                 autocorrect: false,
                                 enableSuggestions: false,
@@ -1090,16 +1109,21 @@ class _SendViewState extends ConsumerState<SendView> {
                                       _addressFocusNode,
                                       context,
                                     ).copyWith(
-                                      contentPadding: const EdgeInsets.only(
-                                        left: 16,
-                                        top: 6,
-                                        bottom: 8,
-                                        right: 5,
-                                      ),
+                                      contentPadding:
+                                          const EdgeInsetsDirectional.only(
+                                            start: 16,
+                                            top: 6,
+                                            bottom: 8,
+                                            end: 5,
+                                          ),
                                       suffixIcon: Padding(
                                         padding: sendToController.text.isEmpty
-                                            ? const EdgeInsets.only(right: 8)
-                                            : const EdgeInsets.only(right: 0),
+                                            ? const EdgeInsetsDirectional.only(
+                                                end: 8,
+                                              )
+                                            : const EdgeInsetsDirectional.only(
+                                                end: 0,
+                                              ),
                                         child: UnconstrainedBox(
                                           child: Row(
                                             mainAxisAlignment:
@@ -1194,15 +1218,15 @@ class _SendViewState extends ConsumerState<SendView> {
                                   return Container();
                                 } else {
                                   return Align(
-                                    alignment: Alignment.topLeft,
+                                    alignment: AlignmentDirectional.topStart,
                                     child: Padding(
-                                      padding: const EdgeInsets.only(
-                                        left: 12.0,
+                                      padding: const EdgeInsetsDirectional.only(
+                                        start: 12.0,
                                         top: 4.0,
                                       ),
                                       child: Text(
                                         error,
-                                        textAlign: TextAlign.left,
+                                        textAlign: TextAlign.start,
                                         style: STextStyles.label(context)
                                             .copyWith(
                                               color: Theme.of(context)
@@ -1216,122 +1240,18 @@ class _SendViewState extends ConsumerState<SendView> {
                               },
                             ),
                             const SizedBox(height: 12),
-                            Text(
-                              l10n.sendSendFrom,
-                              style: STextStyles.smallMed12(context),
-                              textAlign: TextAlign.left,
-                            ),
-                            const SizedBox(height: 8),
-                            Stack(
-                              children: [
-                                TextField(
-                                  autocorrect: Util.isDesktop ? false : true,
-                                  enableSuggestions: Util.isDesktop
-                                      ? false
-                                      : true,
-                                  readOnly: true,
-                                  textInputAction: TextInputAction.none,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                  ),
-                                  child: RawMaterialButton(
-                                    splashColor: Theme.of(context)
-                                        .extension<StackColors>()!
-                                        .highlight,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        Constants.size.circularBorderRadius,
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      showModalBottomSheet<dynamic>(
-                                        backgroundColor: Colors.transparent,
-                                        context: context,
-                                        shape: const RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.vertical(
-                                            top: Radius.circular(20),
-                                          ),
-                                        ),
-                                        builder: (_) =>
-                                            DualBalanceSelectionSheet(
-                                              walletId: walletId,
-                                            ),
-                                      );
-                                    },
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(
-                                              ref.watch(
-                                                        publicPrivateBalanceStateProvider,
-                                                      ) ==
-                                                      BalanceType.private
-                                                  ? l10n.balanceShielded
-                                                  : l10n.balanceTransparent,
-                                              style: STextStyles.itemSubtitle12(
-                                                context,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Builder(
-                                              builder: (_) {
-                                                final Amount amount;
-                                                switch (ref.read(
-                                                  publicPrivateBalanceStateProvider,
-                                                )) {
-                                                  case BalanceType.public:
-                                                    amount = ref
-                                                        .watch(
-                                                          pWalletBalance(
-                                                            walletId,
-                                                          ),
-                                                        )
-                                                        .spendable;
-                                                    break;
-                                                  case BalanceType.private:
-                                                    amount = ref
-                                                        .watch(
-                                                          pWalletBalanceSecondary(
-                                                            walletId,
-                                                          ),
-                                                        )
-                                                        .spendable;
-                                                    break;
-                                                }
-
-                                                return Text(
-                                                  ref
-                                                      .watch(
-                                                        pAmountFormatter(coin),
-                                                      )
-                                                      .format(amount),
-                                                  style:
-                                                      STextStyles.itemSubtitle(
-                                                        context,
-                                                      ),
-                                                );
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                        SvgPicture.asset(
-                                          Assets.svg.chevronDown,
-                                          width: 8,
-                                          height: 4,
-                                          color: Theme.of(context)
-                                              .extension<StackColors>()!
-                                              .textSubtitle2,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            KerriganFundingCard(
+                              walletId: walletId,
+                              funding: (
+                                fromShield: balType == BalanceType.private,
+                                coins: selectedUTXOs.map((e) => e.utxo).toSet(),
+                                changeAddress: _kerriganChange(balType),
+                              ),
+                              amount: ref.watch(pSendAmount),
+                              coinsTarget: _kerriganCoinsTarget(),
+                              subtractFee: _kerriganSubtractFee,
+                              toShield: _sendsToShield,
+                              onChanged: _setKerriganFunding,
                             ),
                             const SizedBox(height: 12),
                             Row(
@@ -1340,14 +1260,11 @@ class _SendViewState extends ConsumerState<SendView> {
                                 Text(
                                   l10n.commonAmount,
                                   style: STextStyles.smallMed12(context),
-                                  textAlign: TextAlign.left,
+                                  textAlign: TextAlign.start,
                                 ),
                                 CustomTextButton(
-                                  text: _getSendAllTitle(
-                                    showCoinControl,
-                                    selectedUTXOs,
-                                  ),
-                                  onTap: () => _sendAllTapped(showCoinControl),
+                                  text: _getSendAllTitle(selectedUTXOs),
+                                  onTap: _sendAllTapped,
                                 ),
                               ],
                             ),
@@ -1371,7 +1288,7 @@ class _SendViewState extends ConsumerState<SendView> {
                                       signed: false,
                                       decimal: true,
                                     ),
-                              textAlign: TextAlign.right,
+                              textAlign: TextAlign.end,
                               inputFormatters: [
                                 AmountInputFormatter(
                                   decimals: coin.fractionDigits,
@@ -1380,10 +1297,11 @@ class _SendViewState extends ConsumerState<SendView> {
                                 ),
                               ],
                               decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.only(
-                                  top: 12,
-                                  right: 12,
-                                ),
+                                contentPadding:
+                                    const EdgeInsetsDirectional.only(
+                                      top: 12,
+                                      end: 12,
+                                    ),
                                 hintText: "0",
                                 hintStyle: STextStyles.fieldLabel(context)
                                     .copyWith(fontSize: 14),
@@ -1430,7 +1348,7 @@ class _SendViewState extends ConsumerState<SendView> {
                                         signed: false,
                                         decimal: true,
                                       ),
-                                textAlign: TextAlign.right,
+                                textAlign: TextAlign.end,
                                 inputFormatters: [
                                   AmountInputFormatter(
                                     decimals: 2,
@@ -1439,10 +1357,11 @@ class _SendViewState extends ConsumerState<SendView> {
                                 ],
                                 onChanged: _fiatFieldChanged,
                                 decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.only(
-                                    top: 12,
-                                    right: 12,
-                                  ),
+                                  contentPadding:
+                                      const EdgeInsetsDirectional.only(
+                                        top: 12,
+                                        end: 12,
+                                      ),
                                   hintText: "0",
                                   hintStyle: STextStyles.fieldLabel(context)
                                       .copyWith(fontSize: 14),
@@ -1501,185 +1420,6 @@ class _SendViewState extends ConsumerState<SendView> {
                                   ),
                                 ),
                               ),
-                            if (coin is Kerrigan) const SizedBox(height: 8),
-                            if (coin is Kerrigan)
-                              RoundedWhiteContainer(
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      l10n.sendChangeAddress,
-                                      style: STextStyles.w500_14(context)
-                                          .copyWith(
-                                            color: Theme.of(context)
-                                                .extension<StackColors>()!
-                                                .textSubtitle1,
-                                          ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Flexible(
-                                      child: CustomTextButton(
-                                        text: _kerriganChange(balType) == null
-                                            ? l10n.sendAutomatic
-                                            : "${_kerriganChange(balType)!.substring(0, 6)}"
-                                                  "…${_kerriganChange(balType)!.substring(_kerriganChange(balType)!.length - 6)}",
-                                        onTap: () async {
-                                          FocusScope.of(context).unfocus();
-                                          final picked =
-                                              await showModalBottomSheet<
-                                                String
-                                              >(
-                                                backgroundColor:
-                                                    Colors.transparent,
-                                                context: context,
-                                                useSafeArea: true,
-                                                isScrollControlled: true,
-                                                builder: (_) =>
-                                                    KerriganChangeAddressSheet(
-                                                      walletId: walletId,
-                                                      coin: coin as Kerrigan,
-                                                      current: _kerriganChange(
-                                                        balType,
-                                                      ),
-                                                      shield:
-                                                          balType ==
-                                                          BalanceType.private,
-                                                    ),
-                                              );
-                                          if (picked != null && mounted) {
-                                            setState(() {
-                                              final value = picked.isEmpty
-                                                  ? null
-                                                  : picked;
-                                              if (balType ==
-                                                  BalanceType.private) {
-                                                _kerriganShieldChangeAddress =
-                                                    value;
-                                              } else {
-                                                _kerriganChangeAddress = value;
-                                              }
-                                            });
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            if (showCoinControl) const SizedBox(height: 8),
-                            if (showCoinControl)
-                              RoundedWhiteContainer(
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      l10n.coinControlTitle,
-                                      style: STextStyles.w500_14(context)
-                                          .copyWith(
-                                            color: Theme.of(context)
-                                                .extension<StackColors>()!
-                                                .textSubtitle1,
-                                          ),
-                                    ),
-                                    CustomTextButton(
-                                      text: selectedUTXOs.isEmpty
-                                          ? l10n.sendSelectCoins
-                                          : l10n.sendSelectedCoins(
-                                              selectedUTXOs.length,
-                                            ),
-                                      onTap: () async {
-                                        if (FocusScope.of(context).hasFocus) {
-                                          FocusScope.of(context).unfocus();
-                                          await Future<void>.delayed(
-                                            const Duration(milliseconds: 100),
-                                          );
-                                        }
-
-                                        if (context.mounted) {
-                                          final kerriganShield =
-                                              coin is Kerrigan &&
-                                              ref.read(
-                                                    publicPrivateBalanceStateProvider,
-                                                  ) ==
-                                                  BalanceType.private;
-                                          final spendable = kerriganShield
-                                              ? ref
-                                                    .read(
-                                                      pWalletBalanceSecondary(
-                                                        walletId,
-                                                      ),
-                                                    )
-                                                    .spendable
-                                              : ref
-                                                    .read(
-                                                      pWalletBalance(walletId),
-                                                    )
-                                                    .spendable;
-
-                                          Amount? amount;
-                                          if (ref.read(pSendAmount) != null) {
-                                            amount = ref.read(pSendAmount)!;
-
-                                            if (spendable == amount ||
-                                                (coin is Kerrigan &&
-                                                    _kerriganSubtractFee)) {
-                                              // send all, or the fee comes
-                                              // out of the amount
-                                            } else {
-                                              amount += _currentFee;
-                                            }
-                                          }
-
-                                          final result =
-                                              await Navigator.of(
-                                                context,
-                                              ).pushNamed(
-                                                CoinControlView.routeName,
-                                                arguments: coin is Kerrigan
-                                                    ? Tuple5(
-                                                        walletId,
-                                                        CoinControlViewType.use,
-                                                        amount,
-                                                        selectedUTXOs
-                                                            .map((e) => e.utxo)
-                                                            .toSet(),
-                                                        (
-                                                          shieldNotes:
-                                                              kerriganShield,
-                                                          sendAmount: ref.read(
-                                                            pSendAmount,
-                                                          ),
-                                                          toShield:
-                                                              _sendsToShield,
-                                                          subtractFee:
-                                                              _kerriganSubtractFee,
-                                                        ),
-                                                      )
-                                                    : Tuple4(
-                                                        walletId,
-                                                        CoinControlViewType.use,
-                                                        amount,
-                                                        selectedUTXOs
-                                                            .map((e) => e.utxo)
-                                                            .toSet(),
-                                                      ),
-                                              );
-
-                                          if (result is Set<UTXO>) {
-                                            setState(() {
-                                              selectedUTXOs = result
-                                                  .map((e) => StandardInput(e))
-                                                  .toSet();
-                                            });
-                                          }
-                                        }
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
                             const SizedBox(height: 12),
                             // Kerrigan: the shielded memo travels encrypted
                             // with the payment; only shield recipients
@@ -1688,7 +1428,7 @@ class _SendViewState extends ConsumerState<SendView> {
                               Text(
                                 l10n.sendShieldedMemoOptional,
                                 style: STextStyles.smallMed12(context),
-                                textAlign: TextAlign.left,
+                                textAlign: TextAlign.start,
                               ),
                               const SizedBox(height: 8),
                               KerriganMemoField(
@@ -1702,7 +1442,7 @@ class _SendViewState extends ConsumerState<SendView> {
                             Text(
                               l10n.sendNoteOptional,
                               style: STextStyles.smallMed12(context),
-                              textAlign: TextAlign.left,
+                              textAlign: TextAlign.start,
                             ),
                             const SizedBox(height: 8),
                             ClipRRect(
@@ -1729,9 +1469,10 @@ class _SendViewState extends ConsumerState<SendView> {
                                     ).copyWith(
                                       suffixIcon: noteController.text.isNotEmpty
                                           ? Padding(
-                                              padding: const EdgeInsets.only(
-                                                right: 0,
-                                              ),
+                                              padding:
+                                                  const EdgeInsetsDirectional.only(
+                                                    end: 0,
+                                                  ),
                                               child: UnconstrainedBox(
                                                 child: Row(
                                                   children: [
@@ -1756,7 +1497,7 @@ class _SendViewState extends ConsumerState<SendView> {
                             Text(
                               l10n.sendNetworkFeeEstimated,
                               style: STextStyles.smallMed12(context),
-                              textAlign: TextAlign.left,
+                              textAlign: TextAlign.start,
                             ),
                             const SizedBox(height: 8),
                             // Kerrigan has no fee market: the fee is the

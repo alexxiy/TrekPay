@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../l10n/l10n.dart';
 import '../../providers/global/wallets_provider.dart';
+import '../../services/kerrigan_name/kerrigan_name.dart';
 import '../../services/kerrigan_name/kerrigan_names_protocol.dart';
 import '../../services/kerrigan_name/kerrigan_names_registrar.dart';
 import '../../themes/stack_colors.dart';
@@ -36,20 +37,38 @@ class KerriganNamesMarketplaceView extends ConsumerStatefulWidget {
 class _KerriganNamesMarketplaceViewState
     extends ConsumerState<KerriganNamesMarketplaceView> {
   String? _key;
-  int _page = 1;
   String _search = "";
-  KerriganNamesPage<KerriganNamesDomain>? _names;
+  List<String> _zones = kKerriganNameZones;
+
+  /// The pages shown so far, and where the next one starts (null: no more).
+  List<KerriganNamesDomain>? _names;
+  String? _next;
   bool _loading = true;
+  bool _loadingMore = false;
   String? _error;
+  String? _moreError;
   int _request = 0;
+
+  // Filters live with the screen: leaving it resets them.
+  KerriganNamesFilter _filter = kKerriganNamesNoFilter;
+  bool _filtersOpen = false;
 
   KerriganWallet get _wallet =>
       ref.read(pWallets).getWallet(widget.walletId) as KerriganWallet;
+
+  KerriganNamesRegistrar get _registrar =>
+      KerriganNamesRegistrar.forCoin(_wallet.cryptoCurrency)!;
 
   @override
   void initState() {
     super.initState();
     kerriganNamesChanges.addListener(_changed);
+    unawaited(_loadKey());
+    unawaited(
+      kerriganNamesZones(_wallet).then((zones) {
+        if (mounted) setState(() => _zones = zones);
+      }),
+    );
     unawaited(_load());
   }
 
@@ -61,41 +80,96 @@ class _KerriganNamesMarketplaceViewState
 
   void _changed() => unawaited(_load());
 
+  /// The user's key, to tell their own listings apart (the list has each
+  /// owner's).
+  Future<void> _loadKey() async {
+    try {
+      final key = await kerriganNamesPublicKey(_wallet);
+      if (mounted) setState(() => _key = key);
+    } catch (_) {}
+  }
+
+  /// The first page again.
   Future<void> _load() async {
     final request = ++_request;
     setState(() {
       _loading = true;
+      _loadingMore = false;
       _error = null;
+      _moreError = null;
     });
     try {
-      // With the key, the user's own listings come marked.
-      String? key = _key;
-      if (key == null) {
-        try {
-          key = await kerriganNamesPublicKey(_wallet);
-          if (mounted) setState(() => _key = key);
-        } catch (_) {}
-      }
-      final names = await KerriganNamesRegistrar.forCoin(_wallet.cryptoCurrency)!
-          .marketplace(pubkey: key, page: _page, search: _search);
+      final page = await _registrar.marketplace(
+        search: _search,
+        filter: _filter,
+      );
       if (!mounted || request != _request) return;
-      setState(() => _names = names);
+      setState(() {
+        _names = page.items;
+        _next = page.next;
+      });
     } catch (e) {
       if (!mounted || request != _request) return;
-      setState(() => _error = l10n.kerriganNamesLoadNamesFailed(kerriganNamesError(e)));
+      setState(
+        () => _error = l10n.kerriganNamesLoadNamesFailed(kerriganNamesError(e)),
+      );
     } finally {
       if (mounted && request == _request) setState(() => _loading = false);
     }
   }
 
-  KerriganNamesFlow _flow(KerriganNamesDomain d, KerriganNamesOp op) => KerriganNamesFlow(
-    walletId: widget.walletId,
-    op: op,
-    name: d.name,
-    price: op == KerriganNamesOp.buy ? d.price : null,
-    listedPrice: op == KerriganNamesOp.lst ? d.price : null,
-    returnTo: KerriganNamesMarketplaceView.routeName,
-  );
+  /// The page after those shown.
+  Future<void> _more() async {
+    final after = _next;
+    if (after == null || _loading || _loadingMore) return;
+    final request = _request;
+    setState(() {
+      _loadingMore = true;
+      _moreError = null;
+    });
+    try {
+      final page = await _registrar.marketplace(
+        after: after,
+        search: _search,
+        filter: _filter,
+      );
+      if (!mounted || request != _request) return;
+      setState(() {
+        // A name whose listing changed meanwhile may come again.
+        final shown = {for (final d in _names ?? const []) d.name};
+        _names = [
+          ...?_names,
+          for (final d in page.items)
+            if (!shown.contains(d.name)) d,
+        ];
+        _next = page.next;
+      });
+    } catch (e) {
+      if (!mounted || request != _request) return;
+      setState(
+        () => _moreError = l10n.kerriganNamesLoadNamesFailed(
+          kerriganNamesError(e),
+        ),
+      );
+    } finally {
+      if (mounted && request == _request) setState(() => _loadingMore = false);
+    }
+  }
+
+  void _setFilter(KerriganNamesFilter filter) {
+    setState(() => _filter = filter);
+    unawaited(_load());
+  }
+
+  KerriganNamesFlow _flow(KerriganNamesDomain d, KerriganNamesOp op) =>
+      KerriganNamesFlow(
+        walletId: widget.walletId,
+        op: op,
+        name: d.name,
+        price: op == KerriganNamesOp.buy ? d.price : d.updatePrice,
+        listedPrice: op == KerriganNamesOp.lst ? d.price : null,
+        returnTo: KerriganNamesMarketplaceView.routeName,
+      );
 
   Future<void> _buy(KerriganNamesDomain d) async {
     final ok = await kerriganNamesConfirm(
@@ -197,6 +271,7 @@ class _KerriganNamesMarketplaceViewState
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<StackColors>()!;
     final names = _names;
+    final filtered = _filter != kKerriganNamesNoFilter;
     return Background(
       child: Scaffold(
         backgroundColor: colors.background,
@@ -216,25 +291,46 @@ class _KerriganNamesMarketplaceViewState
                   style: STextStyles.itemSubtitle(context),
                 ),
                 const SizedBox(height: 12),
-                KerriganNamesSearchField(
-                  hint: l10n.kerriganNamesSearchOnSale,
-                  onSearch: (term) {
-                    _search = term;
-                    _page = 1;
-                    unawaited(_load());
-                  },
+                KerriganNamesSearchBar(
+                  search: KerriganNamesSearchField(
+                    hint: l10n.kerriganNamesSearchOnSale,
+                    onSearch: (term) {
+                      _search = term;
+                      unawaited(_load());
+                    },
+                  ),
+                  filter: _filter,
+                  open: _filtersOpen,
+                  onToggle: () => setState(() => _filtersOpen = !_filtersOpen),
                 ),
+                if (_filtersOpen)
+                  KerriganNamesFilterPanel(
+                    filter: _filter,
+                    zones: _zones,
+                    onChanged: _setFilter,
+                  ),
                 const SizedBox(height: 12),
                 if (_loading && names == null)
                   const KerriganNamesListState(loading: true)
                 else if (_error != null)
                   KerriganNamesListState(error: _error, onRetry: _load)
-                else if (names == null || names.items.isEmpty)
+                else if (names == null || names.isEmpty)
                   KerriganNamesListState(
-                    empty: _search.isNotEmpty
+                    empty: filtered
+                        ? l10n.kerriganNamesNoFilterMatch
+                        : _search.isNotEmpty
                         ? l10n.kerriganNamesNoMatch
                         : l10n.kerriganNamesNoneOnSale,
-                    action: _search.isNotEmpty
+                    action: filtered
+                        ? SecondaryButton(
+                            label: l10n.kerriganNamesResetFilters,
+                            width: 200,
+                            buttonHeight: Util.isDesktop
+                                ? ButtonHeight.m
+                                : null,
+                            onPressed: () => _setFilter(kKerriganNamesNoFilter),
+                          )
+                        : _search.isNotEmpty
                         ? null
                         : SecondaryButton(
                             label: l10n.kerriganNamesSellMyNames,
@@ -251,16 +347,22 @@ class _KerriganNamesMarketplaceViewState
                   )
                 else ...[
                   if (_loading) const LinearProgressIndicator(minHeight: 2),
-                  for (final d in names.items) _card(d),
-                  KerriganNamesPager(
-                    page: _page,
-                    count: names.count,
-                    pageSize: kKerriganNamesListPageSize,
-                    onPage: (p) {
-                      _page = p;
-                      unawaited(_load());
-                    },
-                  ),
+                  for (final d in names) _card(d),
+                  if (_moreError != null)
+                    KerriganNamesListState(error: _moreError, onRetry: _more)
+                  else if (_next != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Center(
+                        child: SecondaryButton(
+                          label: l10n.kerriganNamesShowMore,
+                          width: 200,
+                          enabled: !_loadingMore && !_loading,
+                          buttonHeight: Util.isDesktop ? ButtonHeight.m : null,
+                          onPressed: _more,
+                        ),
+                      ),
+                    ),
                 ],
               ],
             ),

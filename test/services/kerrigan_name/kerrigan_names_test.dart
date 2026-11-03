@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cryptography/cryptography.dart' as c;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:paymint/services/kerrigan_name/kerrigan_name.dart';
 import 'package:paymint/services/kerrigan_name/kerrigan_name_resolver.dart';
 import 'package:paymint/services/kerrigan_name/kerrigan_names_identity.dart';
 import 'package:paymint/services/kerrigan_name/kerrigan_names_protocol.dart';
@@ -389,8 +390,32 @@ void main() {
       expect(info.paymentConfirmations, 40);
       expect(info.refundConfirmations, 120);
       expect(info.chainLockConfirmations, isNull);
+      expect(info.zones, kKerriganNameZones);
       await r.paymentInfo();
       expect(calls, ["GET getPaymentAddress"]);
+    });
+
+    test("zones, as served, of those the app knows", () async {
+      Object? zones;
+      routes["getPaymentAddress"] = (_) => {
+        "address": liveTarget,
+        "network": "mainnet",
+        "zones": zones,
+      };
+      zones = ["safe", "krgn", "moon", "krgn"];
+      expect(await registrar().zones(), ["safe", "krgn"]);
+      for (final odd in [
+        <String>[],
+        ["moon"],
+        "krgn",
+      ]) {
+        zones = odd;
+        await expectLater(
+          registrar().zones(),
+          throwsA(isA<KerriganNamesException>()),
+          reason: "$odd",
+        );
+      }
     });
 
     test("confirmation targets, when served", () async {
@@ -446,13 +471,32 @@ void main() {
 
     test("availability", () async {
       final answers = {
-        "free.krgn": {"exists": false, "price": 1200000000},
-        "taken.krgn": {"exists": true},
-        "taken2.krgn": {"exists": true, "price": "0"},
+        "free.krgn": {
+          "exists": false,
+          "price": 1200000000,
+          "reg_pending": false,
+          "update_price": 100000000,
+        },
+        "paid.krgn": {
+          "exists": false,
+          "price": 1200000000,
+          "reg_pending": true,
+          "update_price": 100000000,
+        },
+        "taken.krgn": {"exists": true, "update_price": 300000000},
         "sale.krgn": {
           "exists": true,
           "price": "500000000.00000000",
           "pubkey": liveOwnerKey,
+          "update_price": 100000000,
+        },
+        // Without the update price, or (free) without saying whether
+        // someone's registration is on its way.
+        "old.krgn": {"exists": true},
+        "old2.krgn": {
+          "exists": false,
+          "price": 1200000000,
+          "update_price": 100000000,
         },
       };
       routes.addAll({
@@ -463,14 +507,28 @@ void main() {
           },
       });
       final r = registrar();
-      final free = await r.check("free.krgn");
-      expect(free, isA<KerriganNamesAvailable>());
-      expect((free as KerriganNamesAvailable).price, BigInt.from(1200000000));
-      expect(await r.check("taken.krgn"), isA<KerriganNamesTaken>());
-      expect(await r.check("taken2.krgn"), isA<KerriganNamesTaken>());
+      final free = await r.check("free.krgn") as KerriganNamesAvailable;
+      expect(free.price, BigInt.from(1200000000));
+      expect(free.pending, isFalse);
+      expect(free.updatePrice, BigInt.from(100000000));
+      expect(
+        (await r.check("paid.krgn") as KerriganNamesAvailable).pending,
+        true,
+      );
+      final taken = await r.check("taken.krgn");
+      expect(taken, isA<KerriganNamesTaken>());
+      expect(taken.updatePrice, BigInt.from(300000000));
       final sale = await r.check("sale.krgn") as KerriganNamesListed;
       expect(sale.price, BigInt.from(500000000));
       expect(sale.owner, liveOwnerKey);
+      expect(sale.updatePrice, BigInt.from(100000000));
+      for (final name in ["old.krgn", "old2.krgn"]) {
+        await expectLater(
+          r.check(name),
+          throwsA(isA<KerriganNamesException>()),
+          reason: name,
+        );
+      }
     });
 
     test("progress, by memo then by transaction", () async {
@@ -479,7 +537,7 @@ void main() {
       routes["check/alice.krgn"] = (body) {
         if (body!.containsKey("reg_id")) {
           expect(body["reg_id"], base64.encode(utf8.encode(memo)));
-          return seen ? {"tx_id": "ab" * 32} : <Object>[];
+          return seen ? {"tx_id": "ab" * 32} : <String, Object>{};
         }
         expect(body["tx_id"], "ab" * 32);
         return {"status": 0, "confirmations": "12"};
@@ -496,48 +554,62 @@ void main() {
       expect(status.confirmations, 12);
     });
 
-    test("update prices by label length", () async {
-      routes["prices"] = (body) {
-        expect(body, {"type": "upd"});
-        return {"1": 1000, "2": 900, "7": "100"};
-      };
-      final r = registrar();
-      expect(await r.updatePriceFor("a.krgn"), BigInt.from(1000));
-      expect(await r.updatePriceFor("ab.safe"), BigInt.from(900));
-      expect(await r.updatePriceFor("abcdefg.krgn"), BigInt.from(100));
-      expect(await r.updatePriceFor("abcdefghijk.krgn"), BigInt.from(100));
-      expect(calls, ["POST prices"]);
-    });
-
-    test("names lists", () async {
+    test("names lists, sorted and filtered by the registrar", () async {
       routes["domains"] = (body) {
+        final echo = {
+          for (final k in ["sort", "order", "zone", "status"]) k: body![k],
+          "min_price": null,
+          "max_price": null,
+        };
         if (body!["type"] == "my") {
           expect(body, {
             "type": "my",
+            "pubkey": liveOwnerKey,
             "page": 2,
             "count": 20,
-            "pubkey": liveOwnerKey,
             "search": "ali",
+            "sort": "price",
+            "order": "desc",
+            "zone": "krgn",
+            "status": "listed",
           });
           return {
+            ...echo,
             "count": 21,
             "domains": [
               {
                 "domain": "alice.krgn",
-                "price": "0",
+                "price": 300000000,
                 "tx_price": 100000000,
                 "address": liveTarget,
+                "updated_ts": 1760000000,
               },
-              {"domain": "Bad Name", "price": 0},
+              {"domain": "Bad Name", "price": 0, "tx_price": 1},
             ],
           };
         }
-        expect(body, {"type": "marketplace", "page": 1, "count": 20});
+        // No key: each name comes with its owner's.
+        expect(body.containsKey("pubkey"), isFalse);
+        expect(body["count"], 20);
+        expect(body["sort"], "listed");
+        expect(body["order"], "desc");
+        expect(body["zone"], "");
+        expect(body["status"], "all");
+        final first = body["after"] == null;
+        if (!first) expect(body["after"], "WyJsaXN0ZWQiXQ");
         return {
-          "count": 1,
+          ...echo,
+          "count": 2,
           "domains": [
-            {"domain": "sale.krgn", "price": 700000000},
+            {
+              "domain": first ? "sale.krgn" : "more.safe",
+              "price": 700000000,
+              "tx_price": 100000000,
+              "pubkey": liveOwnerKey,
+              "listed_ts": 1760000000,
+            },
           ],
+          "next": first ? "WyJsaXN0ZWQiXQ" : null,
         };
       };
       final r = registrar();
@@ -545,15 +617,87 @@ void main() {
         pubkey: liveOwnerKey,
         page: 2,
         search: "ali",
+        filter: (
+          status: KerriganNamesStatusFilter.onSale,
+          zone: "krgn",
+          sort: KerriganNamesSort.priceDesc,
+        ),
       );
       expect(mine.count, 21);
       expect(mine.items, hasLength(1));
       expect(mine.items.single.name, "alice.krgn");
-      expect(mine.items.single.price, BigInt.zero);
+      expect(mine.items.single.price, BigInt.from(300000000));
       expect(mine.items.single.updatePrice, BigInt.from(100000000));
       expect(mine.items.single.address, liveTarget);
-      final market = await r.marketplace();
+
+      const newest = (
+        status: KerriganNamesStatusFilter.all,
+        zone: null,
+        sort: KerriganNamesSort.newest,
+      );
+      final market = await r.marketplace(filter: newest);
+      expect(market.count, 2);
       expect(market.items.single.price, BigInt.from(700000000));
+      expect(market.items.single.owner, liveOwnerKey);
+      expect(market.next, "WyJsaXN0ZWQiXQ");
+      final more = await r.marketplace(after: market.next, filter: newest);
+      expect(more.items.single.name, "more.safe");
+      expect(more.next, isNull);
+    });
+
+    test("a list not sorted or filtered as asked is refused", () async {
+      Map<String, Object?> answer = {};
+      routes["domains"] = (_) => answer;
+      final r = registrar();
+      // A registrar from before the options: no word about them.
+      answer = {
+        "count": 1,
+        "domains": [
+          {"domain": "a.krgn", "price": 1, "tx_price": 1},
+        ],
+      };
+      await expectLater(
+        r.marketplace(),
+        throwsA(isA<KerriganNamesException>()),
+      );
+      // Another order than the one asked for.
+      answer = {
+        ...answer,
+        "sort": "name",
+        "order": "asc",
+        "zone": "",
+        "status": "all",
+        "next": null,
+      };
+      await expectLater(
+        r.marketplace(
+          filter: (
+            status: KerriganNamesStatusFilter.all,
+            zone: null,
+            sort: KerriganNamesSort.nameDesc,
+          ),
+        ),
+        throwsA(isA<KerriganNamesException>()),
+      );
+      expect((await r.marketplace()).items.single.name, "a.krgn");
+      // No update price, or the marketplace without its place.
+      for (final odd in [
+        {
+          ...answer,
+          "domains": [
+            {"domain": "a.krgn", "price": 1},
+          ],
+        },
+        {...answer}..remove("next"),
+        {...answer, "next": ""},
+      ]) {
+        answer = odd;
+        await expectLater(
+          r.marketplace(),
+          throwsA(isA<KerriganNamesException>()),
+          reason: "$odd",
+        );
+      }
     });
 
     test("balance and withdrawal", () async {
@@ -617,8 +761,12 @@ void main() {
                 "count": 1,
                 "tx": [
                   {
+                    "block_id": 5000000,
+                    "time": 1760000000,
                     "domain_name": "alice.krgn",
-                    "op": "REG",
+                    "op": "LST",
+                    "amount": 100000000,
+                    "price": 2500000000,
                     "confirmations": 3,
                     "status": 2,
                     "tx_id": "cd" * 32,
@@ -633,6 +781,7 @@ void main() {
                     "date": 1760000000,
                     "amount": "95000000",
                     "fee": "5%",
+                    "address": liveTarget,
                     "tx_id": "ef" * 32,
                     "status": 3,
                   },
@@ -646,8 +795,12 @@ void main() {
         nonce: 1760000000,
         signature: "sig",
       );
-      expect(incoming.items.single.status, KerriganNamesTxStatus.queuedProof);
-      expect(incoming.items.single.name, "alice.krgn");
+      final paid = incoming.items.single;
+      expect(paid.status, KerriganNamesTxStatus.queuedProof);
+      expect(paid.name, "alice.krgn");
+      expect(paid.time, DateTime.utc(2025, 10, 9, 8, 53, 20));
+      expect(paid.amount, BigInt.from(100000000));
+      expect(paid.price, BigInt.from(2500000000));
       final refunds = await r.refunds(
         pubkey: liveOwnerKey,
         page: 1,
@@ -658,6 +811,7 @@ void main() {
       expect(refund.date, DateTime.utc(2025, 10, 9, 8, 53, 20));
       expect(refund.amount, BigInt.from(95000000));
       expect(refund.fee, "5");
+      expect(refund.address, liveTarget);
       expect(refund.status, KerriganNamesRefundStatus.paid);
       // TX_REFUND_* of the registrar's config.php.
       expect(
@@ -686,7 +840,7 @@ void main() {
       routes["balance"] = (_) => jsonEncode({
         "error": {"error_message": "Invalid\u202e signature\n"},
       });
-      routes["prices"] = (_) => "<html>502</html>";
+      routes["domains"] = (_) => "<html>502</html>";
       final r = registrar();
       await expectLater(
         r.balance(liveOwnerKey),
@@ -697,7 +851,7 @@ void main() {
         ),
       );
       await expectLater(
-        r.updatePrices(),
+        r.marketplace(),
         throwsA(
           isA<KerriganNamesException>().having(
             (e) => e.fromServer,
@@ -724,7 +878,7 @@ void main() {
             "tx_id": "AB" * 32,
             "memo": "KNS:1:UPD:\u2066x",
           },
-          {"domain_name": "bob.krgn", "tx_id": "zz", "status": 9},
+          {"domain_name": "bob.krgn", "time": null, "tx_id": "zz", "status": 9},
         ],
       };
       final r = registrar();
@@ -740,6 +894,9 @@ void main() {
       expect(items[0].status, KerriganNamesTxStatus.pendingProof);
       expect(items[0].txId, "ab" * 32);
       expect(items[0].memo, "KNS:1:UPD: x");
+      expect(items[0].time, isNull);
+      expect(items[0].amount, BigInt.zero);
+      expect(items[1].time, isNull);
       expect(items[1].txId, "");
       expect(items[1].status, KerriganNamesTxStatus.rejected);
       // Not a name: never put in a lookup path.

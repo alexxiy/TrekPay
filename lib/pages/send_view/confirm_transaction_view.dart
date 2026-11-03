@@ -537,7 +537,7 @@ class _ConfirmTransactionViewState
                               .watch(pAmountFormatter(coin))
                               .format(amountWithoutChange),
                           style: STextStyles.itemSubtitle12(context),
-                          textAlign: TextAlign.right,
+                          textAlign: TextAlign.end,
                         ),
                       ],
                     ),
@@ -554,7 +554,7 @@ class _ConfirmTransactionViewState
                         SelectableText(
                           ref.watch(pAmountFormatter(coin)).format(fee),
                           style: STextStyles.itemSubtitle12(context),
-                          textAlign: TextAlign.right,
+                          textAlign: TextAlign.end,
                         ),
                       ],
                     ),
@@ -805,7 +805,7 @@ class _ConfirmTransactionViewState
                                 .extension<StackColors>()!
                                 .textFieldActiveSearchIconRight,
                           ),
-                      textAlign: TextAlign.left,
+                      textAlign: TextAlign.start,
                     ),
                     const SizedBox(height: 10),
                     ClipRRect(
@@ -834,15 +834,17 @@ class _ConfirmTransactionViewState
                               context,
                               desktopMed: true,
                             ).copyWith(
-                              contentPadding: const EdgeInsets.only(
-                                left: 16,
+                              contentPadding: const EdgeInsetsDirectional.only(
+                                start: 16,
                                 top: 11,
                                 bottom: 12,
-                                right: 5,
+                                end: 5,
                               ),
                               suffixIcon: noteController.text.isNotEmpty
                                   ? Padding(
-                                      padding: const EdgeInsets.only(right: 0),
+                                      padding: const EdgeInsetsDirectional.only(
+                                        end: 0,
+                                      ),
                                       child: UnconstrainedBox(
                                         child: Row(
                                           children: [
@@ -869,7 +871,7 @@ class _ConfirmTransactionViewState
               ),
             if (isDesktop)
               Padding(
-                padding: const EdgeInsets.only(left: 32),
+                padding: const EdgeInsetsDirectional.only(start: 32),
                 child: Text(
                   l10n.sendTransactionFee,
                   style: STextStyles.desktopTextExtraExtraSmall(context),
@@ -897,7 +899,7 @@ class _ConfirmTransactionViewState
                 widget.txData.fee != null &&
                 widget.txData.vSize != null)
               Padding(
-                padding: const EdgeInsets.only(left: 32),
+                padding: const EdgeInsetsDirectional.only(start: 32),
                 child: Text(
                   "sats/vByte",
                   style: STextStyles.desktopTextExtraExtraSmall(context),
@@ -970,7 +972,7 @@ class _ConfirmTransactionViewState
                                   .extension<StackColors>()!
                                   .textConfirmTotalAmount,
                             ),
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.end,
                     ),
                   ],
                 ),

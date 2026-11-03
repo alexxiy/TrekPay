@@ -349,14 +349,18 @@ class _WalletViewState extends ConsumerState<WalletView> {
                 actions: [
                   if (AppConfig.hasFeature(AppFeature.tor))
                     const Padding(
-                      padding: EdgeInsets.only(top: 10, bottom: 10, right: 10),
+                      padding: EdgeInsetsDirectional.only(
+                        top: 10,
+                        bottom: 10,
+                        end: 10,
+                      ),
                       child: AspectRatio(aspectRatio: 1, child: SmallTorIcon()),
                     ),
                   Padding(
-                    padding: const EdgeInsets.only(
+                    padding: const EdgeInsetsDirectional.only(
                       top: 10,
                       bottom: 10,
-                      right: 10,
+                      end: 10,
                     ),
                     child: AspectRatio(
                       aspectRatio: 1,
@@ -389,10 +393,10 @@ class _WalletViewState extends ConsumerState<WalletView> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(
+                    padding: const EdgeInsetsDirectional.only(
                       top: 10,
                       bottom: 10,
-                      right: 10,
+                      end: 10,
                     ),
                     child: AspectRatio(
                       aspectRatio: 1,
@@ -419,10 +423,10 @@ class _WalletViewState extends ConsumerState<WalletView> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(
+                    padding: const EdgeInsetsDirectional.only(
                       top: 10,
                       bottom: 10,
-                      right: 10,
+                      end: 10,
                     ),
                     child: AspectRatio(
                       aspectRatio: 1,

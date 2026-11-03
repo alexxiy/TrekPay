@@ -23,6 +23,9 @@ const kKerriganNameMaxProofDepth = 128;
 /// Shield addresses a name can point to: mainnet Sapling only.
 const _targetHrp = "ks";
 
+/// How every address a name can point to starts, on testnet builds too.
+const kKerriganNameTargetPrefix = "${_targetHrp}1";
+
 /// Decoded Sapling address: 11-byte diversifier + 32-byte pk_d.
 const _saplingPayloadLength = 43;
 

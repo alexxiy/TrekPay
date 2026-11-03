@@ -17,6 +17,7 @@
   "languageChinese": "Chinese",
   "languageKorean": "Korean",
   "languageJapanese": "Japanese",
+  "languageArabic": "Arabic",
   "languageTitle": "Language",
   "languageSelect": "Select language",
   "languageChange": "Change language",
@@ -358,7 +359,7 @@
     }
   },
   "kerriganNamesInvalidShieldAddress": "That isn't a valid shield address. Check it for typos.",
-  "kerriganNamesShieldOnly": "A name can only point to a shield address. It starts with \"ps1\".",
+  "kerriganNamesShieldOnly": "A name can only point to a shield address. It starts with \"ks1\".",
   "kerriganNamesOwnKey": "That's your own key: the name is yours.",
   "kerriganNamesInvalidPublicKey": "That isn't a valid public key. It's 64 characters, 0-9 and a-f.",
   "kerriganNamesInvalidPrice": "Enter a price above 0 and up to {max}, with up to {decimals, plural, =1{1 decimal} other{{decimals} decimals}}.",
@@ -678,6 +679,78 @@
   "kerriganNamesManage": "Manage",
   "kerriganNamesMyNamesIntro": "Manage where your names point and who owns them.",
   "kerriganNamesSearchMine": "Search your names",
+  "kerriganNamesFilters": "Filters",
+  "@kerriganNamesFilters": {
+    "description": "The filter button next to a Names search field, and the title of its panel."
+  },
+  "kerriganNamesFilterStatus": "Status",
+  "@kerriganNamesFilterStatus": {
+    "description": "Filter group in My Names: on sale or not."
+  },
+  "kerriganNamesFilterAll": "All",
+  "@kerriganNamesFilterAll": {
+    "description": "Filter chip: no filtering by this (all statuses or all zones)."
+  },
+  "kerriganNamesFilterOnSale": "On sale",
+  "@kerriganNamesFilterOnSale": {
+    "description": "Filter chip: names listed on the marketplace."
+  },
+  "kerriganNamesSortBy": "Sort by",
+  "@kerriganNamesSortBy": {
+    "description": "Filter group: the order of the list."
+  },
+  "kerriganNamesSortNameAsc": "Name A–Z",
+  "@kerriganNamesSortNameAsc": {
+    "description": "Sort chip: names in alphabetical order (names use Latin letters)."
+  },
+  "kerriganNamesSortNameDesc": "Name Z–A",
+  "@kerriganNamesSortNameDesc": {
+    "description": "Sort chip: names in reverse alphabetical order."
+  },
+  "kerriganNamesSortPriceAsc": "Price: low to high",
+  "@kerriganNamesSortPriceAsc": {
+    "description": "Sort chip: cheapest first."
+  },
+  "kerriganNamesSortPriceDesc": "Price: high to low",
+  "@kerriganNamesSortPriceDesc": {
+    "description": "Sort chip: most expensive first."
+  },
+  "kerriganNamesSortNewest": "Newest first",
+  "@kerriganNamesSortNewest": {
+    "description": "Sort chip: names changed (own names) or put on sale (marketplace) most recently first."
+  },
+  "kerriganNamesSortOldest": "Oldest first",
+  "@kerriganNamesSortOldest": {
+    "description": "Sort chip: names changed (own names) or put on sale (marketplace) longest ago first."
+  },
+  "kerriganNamesShowMore": "Show more",
+  "@kerriganNamesShowMore": {
+    "description": "Button under the marketplace list: loads the next names."
+  },
+  "kerriganNamesRegPending": "is being registered",
+  "@kerriganNamesRegPending": {
+    "description": "Under a free name whose registration someone already paid for (shown after the name)."
+  },
+  "kerriganNamesRegPendingNote": "Someone has already paid to register it, and only the first payment gets the name. If that registration fails, the name is free again.",
+  "@kerriganNamesRegPendingNote": {
+    "description": "Explains a name whose registration is already paid for and on its way."
+  },
+  "kerriganNamesCheckAgain": "Check again",
+  "@kerriganNamesCheckAgain": {
+    "description": "Button: looks the name up again."
+  },
+  "kerriganNamesRefundSentTo": "Sent to",
+  "@kerriganNamesRefundSentTo": {
+    "description": "Label before the address a withdrawal was sent to."
+  },
+  "kerriganNamesNoFilterMatch": "No names match these filters.",
+  "@kerriganNamesNoFilterMatch": {
+    "description": "Empty list when the filters hide every name."
+  },
+  "kerriganNamesResetFilters": "Reset filters",
+  "@kerriganNamesResetFilters": {
+    "description": "Button under an empty filtered list."
+  },
   "kerriganNamesNoneYet": "You haven't registered a KNS name yet.",
   "kerriganNamesRegisterFirst": "Register your first name",
   "kerriganNamesDoneBuy": "You've bought {name}!",
@@ -2553,6 +2626,10 @@
         "type": "String"
       }
     }
+  },
+  "nodeAlreadyConnected": "You're already connected to this node.",
+  "@nodeAlreadyConnected": {
+    "description": "Shown when the user taps Connect on the node the app is already connected to."
   },
   "nodeAnsweredIn": "The node works. It answered in {time}.",
   "@nodeAnsweredIn": {

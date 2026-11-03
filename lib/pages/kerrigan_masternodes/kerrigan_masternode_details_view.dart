@@ -525,6 +525,7 @@ class _KerriganMasternodeDetailsViewState
     required String hint,
     String? error,
     TextInputType? keyboardType,
+    TextDirection? textDirection,
   }) {
     final colors = Theme.of(context).extension<StackColors>()!;
     final border = error == null
@@ -540,6 +541,7 @@ class _KerriganMasternodeDetailsViewState
           borderRadius: BorderRadius.circular(8),
           child: TextField(
             controller: controller,
+            textDirection: textDirection,
             focusNode: focus,
             autocorrect: false,
             enableSuggestions: false,
@@ -555,7 +557,7 @@ class _KerriganMasternodeDetailsViewState
         ),
         if (error != null)
           Padding(
-            padding: const EdgeInsets.only(left: 12, top: 4),
+            padding: const EdgeInsetsDirectional.only(start: 12, top: 4),
             child: Text(
               error,
               style: STextStyles.label(context)
@@ -717,6 +719,7 @@ class _KerriganMasternodeDetailsViewState
       _section(l10n.mnRegisterSection, subtitle: l10n.mnRegisterSectionText, [
         _field(
           controller: _serviceController,
+          textDirection: TextDirection.ltr,
           focus: _serviceFocus,
           hint: l10n.mnServerIpExample,
           error: _serviceError,
@@ -761,6 +764,7 @@ class _KerriganMasternodeDetailsViewState
           if (mn.walletOperates) ...[
             _field(
               controller: _serviceController,
+              textDirection: TextDirection.ltr,
               focus: _serviceFocus,
               hint: l10n.mnServerIpExample,
               error: _serviceError,

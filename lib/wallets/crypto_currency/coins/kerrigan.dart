@@ -216,6 +216,7 @@ class Kerrigan extends Bip39HDCurrency {
         return [
           _bridge("https://eu-bridge.trekpay.space", "EU"),
           _bridge("https://us-bridge.trekpay.space", "US", region: "us"),
+          _bridge("https://sg-bridge.trekpay.space", "SG", region: "sg"),
         ];
       case CryptoCurrencyNetwork.test:
         // Development bridge (testnet node on the DevBox) until there's a

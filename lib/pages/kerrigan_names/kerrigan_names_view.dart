@@ -40,6 +40,7 @@ class KerriganNamesView extends ConsumerStatefulWidget {
 class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
   final _label = TextEditingController();
   final _focus = FocusNode();
+  List<String> _zones = kKerriganNameZones;
   String _zone = ".${kKerriganNameZones.first}";
 
   bool _checking = false;
@@ -61,6 +62,7 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
     _focus.addListener(() => setState(() {}));
     kerriganNamesChanges.addListener(_changed);
     unawaited(_loadKey());
+    unawaited(_loadZones());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(showKerriganNamesInfoOnce(context));
     });
@@ -71,6 +73,16 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
       final key = await kerriganNamesPublicKey(_wallet);
       if (mounted) setState(() => _ownKey = key);
     } catch (_) {}
+  }
+
+  Future<void> _loadZones() async {
+    final zones = await kerriganNamesZones(_wallet);
+    if (!mounted) return;
+    setState(() {
+      _zones = zones;
+      // A zone the registrar doesn't take.
+      if (!zones.contains(_zone.substring(1))) _zone = ".${zones.first}";
+    });
   }
 
   @override
@@ -175,6 +187,7 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
         walletId: widget.walletId,
         op: KerriganNamesOp.ult,
         name: l.name,
+        price: l.updatePrice,
         returnTo: KerriganNamesView.routeName,
       ),
     );
@@ -200,7 +213,7 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
                 style: STextStyles.pageTitleH2(context),
               ),
               const SizedBox(height: 8),
-              for (final z in kKerriganNameZones)
+              for (final z in _zones)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: KerriganNamesNameText(
@@ -257,8 +270,10 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
     Widget box({
       required Color color,
       required String text,
+      String? note,
       required String action,
       required VoidCallback onTap,
+      bool primary = true,
     }) => Container(
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(12),
@@ -276,13 +291,28 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
             text,
             style: STextStyles.w600_14(context).copyWith(color: color),
           ),
+          // An own payment on its way says so below instead.
+          if (note != null && inFlight == null) ...[
+            const SizedBox(height: 4),
+            Text(
+              note,
+              style: STextStyles.w500_12(context)
+                  .copyWith(color: colors.textSubtitle1),
+            ),
+          ],
           const SizedBox(height: 10),
           if (inFlight != null)
             KerriganNamesInFlightNote(tracked: inFlight)
-          else
+          else if (primary)
             PrimaryButton(
               label: action,
               // On phones as high as Check above it.
+              buttonHeight: Util.isDesktop ? ButtonHeight.m : null,
+              onPressed: onTap,
+            )
+          else
+            SecondaryButton(
+              label: action,
               buttonHeight: Util.isDesktop ? ButtonHeight.m : null,
               onPressed: onTap,
             ),
@@ -290,6 +320,16 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
       ),
     );
     return switch (result) {
+      // Someone's registration is paid for: only the first one paid gets
+      // the name, and a second would be refunded.
+      KerriganNamesAvailable(pending: true) => box(
+        color: kerriganNamesReadable(colors.accentColorOrange, colors),
+        text: l10n.kerriganNamesRegPending,
+        note: l10n.kerriganNamesRegPendingNote,
+        action: l10n.kerriganNamesCheckAgain,
+        primary: false,
+        onTap: _check,
+      ),
       KerriganNamesAvailable() => box(
         color: green,
         text: l10n.kerriganNamesAvailableFor(
@@ -400,73 +440,82 @@ class _KerriganNamesViewState extends ConsumerState<KerriganNamesView> {
                       style: STextStyles.w600_16(context),
                     ),
                     const SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: TextField(
-                        controller: _label,
-                        focusNode: _focus,
-                        autocorrect: false,
-                        enableSuggestions: false,
-                        textInputAction: TextInputAction.search,
-                        onSubmitted: (_) => _check(),
-                        onChanged: (_) => _edited(),
-                        inputFormatters: [
-                          TextInputFormatter.withFunction((old, value) {
-                            final text = sanitizeKerriganNamesLabel(value.text);
-                            return text == value.text
-                                ? value
-                                : TextEditingValue(
-                                    text: text,
-                                    selection: TextSelection.collapsed(
-                                      offset: text.length,
-                                    ),
-                                  );
-                          }),
-                          LengthLimitingTextInputFormatter(
-                            kKerriganNameMaxLength - 1,
-                          ),
-                        ],
-                        style: STextStyles.field(context),
-                        decoration:
-                            standardInputDecoration(
-                              l10n.kerriganNamesEnterName,
-                              _focus,
-                              context,
-                            ).copyWith(
-                              suffixIcon: Padding(
-                                padding: const EdgeInsets.all(6),
-                                child: Material(
-                                  color: colors.background,
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(8),
-                                    onTap: _pickZone,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
+                    // "alice" then ".kerrigan", in Arabic too.
+                    Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: TextField(
+                          controller: _label,
+                          focusNode: _focus,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          textInputAction: TextInputAction.search,
+                          onSubmitted: (_) => _check(),
+                          onChanged: (_) => _edited(),
+                          inputFormatters: [
+                            TextInputFormatter.withFunction((old, value) {
+                              final text = sanitizeKerriganNamesLabel(
+                                value.text,
+                              );
+                              return text == value.text
+                                  ? value
+                                  : TextEditingValue(
+                                      text: text,
+                                      selection: TextSelection.collapsed(
+                                        offset: text.length,
                                       ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            _zone,
-                                            style: STextStyles.w600_14(context)
-                                                .copyWith(
-                                                  color: colors.accentColorBlue,
-                                                ),
-                                          ),
-                                          Icon(
-                                            Icons.expand_more_rounded,
-                                            size: 18,
-                                            color: colors.accentColorBlue,
-                                          ),
-                                        ],
+                                    );
+                            }),
+                            LengthLimitingTextInputFormatter(
+                              kKerriganNameMaxLength - 1,
+                            ),
+                          ],
+                          style: STextStyles.field(context),
+                          decoration:
+                              standardInputDecoration(
+                                l10n.kerriganNamesEnterName,
+                                _focus,
+                                context,
+                              ).copyWith(
+                                suffixIcon: Padding(
+                                  padding: const EdgeInsets.all(6),
+                                  child: Material(
+                                    color: colors.background,
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(8),
+                                      onTap: _pickZone,
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              _zone,
+                                              style:
+                                                  STextStyles.w600_14(
+                                                    context,
+                                                  ).copyWith(
+                                                    color:
+                                                        colors.accentColorBlue,
+                                                  ),
+                                            ),
+                                            Icon(
+                                              Icons.expand_more_rounded,
+                                              size: 18,
+                                              color: colors.accentColorBlue,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),

@@ -7,6 +7,7 @@ import '../../db/isar/main_db.dart';
 import '../../l10n/l10n.dart';
 import '../../models/isar/models/isar_models.dart';
 import '../../providers/global/wallets_provider.dart';
+import '../../services/kerrigan_name/kerrigan_name.dart';
 import '../../services/kerrigan_name/kerrigan_names_protocol.dart';
 import '../../services/kerrigan_name/kerrigan_names_registrar.dart';
 import '../../themes/stack_colors.dart';
@@ -37,7 +38,8 @@ class KerriganNamesMyNamesView extends ConsumerStatefulWidget {
       _KerriganNamesMyNamesViewState();
 }
 
-class _KerriganNamesMyNamesViewState extends ConsumerState<KerriganNamesMyNamesView> {
+class _KerriganNamesMyNamesViewState
+    extends ConsumerState<KerriganNamesMyNamesView> {
   String? _key;
   String? _keyError;
 
@@ -48,6 +50,11 @@ class _KerriganNamesMyNamesViewState extends ConsumerState<KerriganNamesMyNamesV
   String? _error;
   int _request = 0;
 
+  // Filters live with the screen: leaving it resets them.
+  KerriganNamesFilter _filter = kKerriganNamesNoFilter;
+  bool _filtersOpen = false;
+  List<String> _zones = kKerriganNameZones;
+
   KerriganWallet get _wallet =>
       ref.read(pWallets).getWallet(widget.walletId) as KerriganWallet;
 
@@ -55,6 +62,11 @@ class _KerriganNamesMyNamesViewState extends ConsumerState<KerriganNamesMyNamesV
   void initState() {
     super.initState();
     kerriganNamesChanges.addListener(_changed);
+    unawaited(
+      kerriganNamesZones(_wallet).then((zones) {
+        if (mounted) setState(() => _zones = zones);
+      }),
+    );
     unawaited(_load());
   }
 
@@ -76,8 +88,27 @@ class _KerriganNamesMyNamesViewState extends ConsumerState<KerriganNamesMyNamesV
       final key = _key ?? await kerriganNamesPublicKey(_wallet);
       if (!mounted || request != _request) return;
       setState(() => _key = key);
-      final names = await KerriganNamesRegistrar.forCoin(_wallet.cryptoCurrency)!
-          .myNames(pubkey: key, page: _page, search: _search);
+      final registrar = KerriganNamesRegistrar.forCoin(_wallet.cryptoCurrency)!;
+      var names = await registrar.myNames(
+        pubkey: key,
+        page: _page,
+        search: _search,
+        filter: _filter,
+      );
+      // Past the end (a name sold or moved meanwhile): the last page.
+      final last = (names.count / kKerriganNamesListPageSize).ceil();
+      if (names.items.isEmpty && _page > 1) {
+        if (!mounted || request != _request) return;
+        _page = last < 1 ? 1 : last;
+        if (last >= 1) {
+          names = await registrar.myNames(
+            pubkey: key,
+            page: last,
+            search: _search,
+            filter: _filter,
+          );
+        }
+      }
       if (!mounted || request != _request) return;
       setState(() => _names = names);
     } catch (e) {
@@ -89,6 +120,19 @@ class _KerriganNamesMyNamesViewState extends ConsumerState<KerriganNamesMyNamesV
     } finally {
       if (mounted && request == _request) setState(() => _loading = false);
     }
+  }
+
+  void _setFilter(KerriganNamesFilter filter) {
+    setState(() {
+      _filter = filter;
+      _page = 1;
+    });
+    unawaited(_load());
+  }
+
+  void _setPage(int page) {
+    setState(() => _page = page);
+    unawaited(_load());
   }
 
   Future<void> _start(KerriganNamesFlow flow) =>
@@ -103,6 +147,7 @@ class _KerriganNamesMyNamesViewState extends ConsumerState<KerriganNamesMyNamesV
     op: op,
     name: d.name,
     returnTo: KerriganNamesMyNamesView.routeName,
+    price: d.updatePrice,
     currentAddress: d.address,
     listedPrice: listedPrice,
   );
@@ -130,7 +175,8 @@ class _KerriganNamesMyNamesViewState extends ConsumerState<KerriganNamesMyNamesV
           note: l10n.kerriganNamesListedForShort(
             kerriganNamesAmount(d.price, ref, _wallet),
           ),
-          run: () => _start(_flow(d, KerriganNamesOp.lst, listedPrice: d.price)),
+          run: () =>
+              _start(_flow(d, KerriganNamesOp.lst, listedPrice: d.price)),
         ),
         (
           icon: KerriganNamesIcons.unlist,
@@ -414,6 +460,7 @@ class _KerriganNamesMyNamesViewState extends ConsumerState<KerriganNamesMyNamesV
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<StackColors>()!;
     final names = _names;
+    final filtered = _filter != kKerriganNamesNoFilter;
     return Background(
       child: Scaffold(
         backgroundColor: colors.background,
@@ -435,14 +482,26 @@ class _KerriganNamesMyNamesViewState extends ConsumerState<KerriganNamesMyNamesV
                 const SizedBox(height: 12),
                 _keyCard(),
                 const SizedBox(height: 12),
-                KerriganNamesSearchField(
-                  hint: l10n.kerriganNamesSearchMine,
-                  onSearch: (term) {
-                    _search = term;
-                    _page = 1;
-                    unawaited(_load());
-                  },
+                KerriganNamesSearchBar(
+                  search: KerriganNamesSearchField(
+                    hint: l10n.kerriganNamesSearchMine,
+                    onSearch: (term) {
+                      _search = term;
+                      _page = 1;
+                      unawaited(_load());
+                    },
+                  ),
+                  filter: _filter,
+                  open: _filtersOpen,
+                  onToggle: () => setState(() => _filtersOpen = !_filtersOpen),
                 ),
+                if (_filtersOpen)
+                  KerriganNamesFilterPanel(
+                    filter: _filter,
+                    zones: _zones,
+                    withStatus: true,
+                    onChanged: _setFilter,
+                  ),
                 const SizedBox(height: 12),
                 if (_loading && names == null)
                   const KerriganNamesListState(loading: true)
@@ -450,10 +509,21 @@ class _KerriganNamesMyNamesViewState extends ConsumerState<KerriganNamesMyNamesV
                   KerriganNamesListState(error: _error, onRetry: _load)
                 else if (names == null || names.items.isEmpty)
                   KerriganNamesListState(
-                    empty: _search.isNotEmpty
+                    empty: filtered
+                        ? l10n.kerriganNamesNoFilterMatch
+                        : _search.isNotEmpty
                         ? l10n.kerriganNamesNoMatch
                         : l10n.kerriganNamesNoneYet,
-                    action: _search.isNotEmpty
+                    action: filtered
+                        ? SecondaryButton(
+                            label: l10n.kerriganNamesResetFilters,
+                            width: 200,
+                            buttonHeight: Util.isDesktop
+                                ? ButtonHeight.m
+                                : null,
+                            onPressed: () => _setFilter(kKerriganNamesNoFilter),
+                          )
+                        : _search.isNotEmpty
                         ? null
                         : PrimaryButton(
                             label: l10n.kerriganNamesRegisterFirst,
@@ -470,10 +540,7 @@ class _KerriganNamesMyNamesViewState extends ConsumerState<KerriganNamesMyNamesV
                     page: _page,
                     count: names.count,
                     pageSize: kKerriganNamesListPageSize,
-                    onPage: (p) {
-                      _page = p;
-                      unawaited(_load());
-                    },
+                    onPage: _setPage,
                   ),
                 ],
               ],

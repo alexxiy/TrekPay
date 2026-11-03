@@ -13,7 +13,6 @@ import '../../providers/global/wallets_provider.dart';
 import '../../route_generator.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/amount/amount.dart';
-import '../../utilities/amount/amount_formatter.dart';
 import '../../utilities/assets.dart';
 import '../../utilities/text_styles.dart';
 import '../../utilities/util.dart';
@@ -27,7 +26,6 @@ import '../../widgets/desktop/primary_button.dart';
 import '../../widgets/desktop/secondary_button.dart';
 import '../../widgets/page_app_bar.dart';
 import '../../widgets/kerrigan_memo_field.dart';
-import '../../widgets/rounded_white_container.dart';
 import '../../widgets/stack_text_field.dart';
 import '../send_view/confirm_transaction_view.dart';
 import '../send_view/sub_widgets/building_transaction_dialog.dart';
@@ -232,22 +230,6 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
     });
   }
 
-  Future<void> _chooseFunding(Amount? amount) => showModalBottomSheet<void>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    isScrollControlled: true,
-    useSafeArea: true,
-    builder: (_) => _FundingSheet(
-      walletId: widget.walletId,
-      initial: _funding,
-      amount: amount,
-      onChanged: (funding) => setState(() {
-        _fundingChosen = true;
-        _funding = funding;
-      }),
-    ),
-  );
-
   Future<void> _send() async {
     if (_sending) return;
     _sending = true;
@@ -380,7 +362,6 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
     final locale = ref.watch(
       localeServiceChangeNotifierProvider.select((value) => value.locale),
     );
-    final fmt = ref.watch(pAmountFormatter(coin));
     final tier = _tier;
     final value = _value;
     final look = _look(value);
@@ -499,9 +480,16 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
                 _customField(context, coin.ticker),
               ],
               const SizedBox(height: 20),
-              Text(l10n.sendPayFrom, style: STextStyles.smallMed12(context)),
-              const SizedBox(height: 8),
-              _payFrom(context, fmt, balance, amount, palette),
+              KerriganFundingCard(
+                walletId: widget.walletId,
+                funding: _funding,
+                amount: amount,
+                toShield: true,
+                onChanged: (funding) => setState(() {
+                  _fundingChosen = true;
+                  _funding = funding;
+                }),
+              ),
               if (short) ...[
                 const SizedBox(height: 8),
                 Row(
@@ -584,7 +572,7 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
           ).copyWith(
             prefixText: _customInKrgn ? null : "\$ ",
             suffixIcon: Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsetsDirectional.only(end: 8),
               child: canSwitch
                   ? TextButton.icon(
                       onPressed: _toggleCustomUnit,
@@ -605,84 +593,6 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
                     ),
             ),
           ),
-    );
-  }
-
-  Widget _payFrom(
-    BuildContext context,
-    AmountFormatter fmt,
-    Amount balance,
-    Amount? amount,
-    KerriganDonationPalette palette,
-  ) {
-    final colors = Theme.of(context).extension<StackColors>()!;
-    final coins = _funding.coins;
-    final coinsTotal = Amount(
-      rawValue: coins.fold(BigInt.zero, (p, u) => p + BigInt.from(u.value)),
-      fractionDigits: balance.fractionDigits,
-    );
-    return RoundedWhiteContainer(
-      padding: EdgeInsets.zero,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () => _chooseFunding(amount),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: palette.glow.withValues(alpha: 0.15),
-                ),
-                child: Icon(
-                  _funding.fromShield
-                      ? Icons.shield_rounded
-                      : Icons.visibility_rounded,
-                  size: 18,
-                  color: colors.accentColorBlue,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _funding.fromShield
-                          ? l10n.balanceShielded
-                          : l10n.balanceTransparent,
-                      style: STextStyles.w600_14(context),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      l10n.donateAvailable(fmt.format(balance)),
-                      style: STextStyles.w500_12(context)
-                          .copyWith(color: colors.textSubtitle1),
-                    ),
-                    if (coins.isNotEmpty)
-                      Text(
-                        l10n.sendCoinsSelected(
-                          coins.length,
-                          fmt.format(coinsTotal),
-                        ),
-                        style: STextStyles.w500_12(context)
-                            .copyWith(color: colors.textSubtitle1),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              CustomTextButton(
-                text: l10n.commonChange,
-                onTap: () => _chooseFunding(amount),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -766,13 +676,13 @@ class _ShieldSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<StackColors>()!;
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsetsDirectional.only(end: 8),
       child: MergeSemantics(
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () => onChanged(!value),
           child: Padding(
-            padding: const EdgeInsets.only(left: 8),
+            padding: const EdgeInsetsDirectional.only(start: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -817,68 +727,4 @@ class _AmountFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) => _pattern.hasMatch(newValue.text) ? newValue : oldValue;
-}
-
-/// "Change" on the Pay from row: the balance, the coins (or notes) to
-/// spend and the change address, as on the other Kerrigan payment screens.
-class _FundingSheet extends ConsumerStatefulWidget {
-  const _FundingSheet({
-    required this.walletId,
-    required this.initial,
-    required this.amount,
-    required this.onChanged,
-  });
-
-  final String walletId;
-  final KerriganFunding initial;
-  final Amount? amount;
-  final ValueChanged<KerriganFunding> onChanged;
-
-  @override
-  ConsumerState<_FundingSheet> createState() => _FundingSheetState();
-}
-
-class _FundingSheetState extends ConsumerState<_FundingSheet> {
-  late KerriganFunding _funding = widget.initial;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<StackColors>()!;
-    return Center(
-      heightFactor: 1,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 580),
-        child: Container(
-          decoration: BoxDecoration(
-            color: colors.popupBG,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          child: SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                KerriganFundingCard(
-                  walletId: widget.walletId,
-                  funding: _funding,
-                  amount: widget.amount,
-                  toShield: true,
-                  onChanged: (funding) {
-                    setState(() => _funding = funding);
-                    widget.onChanged(funding);
-                  },
-                ),
-                const SizedBox(height: 16),
-                PrimaryButton(
-                  label: l10n.commonDone,
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
