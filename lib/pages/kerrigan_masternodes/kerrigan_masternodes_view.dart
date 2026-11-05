@@ -9,6 +9,7 @@ import '../../utilities/amount/amount_formatter.dart';
 import '../../utilities/text_styles.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
+import '../../widgets/adaptive_page.dart';
 import '../../widgets/background.dart';
 import '../../widgets/desktop/primary_button.dart';
 import '../../widgets/desktop/secondary_button.dart';
@@ -82,9 +83,13 @@ class _KerriganMasternodesViewState
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<StackColors>()!;
     final masternodes = _wallet.masternodes;
+    final side = ScreenFit.sideBySide(context);
 
     return Background(
-      child: Scaffold(
+      child: AppScaffold(
+        maxBodyWidth: masternodes.length > 1
+            ? ScreenFit.panesOrColumn(context)
+            : ScreenFit.columnWidth,
         backgroundColor: colors.background,
         appBar: PageAppBar(
           title: Text(l10n.mnTitle, style: STextStyles.navBarTitle(context)),
@@ -108,37 +113,63 @@ class _KerriganMasternodesViewState
                                 masternodes: masternodes,
                                 data: _data,
                               ),
-                              for (final mn in masternodes) ...[
-                                const SizedBox(height: 12),
-                                KerriganMasternodeCard(
-                                  wallet: _wallet,
-                                  masternode: mn,
-                                  data: _data[mn.id],
-                                  onTap: () => _open(
-                                    KerriganMasternodeDetailsView.routeName,
-                                    (walletId: widget.walletId, id: mn.id),
-                                  ),
-                                ),
-                              ],
+                              CardGrid(
+                                gap: 12,
+                                children: [
+                                  for (final mn in masternodes)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 12),
+                                      child: KerriganMasternodeCard(
+                                        wallet: _wallet,
+                                        masternode: mn,
+                                        data: _data[mn.id],
+                                        onTap: () => _open(
+                                          KerriganMasternodeDetailsView.routeName,
+                                          (
+                                            walletId: widget.walletId,
+                                            id: mn.id,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
                 ),
                 const SizedBox(height: 12),
-                PrimaryButton(
-                  label: l10n.mnCreate,
-                  onPressed: () => _open(
-                    KerriganCreateMasternodeView.routeName,
-                    widget.walletId,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SecondaryButton(
-                  label: l10n.mnAddExisting,
-                  onPressed: () => _open(
-                    KerriganCreateMasternodeView.routeName,
-                    (walletId: widget.walletId, existing: true),
-                  ),
+                Flex(
+                  direction: side ? Axis.horizontal : Axis.vertical,
+                  crossAxisAlignment: side
+                      ? CrossAxisAlignment.center
+                      : CrossAxisAlignment.stretch,
+                  mainAxisSize: side ? MainAxisSize.max : MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      flex: side ? 1 : 0,
+                      fit: FlexFit.tight,
+                      child: PrimaryButton(
+                        label: l10n.mnCreate,
+                        onPressed: () => _open(
+                          KerriganCreateMasternodeView.routeName,
+                          widget.walletId,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: side ? 12 : 0, height: side ? 0 : 8),
+                    Flexible(
+                      flex: side ? 1 : 0,
+                      fit: FlexFit.tight,
+                      child: SecondaryButton(
+                        label: l10n.mnAddExisting,
+                        onPressed: () => _open(
+                          KerriganCreateMasternodeView.routeName,
+                          (walletId: widget.walletId, existing: true),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -158,11 +189,12 @@ class _Empty extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).extension<StackColors>()!;
     final fmt = ref.watch(pAmountFormatter(wallet.cryptoCurrency));
+    final short = ScreenFit.short(context);
     return ListView(
       children: [
-        const SizedBox(height: 40),
+        SizedBox(height: short ? 8 : 40),
         Center(child: _MasternodeIcon(color: colors.textSubtitle1, size: 56)),
-        const SizedBox(height: 24),
+        SizedBox(height: short ? 12 : 24),
         Text(
           l10n.mnNoneYet,
           textAlign: TextAlign.center,

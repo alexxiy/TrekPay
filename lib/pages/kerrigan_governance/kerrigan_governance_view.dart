@@ -13,6 +13,7 @@ import '../../utilities/logger.dart';
 import '../../utilities/text_styles.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
+import '../../widgets/adaptive_page.dart';
 import '../../widgets/background.dart';
 import '../../widgets/custom_buttons/blue_text_button.dart';
 import '../../widgets/desktop/primary_button.dart';
@@ -205,42 +206,89 @@ class _KerriganGovernanceViewState
     });
     final colors = Theme.of(context).extension<StackColors>()!;
     final canCreate = !_wallet.isViewOnly;
+    final side = ScreenFit.sideBySide(context);
+    final tabs = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: _Tabs(selected: _tab, onSelected: (t) => setState(() => _tab = t)),
+    );
+    final list = RefreshIndicator(onRefresh: _refresh, child: _proposalList());
+    final create = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: PrimaryButton(
+        width: double.infinity,
+        label: l10n.govCreateProposal,
+        onPressed: _create,
+      ),
+    );
     return Background(
-      child: Scaffold(
+      child: AppScaffold(
+        maxBodyWidth: ScreenFit.panesOrColumn(context),
         backgroundColor: colors.background,
         appBar: PageAppBar(
           title: Text(l10n.govTitle, style: STextStyles.navBarTitle(context)),
         ),
         body: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                child: _Tabs(
-                  selected: _tab,
-                  onSelected: (t) => setState(() => _tab = t),
+          child: side
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      flex: 5,
+                      child: Column(
+                        children: [
+                          tabs,
+                          Expanded(child: _summaryPane()),
+                          if (canCreate) create,
+                        ],
+                      ),
+                    ),
+                    Expanded(flex: 6, child: list),
+                  ],
+                )
+              : Column(
+                  children: [
+                    tabs,
+                    Expanded(child: list),
+                    if (canCreate) create,
+                  ],
                 ),
-              ),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _refresh,
-                  child: _proposalList(),
-                ),
-              ),
-              if (canCreate)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                  child: PrimaryButton(
-                    label: l10n.govCreateProposal,
-                    onPressed: _create,
-                  ),
-                ),
-            ],
-          ),
         ),
       ),
     );
   }
+
+  /// In landscape: what stays next to the list.
+  Widget _summaryPane() => FutureBuilder<KerriganGovernance>(
+    future: _governance,
+    builder: (context, snapshot) {
+      final g = snapshot.data;
+      if (g == null || _tab == _Tab.ended) return const SizedBox.shrink();
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        children: _summary(g, _proposalsOfTab(g)),
+      );
+    },
+  );
+
+  /// The proposals of the tab that's open.
+  List<KerriganProposal> _proposalsOfTab(KerriganGovernance g) => [
+    for (final p in g.proposals)
+      if (p.isOver == (_tab == _Tab.ended)) p,
+  ];
+
+  List<Widget> _summary(KerriganGovernance g, List<KerriganProposal> all) => [
+    _SummaryCard(wallet: _wallet, governance: g),
+    const SizedBox(height: 14),
+    _filterChips(g, all),
+  ];
+
+  /// The list's padding: in landscape the pane next to it brings the gap.
+  EdgeInsetsGeometry _listPadding() => EdgeInsetsDirectional.fromSTEB(
+    ScreenFit.sideBySide(context) ? 0 : 16,
+    8,
+    16,
+    16,
+  );
 
   Widget _proposalList() => FutureBuilder<KerriganGovernance>(
     future: _governance,
@@ -256,22 +304,17 @@ class _KerriganGovernanceViewState
         return const Center(child: CircularProgressIndicator());
       }
       final ended = _tab == _Tab.ended;
-      final all = [
-        for (final p in g.proposals)
-          if (p.isOver == ended) p,
-      ];
+      final all = _proposalsOfTab(g);
       final shown = [
         for (final p in all)
           if (ended || _filter.shows(p, g.statusOf(p))) p,
       ];
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        padding: _listPadding(),
         children: [
           if (!ended) ...[
-            _SummaryCard(wallet: _wallet, governance: g),
-            const SizedBox(height: 14),
-            _filterChips(g, all),
+            if (!ScreenFit.sideBySide(context)) ..._summary(g, all),
             for (final p in g.pending) ...[
               const SizedBox(height: 10),
               _PendingCard(

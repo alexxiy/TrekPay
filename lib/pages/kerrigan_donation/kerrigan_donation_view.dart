@@ -19,7 +19,9 @@ import '../../utilities/util.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../wallets/models/tx_data.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
+import '../../widgets/adaptive_page.dart';
 import '../../widgets/background.dart';
+import '../../widgets/center_or_scroll.dart';
 import '../../widgets/custom_buttons/blue_text_button.dart';
 import '../../widgets/desktop/desktop_page_column.dart';
 import '../../widgets/desktop/primary_button.dart';
@@ -315,7 +317,8 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
     final palette = KerriganDonationPalette.of(shielded: _funding.fromShield);
     final thanks = _thanks;
     return Background(
-      child: Scaffold(
+      child: AppScaffold(
+        maxBodyWidth: ScreenFit.panesOrColumn(context),
         backgroundColor: colors.background,
         appBar: PageAppBar(
           // Shares the bar with the Shield switch: on a small phone a long
@@ -341,7 +344,11 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
         body: SafeArea(
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
+              constraints: BoxConstraints(
+                maxWidth: ScreenFit.sideBySide(context)
+                    ? ScreenFit.panesWidth
+                    : 560,
+              ),
               child: thanks == null
                   ? _form(context, wallet, palette)
                   : _thanked(context, thanks),
@@ -409,146 +416,183 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
     final subtle = STextStyles.w500_12(context)
         .copyWith(color: colors.textSubtitle1);
 
+    final about = <Widget>[
+      KerriganDonationStage(
+        art: look.art,
+        mood: look.mood,
+        shielded: fromShield,
+        egg: look.egg,
+        height: _stageHeight(context),
+      ),
+      const SizedBox(height: 14),
+      Text(
+        (fromShield ? l10n.donateDeltaShielded : l10n.donateDeltaTransparent)
+            .toUpperCase(),
+        textAlign: TextAlign.center,
+        style: subtle.copyWith(letterSpacing: 1.2),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        title,
+        textAlign: TextAlign.center,
+        style: STextStyles.pageTitleH2(context),
+      ),
+      if (krgnLine != null) ...[
+        const SizedBox(height: 2),
+        Text(
+          krgnLine,
+          textAlign: TextAlign.center,
+          style: STextStyles.w500_14(context)
+              .copyWith(color: colors.textSubtitle1),
+        ),
+      ],
+      const SizedBox(height: 8),
+      AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        alignment: Alignment.topCenter,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: Text(
+            description,
+            key: ValueKey(description),
+            textAlign: TextAlign.center,
+            style: STextStyles.itemSubtitle(context),
+          ),
+        ),
+      ),
+    ];
+    final controls = <Widget>[
+      KerriganDonationTierSlider(
+        labels: [
+          for (final t in KerriganDonationTier.fixed)
+            kerriganDonationUsdText(Decimal.fromInt(t.usd!), locale),
+          l10n.donateCustom,
+        ],
+        index: _index,
+        palette: palette,
+        semanticLabel: l10n.donateSize,
+        onChanged: (i) => setState(() => _index = i),
+      ),
+      if (priceNote != null) ...[
+        const SizedBox(height: 12),
+        Text(priceNote, textAlign: TextAlign.center, style: subtle),
+      ],
+      if (tier.isCustom) ...[
+        const SizedBox(height: 16),
+        _customField(context, coin.ticker),
+      ],
+      const SizedBox(height: 20),
+      KerriganFundingCard(
+        walletId: widget.walletId,
+        funding: _funding,
+        amount: amount,
+        toShield: true,
+        onChanged: (funding) => setState(() {
+          _fundingChosen = true;
+          _funding = funding;
+        }),
+      ),
+      if (short) ...[
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                fromShield
+                    ? l10n.donateNotEnoughShielded
+                    : l10n.donateNotEnoughTransparent,
+                style: STextStyles.errorSmall(context),
+              ),
+            ),
+            if (otherPays)
+              CustomTextButton(
+                text: fromShield
+                    ? l10n.donateUseTransparent
+                    : l10n.donateUseShielded,
+                onTap: () => _setShield(!fromShield),
+              ),
+          ],
+        ),
+      ],
+      const SizedBox(height: 20),
+      Text(l10n.donateCheers, style: STextStyles.smallMed12(context)),
+      const SizedBox(height: 8),
+      KerriganMemoField(
+        key: const ValueKey("donation-cheers"),
+        controller: _message,
+        focusNode: _messageFocus,
+        maxBytes: kKerriganDonationMessageBytes,
+        hint: l10n.donateCheersHint,
+      ),
+      const SizedBox(height: 6),
+      Text(l10n.donateCheersNote, style: subtle),
+    ];
+    final slide = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      child: Column(
+        children: [
+          KerriganSlideToConfirm(
+            label: l10n.donateSlide,
+            palette: palette,
+            enabled: amount != null && !short,
+            onConfirmed: _send,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.donateTo(kKerriganDonationName),
+            textAlign: TextAlign.center,
+            style: subtle,
+          ),
+        ],
+      ),
+    );
+
+    if (ScreenFit.sideBySide(context)) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 4,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 4, 8, 16),
+              children: about,
+            ),
+          ),
+          Expanded(
+            flex: 5,
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(8, 4, 16, 16),
+                    children: controls,
+                  ),
+                ),
+                slide,
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       children: [
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-            children: [
-              KerriganDonationStage(
-                art: look.art,
-                mood: look.mood,
-                shielded: fromShield,
-                egg: look.egg,
-              ),
-              const SizedBox(height: 14),
-              Text(
-                (fromShield
-                        ? l10n.donateDeltaShielded
-                        : l10n.donateDeltaTransparent)
-                    .toUpperCase(),
-                textAlign: TextAlign.center,
-                style: subtle.copyWith(letterSpacing: 1.2),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: STextStyles.pageTitleH2(context),
-              ),
-              if (krgnLine != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  krgnLine,
-                  textAlign: TextAlign.center,
-                  style: STextStyles.w500_14(context)
-                      .copyWith(color: colors.textSubtitle1),
-                ),
-              ],
-              const SizedBox(height: 8),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 200),
-                alignment: Alignment.topCenter,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: Text(
-                    description,
-                    key: ValueKey(description),
-                    textAlign: TextAlign.center,
-                    style: STextStyles.itemSubtitle(context),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              KerriganDonationTierSlider(
-                labels: [
-                  for (final t in KerriganDonationTier.fixed)
-                    kerriganDonationUsdText(Decimal.fromInt(t.usd!), locale),
-                  l10n.donateCustom,
-                ],
-                index: _index,
-                palette: palette,
-                semanticLabel: l10n.donateSize,
-                onChanged: (i) => setState(() => _index = i),
-              ),
-              if (priceNote != null) ...[
-                const SizedBox(height: 12),
-                Text(priceNote, textAlign: TextAlign.center, style: subtle),
-              ],
-              if (tier.isCustom) ...[
-                const SizedBox(height: 16),
-                _customField(context, coin.ticker),
-              ],
-              const SizedBox(height: 20),
-              KerriganFundingCard(
-                walletId: widget.walletId,
-                funding: _funding,
-                amount: amount,
-                toShield: true,
-                onChanged: (funding) => setState(() {
-                  _fundingChosen = true;
-                  _funding = funding;
-                }),
-              ),
-              if (short) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        fromShield
-                            ? l10n.donateNotEnoughShielded
-                            : l10n.donateNotEnoughTransparent,
-                        style: STextStyles.errorSmall(context),
-                      ),
-                    ),
-                    if (otherPays)
-                      CustomTextButton(
-                        text: fromShield
-                            ? l10n.donateUseTransparent
-                            : l10n.donateUseShielded,
-                        onTap: () => _setShield(!fromShield),
-                      ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 20),
-              Text(l10n.donateCheers, style: STextStyles.smallMed12(context)),
-              const SizedBox(height: 8),
-              KerriganMemoField(
-                key: const ValueKey("donation-cheers"),
-                controller: _message,
-                focusNode: _messageFocus,
-                maxBytes: kKerriganDonationMessageBytes,
-                hint: l10n.donateCheersHint,
-              ),
-              const SizedBox(height: 6),
-              Text(l10n.donateCheersNote, style: subtle),
-            ],
+            children: [...about, const SizedBox(height: 20), ...controls],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-          child: Column(
-            children: [
-              KerriganSlideToConfirm(
-                label: l10n.donateSlide,
-                palette: palette,
-                enabled: amount != null && !short,
-                onConfirmed: _send,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.donateTo(kKerriganDonationName),
-                textAlign: TextAlign.center,
-                style: subtle,
-              ),
-            ],
-          ),
-        ),
+        slide,
       ],
     );
   }
+
+  /// Leaves room for the lines under the stage on a phone on its side.
+  double _stageHeight(BuildContext context) => ScreenFit.sideBySide(context)
+      ? (ScreenFit.bodyHeight(context) - 150).clamp(150.0, 250.0)
+      : 250;
 
   Widget _customField(BuildContext context, String ticker) {
     final colors = Theme.of(context).extension<StackColors>()!;
@@ -597,63 +641,102 @@ class _KerriganDonationViewState extends ConsumerState<KerriganDonationView> {
   }
 
   Widget _thanked(BuildContext context, _Look look) {
+    final stage = KerriganDonationStage(
+      art: Assets.donation.thanks(shielded: _funding.fromShield),
+      mood: look.mood,
+      shielded: _funding.fromShield,
+      celebrating: true,
+      height: _stageHeight(context),
+    );
+    final text = <Widget>[
+      Text(
+        _funding.fromShield
+            ? l10n.donateThanksTitleShielded
+            : l10n.donateThanksTitle,
+        textAlign: TextAlign.center,
+        style: STextStyles.pageTitleH1(context),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        _funding.fromShield
+            ? l10n.donateThanksTextShielded
+            : l10n.donateThanksText,
+        textAlign: TextAlign.center,
+        style: STextStyles.itemSubtitle(context),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        l10n.donateOnItsWay,
+        textAlign: TextAlign.center,
+        style: STextStyles.itemSubtitle(context),
+      ),
+    ];
+    final buttons = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: SecondaryButton(
+              label: l10n.donateAgain,
+              onPressed: () => setState(() => _thanks = null),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: PrimaryButton(
+              label: l10n.commonDone,
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (ScreenFit.sideBySide(context)) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: 4,
+            child: CenterOrScroll(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 8, 16),
+                child: stage,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 5,
+            child: Column(
+              children: [
+                Expanded(
+                  child: CenterOrScroll(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 4, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: text,
+                      ),
+                    ),
+                  ),
+                ),
+                buttons,
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       children: [
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-            children: [
-              KerriganDonationStage(
-                art: Assets.donation.thanks(shielded: _funding.fromShield),
-                mood: look.mood,
-                shielded: _funding.fromShield,
-                celebrating: true,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                _funding.fromShield
-                    ? l10n.donateThanksTitleShielded
-                    : l10n.donateThanksTitle,
-                textAlign: TextAlign.center,
-                style: STextStyles.pageTitleH1(context),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _funding.fromShield
-                    ? l10n.donateThanksTextShielded
-                    : l10n.donateThanksText,
-                textAlign: TextAlign.center,
-                style: STextStyles.itemSubtitle(context),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.donateOnItsWay,
-                textAlign: TextAlign.center,
-                style: STextStyles.itemSubtitle(context),
-              ),
-            ],
+            children: [stage, const SizedBox(height: 20), ...text],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: SecondaryButton(
-                  label: l10n.donateAgain,
-                  onPressed: () => setState(() => _thanks = null),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: PrimaryButton(
-                  label: l10n.commonDone,
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ),
-            ],
-          ),
-        ),
+        buttons,
       ],
     );
   }

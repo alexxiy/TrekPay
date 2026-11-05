@@ -15,6 +15,7 @@ import '../../widgets/stack_dialog.dart';
 import '../../widgets/stack_text_field.dart';
 import '../../widgets/textfield_icon_button.dart';
 import '../kerrigan_masternodes/kerrigan_masternodes_view.dart';
+import '../../widgets/adaptive_page.dart';
 
 /// Readable on light themes too (deepens light accents such as yellow).
 Color _readable(Color color, StackColors colors) {
@@ -481,7 +482,7 @@ class _KerriganMasternodeSearchFieldState
 /// A bottom sheet about the wallet's masternodes, laid out with
 /// [KerriganSheetLayout].
 Future<T?> showKerriganSheet<T>(BuildContext context, WidgetBuilder builder) =>
-    showModalBottomSheet<T>(
+    showAppSheet<T>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,

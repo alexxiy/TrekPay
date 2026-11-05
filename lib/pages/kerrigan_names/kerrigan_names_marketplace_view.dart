@@ -12,6 +12,7 @@ import '../../themes/stack_colors.dart';
 import '../../utilities/text_styles.dart';
 import '../../utilities/util.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
+import '../../widgets/adaptive_page.dart';
 import '../../widgets/background.dart';
 import '../../widgets/desktop/primary_button.dart';
 import '../../widgets/desktop/secondary_button.dart';
@@ -273,7 +274,8 @@ class _KerriganNamesMarketplaceViewState
     final names = _names;
     final filtered = _filter != kKerriganNamesNoFilter;
     return Background(
-      child: Scaffold(
+      child: AppScaffold(
+        maxBodyWidth: ScreenFit.panesOrColumn(context),
         backgroundColor: colors.background,
         appBar: KerriganNamesAppBar(
           walletId: widget.walletId,
@@ -347,7 +349,7 @@ class _KerriganNamesMarketplaceViewState
                   )
                 else ...[
                   if (_loading) const LinearProgressIndicator(minHeight: 2),
-                  for (final d in names) _card(d),
+                  CardGrid(children: [for (final d in names) _card(d)]),
                   if (_moreError != null)
                     KerriganNamesListState(error: _moreError, onRetry: _more)
                   else if (_next != null)

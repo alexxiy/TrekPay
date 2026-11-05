@@ -38,6 +38,7 @@ import '../../utilities/util.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../wallets/models/tx_data.dart';
 import '../../wallets/crypto_currency/crypto_currency.dart';
+import '../../widgets/adaptive_page.dart';
 import '../../widgets/background.dart';
 import '../../widgets/conditional_parent.dart';
 import '../../widgets/custom_buttons/app_bar_icon_button.dart';
@@ -418,7 +419,7 @@ class _ConfirmTransactionViewState
     return ConditionalParent(
       condition: !isDesktop,
       builder: (child) => Background(
-        child: Scaffold(
+        child: AppScaffold(
           backgroundColor: Theme.of(context)
               .extension<StackColors>()!
               .background,

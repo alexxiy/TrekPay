@@ -24,6 +24,7 @@ import '../../../widgets/stack_text_field.dart';
 import '../../../widgets/textfield_icon_button.dart';
 import '../../coin_control/coin_control_view.dart';
 import 'kerrigan_change_address_sheet.dart';
+import '../../../widgets/adaptive_page.dart';
 
 /// How a Kerrigan transaction is paid ([KerriganFunding]): from the public or the
 /// private balance, with which coins, and where the change goes.
@@ -84,7 +85,7 @@ class KerriganFundingCard extends ConsumerWidget {
   }
 
   Future<void> _chooseChange(BuildContext context, Kerrigan coin) async {
-    final picked = await showModalBottomSheet<String>(
+    final picked = await showAppSheet<String>(
       backgroundColor: Colors.transparent,
       context: context,
       useSafeArea: true,
@@ -286,7 +287,7 @@ class KerriganOwnAddressField extends ConsumerWidget {
         ? await wallet.ownShieldAddresses()
         : await wallet.ownTransparentAddresses();
     if (!context.mounted) return;
-    final picked = await showModalBottomSheet<String>(
+    final picked = await showAppSheet<String>(
       backgroundColor: Colors.transparent,
       context: context,
       useSafeArea: true,

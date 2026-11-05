@@ -16,6 +16,7 @@ import '../../utilities/show_loading.dart';
 import '../../utilities/text_styles.dart';
 import '../../wallets/isar/providers/wallet_info_provider.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
+import '../../widgets/adaptive_page.dart';
 import '../../widgets/background.dart';
 import '../../widgets/custom_buttons/blue_text_button.dart';
 import '../../widgets/desktop/primary_button.dart';
@@ -587,7 +588,7 @@ class _KerriganMasternodeDetailsViewState
       "${l10n.mnCollateralTx}: ${mn.txid}",
       "${l10n.mnOutputIndex}: ${mn.vout}",
     ].join("\n");
-    await showModalBottomSheet<void>(
+    await showAppSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -809,7 +810,7 @@ class _KerriganMasternodeDetailsViewState
     final blockSeconds = wallet.cryptoCurrency.targetBlockTimeSeconds;
 
     return Background(
-      child: Scaffold(
+      child: AppScaffold(
         backgroundColor: colors.background,
         appBar: PageAppBar(
           title: Text(

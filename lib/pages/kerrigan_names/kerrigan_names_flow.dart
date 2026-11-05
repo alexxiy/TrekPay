@@ -22,6 +22,7 @@ import '../../utilities/text_styles.dart';
 import '../../utilities/util.dart';
 import '../../wallets/models/tx_data.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
+import '../../widgets/adaptive_page.dart';
 import '../../widgets/background.dart';
 import '../../widgets/desktop/desktop_page_column.dart';
 import '../../widgets/desktop/primary_button.dart';
@@ -487,7 +488,7 @@ class _KerriganNamesTargetViewState
     };
 
     return Background(
-      child: Scaffold(
+      child: AppScaffold(
         backgroundColor: colors.background,
         appBar: kerriganNamesFlowAppBar(context, _flow.title),
         body: SafeArea(
@@ -640,6 +641,7 @@ class _KerriganNamesTargetViewState
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: PrimaryButton(
+                  width: double.infinity,
                   label: l10n.commonNext,
                   enabled: error == null,
                   onPressed: _next,
@@ -817,7 +819,7 @@ class _KerriganNamesPaymentViewState
         ref.watch(pWallets).getWallet(_flow.walletId) as KerriganWallet;
     final amount = _amount(wallet);
     return Background(
-      child: Scaffold(
+      child: AppScaffold(
         backgroundColor: colors.background,
         appBar: kerriganNamesFlowAppBar(context, _flow.title),
         body: SafeArea(
@@ -893,6 +895,7 @@ class _KerriganNamesPaymentViewState
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: PrimaryButton(
+                  width: double.infinity,
                   label: l10n.kerriganNamesCreateTransaction,
                   onPressed: _create,
                 ),

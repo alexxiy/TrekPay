@@ -11,6 +11,7 @@ import '../../services/kerrigan_name/kerrigan_names_registrar.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/text_styles.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
+import '../../widgets/adaptive_page.dart';
 import '../../widgets/background.dart';
 import '../../widgets/middle_ellipsis_text.dart';
 import '../../widgets/rounded_white_container.dart';
@@ -535,7 +536,7 @@ class _KerriganNamesTransactionsViewState
     final count = _refunds ? _refundList?.count : _incoming?.count;
     final shown = _refunds ? _refundList : _incoming;
     return Background(
-      child: Scaffold(
+      child: AppScaffold(
         backgroundColor: colors.background,
         appBar: KerriganNamesAppBar(
           walletId: widget.walletId,

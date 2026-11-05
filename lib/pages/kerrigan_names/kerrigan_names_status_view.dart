@@ -9,6 +9,7 @@ import '../../services/kerrigan_name/kerrigan_names_registrar.dart';
 import '../../themes/stack_colors.dart';
 import '../../utilities/text_styles.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
+import '../../widgets/adaptive_page.dart';
 import '../../widgets/background.dart';
 import '../../widgets/desktop/primary_button.dart';
 import '../../widgets/desktop/secondary_button.dart';
@@ -281,7 +282,7 @@ class _KerriganNamesStatusViewState
     final status = _progress?.status;
     final txId = _txId;
     return Background(
-      child: Scaffold(
+      child: AppScaffold(
         backgroundColor: colors.background,
         appBar: kerriganNamesFlowAppBar(context, _t.name),
         body: SafeArea(

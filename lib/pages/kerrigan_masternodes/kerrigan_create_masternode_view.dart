@@ -17,6 +17,7 @@ import '../../utilities/text_styles.dart';
 import '../../utilities/util.dart';
 import '../../wallets/models/tx_data.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
+import '../../widgets/adaptive_page.dart';
 import '../../widgets/background.dart';
 import '../../widgets/desktop/desktop_page_column.dart';
 import '../../widgets/desktop/primary_button.dart';
@@ -429,7 +430,7 @@ class _KerriganCreateMasternodeViewState
     final aliasError = wallet.masternodeAliasError(_labelController.text);
 
     return Background(
-      child: Scaffold(
+      child: AppScaffold(
         backgroundColor: colors.background,
         appBar: PageAppBar(
           title: Text(

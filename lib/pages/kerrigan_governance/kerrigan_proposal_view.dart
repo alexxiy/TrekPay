@@ -9,6 +9,7 @@ import '../../utilities/block_explorers.dart';
 import '../../utilities/text_styles.dart';
 import '../../utilities/util.dart';
 import '../../wallets/wallet/impl/kerrigan_wallet.dart';
+import '../../widgets/adaptive_page.dart';
 import '../../widgets/background.dart';
 import '../../widgets/block_explorer_link.dart';
 import '../../widgets/custom_buttons/blue_text_button.dart';
@@ -135,7 +136,7 @@ class _KerriganProposalViewState extends ConsumerState<KerriganProposalView> {
         if (!didPop) Navigator.of(context).pop(_voted);
       },
       child: Background(
-        child: Scaffold(
+        child: AppScaffold(
           backgroundColor: colors.background,
           appBar: PageAppBar(
             onBack: () => Navigator.of(context).pop(_voted),
