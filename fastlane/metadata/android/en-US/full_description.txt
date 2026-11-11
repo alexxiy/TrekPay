@@ -24,7 +24,7 @@ Everyday use
 • Sign and verify messages.
 • A clear history: masternode rewards, proposal payments and shielded transactions are labelled, and you can filter by each kind.
 • Several accounts from one recovery phrase, and view-only wallets from an extended public key or a shield viewing key.
-• Available in 14 languages. TrekPay follows your phone's language, or you can pick one in Settings.
+• Available in 15 languages. TrekPay follows your phone's language, or you can pick one in Settings.
 
 Backups and security
 • Restore with your 12- or 24-word recovery phrase, with an optional passphrase.

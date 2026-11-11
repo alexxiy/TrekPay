@@ -100,7 +100,7 @@ void main() {
           .listSync()
           .whereType<File>()
           .where((f) => f.path.endsWith(".arb"));
-      expect(arbs, hasLength(14));
+      expect(arbs, hasLength(15));
       for (final arb in arbs) {
         final texts = jsonDecode(arb.readAsStringSync()) as Map;
         expect(

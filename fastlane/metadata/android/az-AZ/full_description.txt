@@ -24,7 +24,7 @@ Gündəlik istifadə
 • Mesajları imzalayın və yoxlayın.
 • Aydın tarixçə: masternod mükafatları, təklif ödənişləri və Shield əməliyyatları işarələnir və hər növə görə filtr edə bilərsiniz.
 • Bir bərpa ifadəsindən bir neçə hesab və genişləndirilmiş açıq açardan və ya Shield baxış açarından yalnız baxış pulqabıları.
-• 14 dildə mövcuddur. TrekPay telefonunuzun dilini izləyir, ya da Parametrlər bölməsində dil seçə bilərsiniz.
+• 15 dildə mövcuddur. TrekPay telefonunuzun dilini izləyir, ya da Parametrlər bölməsində dil seçə bilərsiniz.
 
 Ehtiyat nüsxələr və təhlükəsizlik
 • 12 və ya 24 sözlük bərpa ifadənizlə, istəsəniz parol ifadəsi ilə birlikdə bərpa edin.

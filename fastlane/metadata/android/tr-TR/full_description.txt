@@ -24,7 +24,7 @@ Günlük kullanım
 • Mesajları imzalayın ve doğrulayın.
 • Anlaşılır bir geçmiş: masternode ödülleri, teklif ödemeleri ve Shield işlemleri etiketlenir ve her türe göre filtreleyebilirsiniz.
 • Tek bir kurtarma ifadesinden birden fazla hesap ve genişletilmiş açık anahtardan ya da Shield görüntüleme anahtarından salt görüntüleme cüzdanları.
-• 14 dilde kullanılabilir. TrekPay telefonunuzun dilini izler ya da Ayarlar'dan bir dil seçebilirsiniz.
+• 15 dilde kullanılabilir. TrekPay telefonunuzun dilini izler ya da Ayarlar'dan bir dil seçebilirsiniz.
 
 Yedekler ve güvenlik
 • 12 veya 24 kelimelik kurtarma ifadenizle, isterseniz bir parola ifadesiyle birlikte geri yükleyin.

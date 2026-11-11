@@ -24,7 +24,7 @@ Dùng hằng ngày
 • Ký và xác minh tin nhắn.
 • Lịch sử rõ ràng: phần thưởng masternode, khoản chi đề xuất và giao dịch Shield đều được gắn nhãn, và bạn có thể lọc theo từng loại.
 • Nhiều tài khoản từ một cụm từ khôi phục, và ví chỉ xem từ khóa công khai mở rộng hoặc khóa xem Shield.
-• Có 14 ngôn ngữ. TrekPay theo ngôn ngữ của điện thoại, hoặc bạn chọn một ngôn ngữ trong Cài đặt.
+• Có 15 ngôn ngữ. TrekPay theo ngôn ngữ của điện thoại, hoặc bạn chọn một ngôn ngữ trong Cài đặt.
 
 Sao lưu và bảo mật
 • Khôi phục bằng cụm từ khôi phục 12 hoặc 24 từ, kèm passphrase nếu muốn.

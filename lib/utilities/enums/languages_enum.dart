@@ -27,7 +27,8 @@ enum Language {
   chinese("zh", "中文"),
   korean("ko", "한국어"),
   japanese("ja", "日本語"),
-  arabic("ar", "العربية");
+  arabic("ar", "العربية"),
+  persian("fa", "فارسی");
 
   const Language(this.code, this.nativeName);
 
@@ -55,6 +56,7 @@ enum Language {
     Language.korean => l10n.languageKorean,
     Language.japanese => l10n.languageJapanese,
     Language.arabic => l10n.languageArabic,
+    Language.persian => l10n.languagePersian,
   };
 
   /// The system language: the first of the device's languages
