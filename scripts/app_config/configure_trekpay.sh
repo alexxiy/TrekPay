@@ -64,9 +64,22 @@ const _websiteUrl = "https://trekpay.space";
 const _termsUrl = "https://trekpay.space/terms-of-service.html";
 const _privacyUrl = "https://trekpay.space/privacy-policy.html";
 
-// Support: the official Kerrigan community channels (see kerrigan.network)
-// and TrekPay's own email.
-const List<SupportLink> _supportLinks = [
+// Support. The developer: questions about the app and bug reports.
+const List<SupportLink> _developerLinks = [
+  (
+    channel: SupportChannel.telegram,
+    text: "@alexxiy_lounge",
+    url: "https://t.me/alexxiy_lounge",
+  ),
+  (
+    channel: SupportChannel.email,
+    text: "support@trekpay.space",
+    url: "mailto:support@trekpay.space",
+  ),
+];
+
+// The official Kerrigan community (see kerrigan.network).
+const List<SupportLink> _communityLinks = [
   (
     channel: SupportChannel.discord,
     text: "Kerrigan Discord",
@@ -76,11 +89,6 @@ const List<SupportLink> _supportLinks = [
     channel: SupportChannel.x,
     text: "@kerrigannetwork",
     url: "https://x.com/kerrigannetwork",
-  ),
-  (
-    channel: SupportChannel.email,
-    text: "support@trekpay.space",
-    url: "mailto:support@trekpay.space",
   ),
 ];
 
