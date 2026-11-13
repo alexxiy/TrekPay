@@ -1,0 +1,1 @@
+TrekPay now speaks Persian. The Support screen lists the developer's contacts first, then the Kerrigan community. A full security review brought many fixes: keys you copy are cleared from the clipboard after a minute, and pasted text stays out of the logs. Plus layout fixes in every language.

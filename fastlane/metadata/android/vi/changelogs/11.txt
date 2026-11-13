@@ -1,0 +1,1 @@
+TrekPay giờ có tiếng Ba Tư. Màn hình Hỗ trợ hiển thị liên hệ của nhà phát triển trước, rồi đến cộng đồng Kerrigan. Một đợt rà soát bảo mật toàn diện mang lại nhiều bản sửa lỗi: khóa bạn sao chép sẽ bị xóa khỏi bộ nhớ tạm sau một phút, và văn bản đã dán không còn ghi vào nhật ký. Cùng nhiều chỉnh sửa bố cục ở mọi ngôn ngữ.

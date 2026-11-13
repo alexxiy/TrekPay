@@ -1,0 +1,1 @@
+TrekPay agora fala persa. A tela de Suporte mostra primeiro os contatos do desenvolvedor e depois a comunidade Kerrigan. Uma revisão de segurança completa trouxe muitas correções: chaves copiadas saem da área de transferência após um minuto, e o texto colado não fica mais nos logs. Além disso, ajustes de layout em todos os idiomas.

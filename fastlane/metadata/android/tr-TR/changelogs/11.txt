@@ -1,0 +1,1 @@
+TrekPay artık Farsça konuşuyor. Destek ekranı önce geliştiricinin iletişim bilgilerini, ardından Kerrigan topluluğunu gösteriyor. Kapsamlı bir güvenlik incelemesi pek çok düzeltme getirdi: kopyaladığınız anahtarlar bir dakika sonra panodan silinir ve yapıştırılan metin artık günlüklere yazılmaz. Ayrıca tüm dillerde düzen düzeltmeleri.

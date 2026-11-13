@@ -1,0 +1,1 @@
+TrekPay spricht jetzt Persisch. Der Support-Bildschirm zeigt zuerst die Kontakte des Entwicklers, dann die Kerrigan-Community. Eine umfassende Sicherheitsprüfung brachte viele Korrekturen: Kopierte Schlüssel werden nach einer Minute aus der Zwischenablage gelöscht, und eingefügter Text landet nicht mehr im Protokoll. Dazu Layout-Korrekturen in allen Sprachen.

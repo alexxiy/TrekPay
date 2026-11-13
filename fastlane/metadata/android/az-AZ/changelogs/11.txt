@@ -1,0 +1,1 @@
+TrekPay artıq fars dilində danışır. Dəstək ekranı əvvəlcə tərtibatçının əlaqə məlumatlarını, sonra Kerrigan icmasını göstərir. Tam təhlükəsizlik yoxlaması bir çox düzəliş gətirdi: kopyaladığınız açarlar bir dəqiqədən sonra buferdən silinir, yapışdırılan mətn isə artıq jurnallara düşmür. Həmçinin bütün dillərdə tərtibat düzəlişləri.
