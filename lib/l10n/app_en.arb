@@ -34,6 +34,14 @@
       }
     }
   },
+  "logLevelName": "{level, select, off{Off} fatal{Fatal} error{Error} warning{Warning} info{Info} debug{Debug} trace{Trace} other{{level}}}",
+  "@logLevelName": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
   "logLevelPrivacyWarning": "<b>Privacy Warning:</b> Selecting <b>Trace</b> or <b>Debug</b> may log sensitive metadata, such as transaction details, amounts, addresses, or network activity. While <b>Info</b> logs are less likely to contain sensitive data, they may still include some. No private keys, mnemonics, or credentials will ever be logged, but enabling these levels could expose information that might compromise privacy if accessed by unauthorized parties.",
   "@logLevelPrivacyWarning": {
     "description": "Keep <b> and </b> around the words to bold: the log level names Trace, Debug and Info stay in English."
@@ -981,22 +989,15 @@
   "kerriganNamesWithdrawUnexpected": "The withdrawal failed: Kerrigan NameSpace sent an unexpected answer",
   "sendInvalidAddress": "Invalid address",
   "sendNameInvalid": "Names use letters, digits and single hyphens, like alice.kerrigan",
-  "sendEnterAddress": "Enter {ticker} address",
-  "@sendEnterAddress": {
+  "sendAddressHint": "{ticker} address",
+  "@sendAddressHint": {
     "placeholders": {
       "ticker": {
         "type": "String"
       }
     }
   },
-  "sendEnterAddressOrName": "Enter {ticker} address or KNS name",
-  "@sendEnterAddressOrName": {
-    "placeholders": {
-      "ticker": {
-        "type": "String"
-      }
-    }
-  },
+  "sendAddressOrNameHint": "Address or KNS name",
   "kerriganNameErrorUnreachable": "Couldn't reach the Kerrigan NameSpace server.",
   "kerriganNameErrorIndexer": "The Kerrigan NameSpace server sent an answer TrekPay can't use.",
   "kerriganNameErrorChainUnavailable": "Too few BNB Smart Chain servers answered to check the name. Try again later.",
@@ -2753,6 +2754,19 @@
     "description": "Tooltip of the (i) button next to a security setting."
   },
   "securityNoScreenshots": "Disable screenshots",
+  "securityNoScreenshotsInfo": "Blocks screenshots and screen recordings of this app. Android also shows the app's preview in recent apps as a blank screen.",
+  "@securityNoScreenshotsInfo": {
+    "description": "Explains the \"Disable screenshots\" setting (Android only). Recent apps: the system's app switcher."
+  },
+  "securityCoverScreenshotsNote": "Recent apps still show a blank preview because “{setting}” is on.",
+  "@securityCoverScreenshotsNote": {
+    "description": "Small note under \"Cover in background\" when it is off but screenshots are disabled (Android only). {setting} is the name of the \"Disable screenshots\" setting.",
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
   "securityDuressPin": "Duress PIN",
   "securityBiometricsDuress": "Biometrics opens duress",
   "@securityBiometricsDuress": {
@@ -2896,6 +2910,8 @@
     }
   },
   "backupAutoFile": "Auto Backup file",
+  "backupAutoOn": "Enabled",
+  "backupAutoOff": "Disabled",
   "backupSavedTo": "Saved to",
   "backupPassphrase": "Passphrase",
   "backupAutoFrequency": "Auto Backup frequency",

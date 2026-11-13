@@ -687,6 +687,24 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
     return l10n.sendAllTicker(coin.ticker);
   }
 
+  /// The long note hint where it fits on one line in a field [width] wide,
+  /// else the short one (an 800 px window leaves the form too narrow).
+  String _noteHint(BuildContext context, double width) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: l10n.sendNoteHintLong,
+        style: STextStyles.desktopTextExtraSmall(context),
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    // Padding at the start (16) and end (5), and a little room to spare.
+    final fits = painter.width <= width - 16 - 5 - 8;
+    painter.dispose();
+    return fits ? l10n.sendNoteHintLong : l10n.sendNoteHint;
+  }
+
   Amount _selectedUtxosAmount(Set<UTXO> utxos) => Amount(
     rawValue: utxos.map((e) => BigInt.from(e.value)).reduce((v, e) => v += e),
     fractionDigits: ref.read(pWalletCoin(walletId)).fractionDigits,
@@ -790,7 +808,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.refresh(feeSheetSessionCacheProvider);
+      ref.invalidate(feeSheetSessionCacheProvider);
       ref.read(pValidSendToAddress.notifier).state = false;
     });
 
@@ -857,7 +875,7 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
     _baseFocus.addListener(() {
       if (!_cryptoFocus.hasFocus && !_baseFocus.hasFocus) {
         if (ref.read(pSendAmount) == null) {
-          ref.refresh(sendAmountProvider);
+          ref.invalidate(sendAmountProvider);
         } else {
           ref.read(sendAmountProvider.notifier).state = ref.read(pSendAmount)!;
         }
@@ -1046,7 +1064,6 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("BUILD: $runtimeType");
     final String locale = ref.watch(
       localeServiceChangeNotifierProvider.select((value) => value.locale),
     );
@@ -1299,11 +1316,12 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
             ),
             decoration:
                 standardInputDecoration(
-                  recipientHint(coin),
+                  null,
                   _addressFocusNode,
                   context,
                   desktopMed: true,
                 ).copyWith(
+                  label: recipientLabel(coin),
                   contentPadding: const EdgeInsetsDirectional.only(
                     start: 16,
                     top: 11,
@@ -1466,39 +1484,41 @@ class _DesktopSendState extends ConsumerState<DesktopSend> {
         const SizedBox(height: 20),
         Text(l10n.sendNoteOptional, style: labelStyle),
         const SizedBox(height: 10),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(
-            Constants.size.circularBorderRadius,
-          ),
-          child: TextField(
-            key: const Key("desktopSendNoteFieldKey"),
-            controller: noteController,
-            focusNode: _noteFocus,
-            minLines: 1,
-            maxLines: 3,
-            autocorrect: false,
-            enableSuggestions: false,
-            style: STextStyles.desktopTextExtraSmall(context).copyWith(
-              color: Theme.of(context)
-                  .extension<StackColors>()!
-                  .textFieldActiveText,
-              height: 1.8,
+        LayoutBuilder(
+          builder: (context, constraints) => ClipRRect(
+            borderRadius: BorderRadius.circular(
+              Constants.size.circularBorderRadius,
             ),
-            onChanged: (_) => setState(() {}),
-            decoration:
-                standardInputDecoration(
-                  l10n.sendNoteHintLong,
-                  _noteFocus,
-                  context,
-                  desktopMed: true,
-                ).copyWith(
-                  contentPadding: const EdgeInsetsDirectional.only(
-                    start: 16,
-                    top: 11,
-                    bottom: 12,
-                    end: 5,
+            child: TextField(
+              key: const Key("desktopSendNoteFieldKey"),
+              controller: noteController,
+              focusNode: _noteFocus,
+              minLines: 1,
+              maxLines: 3,
+              autocorrect: false,
+              enableSuggestions: false,
+              style: STextStyles.desktopTextExtraSmall(context).copyWith(
+                color: Theme.of(context)
+                    .extension<StackColors>()!
+                    .textFieldActiveText,
+                height: 1.8,
+              ),
+              onChanged: (_) => setState(() {}),
+              decoration:
+                  standardInputDecoration(
+                    _noteHint(context, constraints.maxWidth),
+                    _noteFocus,
+                    context,
+                    desktopMed: true,
+                  ).copyWith(
+                    contentPadding: const EdgeInsetsDirectional.only(
+                      start: 16,
+                      top: 11,
+                      bottom: 12,
+                      end: 5,
+                    ),
                   ),
-                ),
+            ),
           ),
         ),
         const SizedBox(height: 20),

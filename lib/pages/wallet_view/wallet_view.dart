@@ -309,8 +309,6 @@ class _WalletViewState extends ConsumerState<WalletView> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("BUILD: $runtimeType");
-
     final coin = ref.watch(pWalletCoin(walletId));
 
     final wallet = ref.watch(pWallets).getWallet(walletId);
@@ -349,6 +347,7 @@ class _WalletViewState extends ConsumerState<WalletView> {
                       child: Text(
                         ref.watch(pWalletName(walletId)),
                         style: STextStyles.navBarTitle(context),
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -499,7 +498,9 @@ class _WalletViewState extends ConsumerState<WalletView> {
                                       ? ScreenFit.bodyHeight(context) -
                                             WalletView.navBarHeight -
                                             34 -
-                                            (isKerriganShield && !viewOnly ? 58 : 0)
+                                            (isKerriganShield && !viewOnly
+                                                ? 58
+                                                : 0)
                                       : null,
                                   initialSyncStatus:
                                       ref

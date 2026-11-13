@@ -9,6 +9,7 @@ import '../../networking/http.dart';
 import '../../services/kerrigan_name/kerrigan_name_resolver.dart';
 import '../../services/price.dart';
 import '../../utilities/amount/amount.dart';
+import '../../utilities/app_store_build.dart';
 import '../../utilities/assets.dart';
 import '../../utilities/logger.dart';
 import '../../utilities/prefs.dart';
@@ -28,9 +29,10 @@ import '../../widgets/kerrigan_memo_field.dart';
 const kKerriganDonationName = "alexxiy.kerrigan";
 
 /// Whether [coin]'s wallets can donate: where Kerrigan names resolve
-/// (nowhere until the names service is in).
+/// (mainnet). Not in App Store builds: the App Store wants tips to the
+/// developer to go through in-app purchase.
 bool kerriganDonationAvailable(CryptoCurrency coin) =>
-    KerriganNameService.forCoin(coin) != null;
+    !isAppStoreBuild && KerriganNameService.forCoin(coin) != null;
 
 /// The cheers message: what the 512-byte memo has room for after the
 /// tag line (at most 63 bytes, see [kerriganDonationMemo]).

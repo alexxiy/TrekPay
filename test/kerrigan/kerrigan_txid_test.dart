@@ -1,0 +1,107 @@
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:paymint/wallets/api/kerrigan/kerrigan_bridge_client.dart';
+
+/// A shield transaction from the regtest chain: a type 10 (Sapling) special transaction,
+/// as Kerrigan Core gave it, with the txid it showed.
+const _shieldTxid =
+    "ef51d24c5ecf82ea54e2836d2bb2b5ba2ed9f2d9814ebda7419d713944575f76";
+const _shieldTxHex =
+    "03000a0002e97ebe42c2967b7c9912621e8f2190c5e384b81e901f53cd002dc1148be5"
+    "12f5000000006a47304402206aa573531c18f41b24960dcfe56fb627b23c7adf55c62f"
+    "d7152f66d208e87c5402206a08f2aefeefc796bb3647ceeb32424f3167fd43fa7e946e"
+    "60c0f22ba192130b01210322651477d30d038e143ac97f777e012dd8f7ed3da3082bbc"
+    "797b58bc763aa2f4ffffffff27919670f29553b773fb01f6882286e9502a5f4f3d6e90"
+    "ee313088d02cfa48a9000000006a47304402200c521ebe2a400c24e65c45d47bfb74d1"
+    "2502874ec60e74bdb0a05a2ffc2c1f1e02201e3bdf0bb093e46aa92f93dc5b6721a21d"
+    "21a07979e4765ad6fcbdb1749098fe01210322651477d30d038e143ac97f777e012dd8"
+    "f7ed3da3082bbc797b58bc763aa2f4ffffffff0160c9b32c000000001976a914c9d262"
+    "76980a8b868a059a62c05770705c9f08d888ac00000000fdb407010000023984cdd74b"
+    "7ae9c605f6cdfe835ffc70c22fbced9c95628e829e1560eaaccac5031e5c00679a1a17"
+    "9987e94c675b7cb7da467ca31e86e9322c227169595025711e989c73fef3ce8b620c37"
+    "53508a22a9daf508a46247d51bd32cba97abdbc4122ced1abf514db7d93f1de8b41dcb"
+    "6b1620179e07e7dac4dfd52c11f30c9694c75f8046dd507541818ae307027ffe8e8c8c"
+    "25a953a53c57ee36a89b1636ec168e2afa0f1b39467fa20044eeba19432ed01d24977a"
+    "481fd5bfa267d991e8323565f099f67f2858216d56de0207eab0e58e86a1b1a4f31884"
+    "10de97eabb0e6eb528ac46158668754895e4c0750ace00a4ee9429185cc7de143bfc93"
+    "7502f718e85c1163304f665cb7c724be7f17d01eab25ba01b45fa96aebbc768543124e"
+    "7f272849b3bc229f67ecf3f8c6a416b45088242a0111ec3a96163b38c7b09940d5bc0e"
+    "e0e028aeaa4eb4e6258610103e4e11f0c2bb682f9d1fad88810b742da0258d39176f4b"
+    "47c593b847ffd31623bf4cf99ca9165b6144a3c31d3f58f6d816160d379400a6f8137d"
+    "38cb66366d0284bc03e78044fb228c6bc0f5e077a876cdb198826a6de4164762c6b35d"
+    "c65e6137f92b6d16ec1a37c3db7becd436252045e803b29a1a12c8f2d73a1b96a4e695"
+    "f9804412c0dcda9d80505697c6e4a541090631c482b23d48bbb93598b39bd6c5eb0740"
+    "245a51c25a26c67cac68e854c3b3ad99e0e6b47d884aa3cd2f00d151b9107c91083eb4"
+    "0aaab04395d58b65acacff5954699a89b5774193f1a62973d859f6d8afac972b6c0dbb"
+    "73afdb6875e81b5c3702a76abd533008bd97982f053870bf503b471d69ffe6e8ee2db8"
+    "e0c615d2281d571880ad7ec180b664dbe81e06ecc8517386d41600ad557559b4898d43"
+    "9a10fd4eed3e820dc323377dd8df62d9206575bcbc4c32b5d7a301390d8614e5886afb"
+    "1069102585e1e4833beb327a2a6f39e4808ca31c1ed3cd052e78d4cfc7a253e2581697"
+    "61ce4965fcd5a39c049ed09003acb050a9eec6eb4e9f184c4fe0e2b2ceea29c364c046"
+    "c3990a267ea67fb59cefd5e63edae361aeed3738afa7adde4b6da0b9312c03f5092aa1"
+    "b022c9ca12feaf24185c4cdddb0292d96a3411a6c507e2d811846ffe1ba13f8ee202db"
+    "d8ab9abcfe7939563fdf3cb544761c80c5c3025cc9fe34f01dd4358a160cab98e0aad5"
+    "7a143a0e84522c092dd35c644db79c3199969207e063f0f1e38d4fd6e4add3e4e38cc8"
+    "6f9e6406d53cb6f9ab56bc5d9eb6b0feb47ae508b668ca9cd76467e42bf17d2d5160dd"
+    "dcb4d2c2824c2026e98869cb59e169d7b5b332da06b1bf87741691835a81d7b7d22a8c"
+    "47c1ad920dc198d978246ddf2dc6066bc49b7835130ae9cdf528d7d0fe3a46d0dd1b98"
+    "115e9b91f1dfef4658d1066593efdcbbdcc1fb451b3fb78abe3c38be4cdf339127c3d6"
+    "64f7a3553d170260fb7c5290b8c250a0796a69d724dbc2310dd42323f0ccd9b22ba511"
+    "55a0b6a5931c79c0228476639d9f4ad7a3c97cbfc07f7f0be4988c23291e8cbdf6a84e"
+    "991ac90a14022bfd9e21c0a98f1091c1651cde49c6a5b9d6051f0964f59e71d79ce057"
+    "c1be94da78c1a2b207b815808060b76459d52a25728ce3c2651c95ae89353c696276f2"
+    "24b440ba8e3e0910dba48e2d7041f268e74ccfad6ec03463ac4bfb6aa1a6e1e53a33c8"
+    "76ee10e94eec41d7f7c86cb48950b61d0bdc216984271fad55269fd84e7f77fcbc7fc6"
+    "fd1148e719ad8a53171bce0762c6fe5e05bc52598791e29f9d12fb9672fabbca18a6e7"
+    "b48eaa0a2eea78cfdee48847281ff0cb44f5093d500a16dfbb4d364709b3db096e8137"
+    "8ffde9989a99d47bb690e02256a505f4e90c4371cb7fb96a5a2201f96c98053f5a8c29"
+    "35a607784d47541edcb9b06fcdda0d532e27558d491737acee4c0932c3b74d58f6873b"
+    "1ed32b83868d8bbd869a7ff1d5749384db0fc5580ecf8f189db90435615160d9675bbf"
+    "4c9906bd1dcf134b25b32ebc3095a0a683db70ec597c54a007bcaf01b9972dd9b3d78b"
+    "4f2136435ee4fcac08c385fa16bd09bf05e0b08a897237e26fe22faabc44d24282e8ee"
+    "0f7cc324e586c5ea90142efc47618cfdc2097a857d468a33e8a2e972f01d52b4af2ab4"
+    "d638a263551cde753405b820113ec91c46ddecd999fcaf7690779ae12d193372cab94d"
+    "03931a5ea54cedb46a559c6054c5cedf43390cde704ef22aac9ac639c4036cd1f9e07c"
+    "343d2e5ac7fd52358a7d5c326d9d61bfffff395585bd2f62557246a20eea14c91542ad"
+    "da7ba9bb994918f9ae5543a5376ca176df537cd65573cd66407712e57f26b2ecfa9ca0"
+    "4c745e78c3de21b8363ba00089bab09907186c99ed436035111649c4f78a4d99e74257"
+    "b51dfcceb3700cb4b9d0b88bc698154a5d3e8eb1b4df9ddcd72d1f62a4c196519fb84f"
+    "083a3e87ce45fcba319f0edb8e251b2cf1f4cb08a51fa33909ae75c92dece581836e9c"
+    "e188893a4a44a94d052f1767a9b318f9e2ffea77987bbd0357b79f7bbaa085e32da866"
+    "225baeb0c84fa682502b0899b8e11b680ea6417901ddefb31c2d106c76a4a9548fc9b9"
+    "eca7a6dc4cfb921db412c6bd5e0f56f4c2866949b38eb28ccdc1fae1905b2cc8d54165"
+    "103c260c32a9f8ef5986c5f635e90b2fda3625dbe4db5365000fac63269b104cdec129"
+    "5580837eb5ffffffffbc3a3d17c99814b3ba9f10d974080e49cc831c4baec9e734955d"
+    "baffd42c32a0f49817ffd70eba2dcacfa553129892485e30d3937182989d09cee7e9c4"
+    "ab570b";
+
+void main() {
+  test("the txid of a shield transaction is worked out locally", () {
+    expect(kerriganTxidOf(_shieldTxHex), _shieldTxid);
+  });
+
+  group("after a send, the bridge's answer", () {
+    Future<String> sendWithAnswer(String body) async {
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      addTearDown(() => server.close(force: true));
+      server.listen((request) async {
+        request.response
+          ..statusCode = 200
+          ..write(body);
+        await request.response.close();
+      });
+      return KerriganBridgeClient(
+        baseUri: Uri.parse("http://127.0.0.1:${server.port}"),
+      ).sendTx(_shieldTxHex);
+    }
+
+    test("that isn't JSON doesn't make it look failed", () async {
+      expect(await sendWithAnswer("<html>proxy</html>"), _shieldTxid);
+    });
+
+    test("can't name another transaction", () async {
+      expect(await sendWithAnswer('{"result":"${"ab" * 32}"}'), _shieldTxid);
+    });
+  });
+}

@@ -148,7 +148,7 @@ void main() {
           },
         ],
         "spentNullifiers": [nf],
-        "sent": [],
+        "sent": <dynamic>[],
       },
       nullifierNotes: {
         nf: {"value": 7 * _coin, "address": _shield},
@@ -157,9 +157,7 @@ void main() {
     expect(tx.type, TransactionType.outgoing);
     expect(tx.kerriganChangeAddresses, contains(_change));
     expect(
-      tx
-          .getAmountSentFromThisWallet(fractionDigits: 8, subtractFee: true)
-          .raw,
+      tx.getAmountSentFromThisWallet(fractionDigits: 8, subtractFee: true).raw,
       BigInt.from(2 * _coin),
     );
     expect(tx.getFee(fractionDigits: 8).raw, BigInt.from(25000));
@@ -205,7 +203,11 @@ void main() {
           },
         ],
         vout: [
-          {"value": "$_coin", "addresses": <String>[], "hex": "6a20${"cd" * 32}"},
+          {
+            "value": "$_coin",
+            "addresses": <String>[],
+            "hex": "6a20${"cd" * 32}",
+          },
           {
             "value": "${_coin - 1000}",
             "addresses": [_ours],

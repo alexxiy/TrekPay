@@ -91,7 +91,7 @@ void main() {
     const jsonString =
         '{"mnemonic":"hello","word","something","who","green","seven"]}';
 
-    expect(AddressUtils.decodeQRSeedData(jsonString), {});
+    expect(AddressUtils.decodeQRSeedData(jsonString), isEmpty);
   });
 
   test("build a uri string with empty params", () {
@@ -139,7 +139,8 @@ void main() {
   test("an amount that isn't a plain number is left out", () {
     for (final amount in ["1e3", "1,5", "-1", "1.2.3", "abc"]) {
       expect(
-        AddressUtils.parsePaymentUri("kerrigan:$address?amount=$amount")!.amount,
+        AddressUtils.parsePaymentUri("kerrigan:$address?amount=$amount")!
+            .amount,
         isNull,
         reason: amount,
       );

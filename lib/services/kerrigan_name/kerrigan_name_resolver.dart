@@ -46,11 +46,14 @@ class KerriganNameService {
     indexer: Uri.parse("https://indexer.kerrigan-name.space"),
     anchor: "0xca90886d9999cef4e15da8b4af061a52c366238d",
     rpcs: [
-      Uri.parse("https://bsc-dataseed.bnbchain.org"),
-      Uri.parse("https://bsc-dataseed.defibit.io"),
-      Uri.parse("https://bsc-dataseed.ninicoin.io"),
-      Uri.parse("https://bsc-rpc.publicnode.com"),
-      Uri.parse("https://bsc-mainnet.public.blastapi.io"),
+      Uri.parse("https://bsc-dataseed.bnbchain.org"), // BNB Chain
+      Uri.parse("https://bsc-rpc.publicnode.com"), // Allnodes (PublicNode)
+      Uri.parse("https://bsc.api.pocket.network"), // Pocket Network
+      Uri.parse("https://public-bsc.nownodes.io"), // NOWNodes
+      Uri.parse("https://rpc-bsc.48.club"), // 48 Club
+      Uri.parse("https://bsc-mainnet.public.blastapi.io"), // Blast API
+      Uri.parse("https://bsc.blockrazor.xyz"), // BlockRazor
+      Uri.parse("https://bsc.rpc.blxrbdn.com"), // bloXroute
     ],
     epochs: const {1},
   );

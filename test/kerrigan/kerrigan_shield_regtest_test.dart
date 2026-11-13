@@ -452,7 +452,8 @@ void main() {
       expect(sent["value"], 20000000);
       expect(sent["memo"], memo);
       // Kerrigan Core decrypts the note and its memo.
-      final notes = (await rpc("z_listunspent", [0]) as List).cast<Map>();
+      final notes = (await rpc("z_listunspent", [0]) as List)
+          .cast<Map<String, dynamic>>();
       final note = notes.firstWhere((n) => n["address"] == dest);
       expect(note["amount"], 0.2);
       expect(note["memo"] as String, startsWith(_hex(memo)));

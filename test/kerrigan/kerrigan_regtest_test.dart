@@ -88,7 +88,7 @@ void main() {
   test("bridge derives the same addresses from the account xpub", () async {
     final xpub = accountXpub();
     final info = await bridge.xpub(xpub, details: "tokens", tokens: "derived");
-    final tokens = (info["tokens"] as List).cast<Map>();
+    final tokens = (info["tokens"] as List).cast<Map<String, dynamic>>();
     String tokenAt(String suffix) =>
         tokens.firstWhere((t) => (t["path"] as String).endsWith(suffix))["name"]
             as String;
@@ -114,9 +114,8 @@ void main() {
         final utxos = await bridge.utxo(xpub);
         return utxos.any((u) => u["txid"] == fundTxid);
       });
-      final pending = (await bridge.utxo(
-        xpub,
-      )).firstWhere((u) => u["txid"] == fundTxid);
+      final pending = (await bridge.utxo(xpub))
+          .firstWhere((u) => u["txid"] == fundTxid);
       expect(pending["confirmations"], 0);
       expect(pending["instantlock"], isFalse);
       expect((await bridge.tx(fundTxid))["instantlock"], isFalse);
@@ -128,9 +127,8 @@ void main() {
           (u) => u["txid"] == fundTxid && (u["confirmations"] as int) > 0,
         );
       });
-      final utxo = (await bridge.utxo(
-        xpub,
-      )).firstWhere((u) => u["txid"] == fundTxid);
+      final utxo = (await bridge.utxo(xpub))
+          .firstWhere((u) => u["txid"] == fundTxid);
       final value = BigInt.parse(utxo["value"] as String);
       expect(utxo["address"], receive);
       expect(utxo["path"], "m/44'/1'/0'/0/0");
