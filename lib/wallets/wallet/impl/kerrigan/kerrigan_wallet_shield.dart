@@ -886,7 +886,7 @@ extension _KerriganShield on KerriganWallet {
         collateral: selected.isNotEmpty,
       );
       if (selected.isNotEmpty && candidates.length != selected.length) {
-        throw Exception("Attempted to use an unavailable utxo");
+        throw Exception(l10n.sendCoinUnavailable);
       }
       if (extra.isNotEmpty || isKerriganOpReturn(recipient.address)) {
         throw Exception(l10n.sendShieldOnly);

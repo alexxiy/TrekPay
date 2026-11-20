@@ -1542,5 +1542,9 @@
   "mnOperatorSecretKey": "Clave secreta de operador",
   "sendTooManyInputs": "Esto necesita más monedas de las que caben en una transacción (como máximo {count}). Combínalas primero: envía hasta {amount} a una de tus propias direcciones y vuelve a intentarlo.",
   "sendSubtractFeeOneRecipient": "Para restar la comisión hace falta un solo destinatario",
-  "sendShieldOnly": "Este pago solo se puede hacer desde el Shield"
+  "sendShieldOnly": "Este pago solo se puede hacer desde el Shield",
+  "sendCoinUnavailable": "Una de las monedas que elegiste no se puede gastar ahora. Revisa tu selección en Control de monedas.",
+  "introConsentTitle": "Antes de empezar",
+  "introConsentRead": "Lee los documentos de abajo. Cada uno se abre en tu navegador.",
+  "introConsentOpenFirst": "Abre cada documento para poder marcar la casilla."
 }

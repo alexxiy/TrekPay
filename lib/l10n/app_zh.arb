@@ -1542,5 +1542,9 @@
   "mnOperatorSecretKey": "运营者私钥",
   "sendTooManyInputs": "这需要的币超过了一笔交易能容纳的数量（最多 {count} 个）。请先合并：向您自己的一个地址发送最多 {amount}，然后重试。",
   "sendSubtractFeeOneRecipient": "只有一个收款人时才能从金额中扣除费用",
-  "sendShieldOnly": "此付款只能从 Shield 支付"
+  "sendShieldOnly": "此付款只能从 Shield 支付",
+  "sendCoinUnavailable": "您选择的币中有一枚暂时无法花费。请在手动选币中检查您的选择。",
+  "introConsentTitle": "开始之前",
+  "introConsentRead": "请阅读以下文件。每个文件都会在您的浏览器中打开。",
+  "introConsentOpenFirst": "请先打开每个文件，才能勾选此框。"
 }

@@ -1542,5 +1542,9 @@
   "mnOperatorSecretKey": "オペレーター秘密鍵",
   "sendTooManyInputs": "1 回の取引に入れられる数を超えるコインが必要です（最大 {count} 個）。先にコインをまとめてください。自分のアドレスのどれかに最大 {amount} を送ってから、もう一度お試しください。",
   "sendSubtractFeeOneRecipient": "手数料を差し引くには、受取人が 1 人である必要があります",
-  "sendShieldOnly": "この支払いは Shield からのみ行えます"
+  "sendShieldOnly": "この支払いは Shield からのみ行えます",
+  "sendCoinUnavailable": "選んだコインのうち、今は使えないものがあります。コインコントロールで選択を確認してください。",
+  "introConsentTitle": "はじめる前に",
+  "introConsentRead": "以下のドキュメントをお読みください。それぞれブラウザで開きます。",
+  "introConsentOpenFirst": "チェックを入れるには、各ドキュメントを開いてください。"
 }

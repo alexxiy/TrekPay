@@ -1542,5 +1542,9 @@
   "mnOperatorSecretKey": "Geheimer Operator-Schlüssel",
   "sendTooManyInputs": "Dafür braucht es mehr Coins, als in eine Transaktion passen (höchstens {count}). Fassen Sie sie zuerst zusammen: Senden Sie bis zu {amount} an eine Ihrer eigenen Adressen und versuchen Sie es dann erneut.",
   "sendSubtractFeeOneRecipient": "Die Gebühr kann nur bei einem einzigen Empfänger abgezogen werden",
-  "sendShieldOnly": "Diese Zahlung ist nur aus dem Shield möglich"
+  "sendShieldOnly": "Diese Zahlung ist nur aus dem Shield möglich",
+  "sendCoinUnavailable": "Einer der gewählten Coins kann gerade nicht ausgegeben werden. Prüfen Sie Ihre Auswahl unter Coin Control.",
+  "introConsentTitle": "Bevor Sie beginnen",
+  "introConsentRead": "Bitte lesen Sie die folgenden Dokumente. Jedes öffnet sich in Ihrem Browser.",
+  "introConsentOpenFirst": "Öffnen Sie jedes Dokument, um das Kästchen anzukreuzen."
 }

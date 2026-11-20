@@ -1542,5 +1542,9 @@
   "mnOperatorSecretKey": "Operator gizli açarı",
   "sendTooManyInputs": "Bunun üçün bir əməliyyata sığandan çox coin lazımdır (ən çoxu {count}). Əvvəlcə onları birləşdirin: öz ünvanlarınızdan birinə {amount} qədər göndərin, sonra yenidən cəhd edin.",
   "sendSubtractFeeOneRecipient": "Komissiyanı çıxmaq üçün tək alıcı lazımdır",
-  "sendShieldOnly": "Bu ödənişi yalnız Shield-dən etmək olar"
+  "sendShieldOnly": "Bu ödənişi yalnız Shield-dən etmək olar",
+  "sendCoinUnavailable": "Seçdiyiniz coinlərdən biri hazırda xərclənə bilməz. Seçiminizi Coin nəzarətində yoxlayın.",
+  "introConsentTitle": "Başlamazdan əvvəl",
+  "introConsentRead": "Zəhmət olmasa, aşağıdakı sənədləri oxuyun. Hər biri brauzerinizdə açılır.",
+  "introConsentOpenFirst": "Qutunu işarələmək üçün hər sənədi açın."
 }

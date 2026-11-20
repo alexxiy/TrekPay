@@ -4482,5 +4482,9 @@
     }
   },
   "sendSubtractFeeOneRecipient": "Subtracting the fee needs a single recipient",
-  "sendShieldOnly": "This payment can only be made from the shield"
+  "sendShieldOnly": "This payment can only be made from the shield",
+  "sendCoinUnavailable": "A coin you picked can't be spent right now. Check your choice in Coin control.",
+  "introConsentTitle": "Before you start",
+  "introConsentRead": "Please read the documents below. Each one opens in your browser.",
+  "introConsentOpenFirst": "Open each document to tick the box."
 }

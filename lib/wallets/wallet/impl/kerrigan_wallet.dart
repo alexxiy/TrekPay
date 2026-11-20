@@ -1667,7 +1667,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
           .toList();
       final usable = _spendable(candidates, currentHeight, collateral: true);
       if (usable.length != candidates.length) {
-        throw Exception("Attempted to use an unavailable utxo");
+        throw Exception(l10n.sendCoinUnavailable);
       }
     } else {
       candidates = _spendable(
