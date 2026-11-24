@@ -138,7 +138,7 @@ class _KerriganNamesBalanceViewState
       onException: (e) => error = e,
       whileFutureAlt: () async {
         final identity = await wallet.namesIdentity();
-        final nonce = kerriganNamesNonce();
+        final nonce = await _registrar.serverNow();
         final signature = await identity.sign(
           kerriganNamesWithdrawMessage(
             marker: _registrar.service.marker,

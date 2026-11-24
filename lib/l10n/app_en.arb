@@ -967,6 +967,9 @@
   },
   "kerriganNamesBadAnswer": "Kerrigan NameSpace sent an answer the app doesn't understand",
   "kerriganNamesClockOff": "Kerrigan NameSpace turned the request down because this device's clock is off. Set the right time and try again.",
+  "kerriganNamesNonceWait": "This name was changed moments ago. Wait a few minutes and try again.",
+  "kerriganNamesWrongPaymentAddress": "Kerrigan NameSpace sent a payment address that isn't its published one, so the app won't pay it. Try again later or update the app.",
+  "kerriganNamesWithdrawToRegistrar": "This is the service's payment address, where payouts are sent from. Withdraw to an address of your own.",
   "kerriganNamesWrongNetwork": "Kerrigan NameSpace answered for {got}, not {expected}",
   "@kerriganNamesWrongNetwork": {
     "placeholders": {

@@ -91,7 +91,7 @@ class _KerriganNamesTransactionsViewState
     try {
       final wallet = _wallet;
       final identity = await wallet.namesIdentity();
-      final nonce = kerriganNamesNonce();
+      final nonce = await _registrar.serverNow();
       final signature = await identity.sign(
         kerriganNamesHistoryMessage(
           marker: _registrar.service.marker,

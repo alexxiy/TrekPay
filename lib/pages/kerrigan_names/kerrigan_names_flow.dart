@@ -161,7 +161,7 @@ Future<KerriganNamesPayment?> _sign(
         marker: registrar.service.marker,
         op: flow.op,
         name: flow.name,
-        nonce: kerriganNamesNonce(),
+        nonce: await registrar.commandNonce(flow.name),
         pubkey: identity.publicKey,
         target: target,
         newOwner: newOwner,
