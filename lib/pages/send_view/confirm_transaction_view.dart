@@ -97,7 +97,6 @@ class _ConfirmTransactionViewState
     extends ConsumerState<ConfirmTransactionView> {
   /// The first recipient; a proposal fee (OP_RETURN) reads as what it is.
   String get _recipientText {
-    if (widget.kerriganName != null) return widget.kerriganName!.name;
     final address = widget.txData.recipients?.firstOrNull?.address ?? "";
     return isKerriganOpReturn(address)
         ? l10n.sendProposalFeeBurnt(
@@ -106,17 +105,13 @@ class _ConfirmTransactionViewState
         : address;
   }
 
-  /// Under the recipient when paying a Kerrigan NameSpace name.
+  /// The name being paid, above the address it points to.
   Widget _kerriganNameDetails(BuildContext context, TextStyle style) {
     final colors = Theme.of(context).extension<StackColors>()!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 4),
-        SelectableText(
-          widget.kerriganName!.address,
-          style: style.copyWith(color: colors.textSubtitle1),
-        ),
+        SelectableText(widget.kerriganName!.name, style: style),
         const SizedBox(height: 4),
         Text(
           l10n.sendNameChecked,
@@ -124,6 +119,26 @@ class _ConfirmTransactionViewState
         ),
       ],
     );
+  }
+
+  /// A shield payment carries the encrypted memo, so the memo is shown even
+  /// when it's empty.
+  bool _sendsToShield(CryptoCurrency coin) =>
+      coin is Kerrigan &&
+      coin.isShieldAddress(
+        widget.txData.recipients?.firstOrNull?.address ?? "",
+      );
+
+  Widget _memoText(BuildContext context, TextStyle style) {
+    final memo = widget.txData.memo ?? "";
+    return memo.isEmpty
+        ? Text(
+            l10n.sendMemoEmpty,
+            style: style.copyWith(
+              color: Theme.of(context).extension<StackColors>()!.textSubtitle2,
+            ),
+          )
+        : SelectableText(memo, style: style);
   }
 
   /// Change paid to an address outside the wallet (a custom change address
@@ -496,6 +511,25 @@ class _ConfirmTransactionViewState
                     style: STextStyles.pageTitleH1(context),
                   ),
                   const SizedBox(height: 12),
+                  if (widget.kerriganName != null) ...[
+                    RoundedWhiteContainer(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            l10n.sendRecipientName,
+                            style: STextStyles.smallMed12(context),
+                          ),
+                          const SizedBox(height: 4),
+                          _kerriganNameDetails(
+                            context,
+                            STextStyles.itemSubtitle12(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   RoundedWhiteContainer(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -509,11 +543,6 @@ class _ConfirmTransactionViewState
                           _recipientText,
                           style: STextStyles.itemSubtitle12(context),
                         ),
-                        if (widget.kerriganName != null)
-                          _kerriganNameDetails(
-                            context,
-                            STextStyles.itemSubtitle12(context),
-                          ),
                         if (foreignChange != null)
                           _foreignChangeDetails(
                             context,
@@ -603,6 +632,25 @@ class _ConfirmTransactionViewState
                         ],
                       ),
                     ),
+                  if (_sendsToShield(coin)) ...[
+                    const SizedBox(height: 12),
+                    RoundedWhiteContainer(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            l10n.sendShieldedMemo,
+                            style: STextStyles.smallMed12(context),
+                          ),
+                          const SizedBox(height: 4),
+                          _memoText(
+                            context,
+                            STextStyles.itemSubtitle12(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             if (isDesktop)
@@ -748,6 +796,40 @@ class _ConfirmTransactionViewState
                             .extension<StackColors>()!
                             .background,
                       ),
+                      if (widget.kerriganName != null) ...[
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l10n.sendRecipientName,
+                                style: STextStyles.desktopTextExtraExtraSmall(
+                                  context,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              _kerriganNameDetails(
+                                context,
+                                STextStyles.desktopTextExtraExtraSmall(
+                                  context,
+                                ).copyWith(
+                                  color: Theme.of(context)
+                                      .extension<StackColors>()!
+                                      .textDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          height: 1,
+                          color: Theme.of(context)
+                              .extension<StackColors>()!
+                              .background,
+                        ),
+                      ],
                       Padding(
                         padding: const EdgeInsets.all(12),
                         child: Column(
@@ -772,11 +854,6 @@ class _ConfirmTransactionViewState
                                         .textDark,
                                   ),
                             ),
-                            if (widget.kerriganName != null)
-                              _kerriganNameDetails(
-                                context,
-                                STextStyles.desktopTextExtraExtraSmall(context),
-                              ),
                             if (foreignChange != null)
                               _foreignChangeDetails(
                                 context,
@@ -926,6 +1003,28 @@ class _ConfirmTransactionViewState
                   ),
                 ),
               ),
+            if (isDesktop && _sendsToShield(coin)) ...[
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 32, top: 20),
+                child: Text(
+                  l10n.sendShieldedMemo,
+                  style: STextStyles.desktopTextExtraExtraSmall(context),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 10, left: 32, right: 32),
+                child: RoundedContainer(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 18,
+                  ),
+                  color: Theme.of(context)
+                      .extension<StackColors>()!
+                      .textFieldDefaultBG,
+                  child: _memoText(context, STextStyles.itemSubtitle(context)),
+                ),
+              ),
+            ],
             if (!isDesktop) const Spacer(),
             SizedBox(height: isDesktop ? 23 : 12),
             Padding(
