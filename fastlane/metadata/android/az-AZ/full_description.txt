@@ -2,7 +2,7 @@ TrekPay nəzarəti sizdə saxlayan Kerrigan pulqabısıdır. Bərpa ifadəniz v�
 
 Məxfilik
 • Shield əməliyyatları: KRGN-ləri Shield-ə köçürün, Shield-dən çıxarın və məxfi göndərin, istəsəniz şifrələnmiş memo ilə.
-• Bütün bağlantılar üçün istəyə bağlı Tor.
+• Bütün bağlantılar üçün istəyə bağlı Tor və ya Nym.
 • Reklam yoxdur, izləmə yoxdur.
 
 Sürətli ödənişlər, masternodlar və idarəetmə

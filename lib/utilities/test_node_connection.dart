@@ -11,6 +11,7 @@ import '../models/node_model.dart';
 import '../pages/settings_views/global_settings_view/manage_nodes_views/add_edit_node_view.dart';
 import '../providers/global/prefs_provider.dart';
 import '../wallets/api/kerrigan/kerrigan_bridge_client.dart';
+import '../services/network_privacy.dart';
 import '../wallets/crypto_currency/crypto_currency.dart';
 import 'logger.dart';
 import 'tor_plain_net_option_enum.dart';
@@ -73,7 +74,7 @@ Future<String?> testNodeConnection({
       host: formData.host!,
       port: formData.port ?? 0,
       useSSL: formData.useSSL ?? false,
-      useTor: read(prefsChangeNotifierProvider).useTor,
+      network: NetworkPrivacy.activeIn(read(prefsChangeNotifierProvider)),
     );
     final problem = await client
         .verifyFor(cryptoCurrency as Kerrigan)

@@ -2,7 +2,7 @@ TrekPay, kontrolü sizde tutan bir Kerrigan cüzdanıdır. Kurtarma ifadeniz ve 
 
 Gizlilik
 • Shield işlemleri: KRGN'leri Shield'e taşıyın, Shield'den çıkarın ve gizlice gönderin; isterseniz şifreli bir memo ekleyin.
-• Tüm bağlantılar için isteğe bağlı Tor.
+• Tüm bağlantılar için isteğe bağlı Tor veya Nym.
 • Reklam yok, takip yok.
 
 Hızlı ödemeler, masternode'lar ve yönetişim

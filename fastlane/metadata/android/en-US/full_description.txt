@@ -2,7 +2,7 @@ TrekPay is a self-custodial Kerrigan wallet that keeps you in control. Your reco
 
 Privacy
 • Shielded transactions: shield, unshield and send KRGN privately, with an optional encrypted memo.
-• Optional Tor for every connection.
+• Optional Tor or Nym for every connection.
 • No ads and no tracking.
 
 Fast payments, masternodes and governance

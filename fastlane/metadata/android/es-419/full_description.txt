@@ -2,7 +2,7 @@ TrekPay es una billetera Kerrigan de autocustodia que te deja el control. Tu fra
 
 Privacidad
 • Transacciones Shield: mueve KRGN a Shield, sácalos de Shield y envíalos de forma privada, con un memo cifrado opcional.
-• Tor opcional para todas las conexiones.
+• Tor o Nym opcional para todas las conexiones.
 • Sin anuncios y sin rastreo.
 
 Pagos rápidos, masternodes y gobernanza

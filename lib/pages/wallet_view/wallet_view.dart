@@ -17,7 +17,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:tuple/tuple.dart';
 
-import '../../app_config.dart';
 import '../../l10n/l10n.dart';
 import '../../notifications/show_flush_bar.dart';
 import '../../providers/global/active_wallet_provider.dart';
@@ -26,6 +25,7 @@ import '../../providers/providers.dart';
 import '../../providers/ui/transaction_filter_provider.dart';
 import '../../providers/wallet/public_private_balance_state_provider.dart';
 import '../../services/device_network.dart';
+import '../../services/network_privacy.dart';
 import '../../services/event_bus/events/global/node_connection_status_changed_event.dart';
 import '../../services/event_bus/events/global/wallet_sync_status_changed_event.dart';
 import '../../services/event_bus/global_event_bus.dart';
@@ -354,7 +354,7 @@ class _WalletViewState extends ConsumerState<WalletView> {
                   ],
                 ),
                 actions: [
-                  if (AppConfig.hasFeature(AppFeature.tor))
+                  if (NetworkPrivacy.available.isNotEmpty)
                     const Padding(
                       padding: EdgeInsetsDirectional.only(
                         top: 10,

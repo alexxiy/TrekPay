@@ -2,7 +2,7 @@ TrekPay là ví Kerrigan tự lưu ký giúp bạn luôn nắm quyền kiểm so
 
 Quyền riêng tư
 • Giao dịch Shield: chuyển KRGN vào Shield, rút khỏi Shield và gửi riêng tư, kèm memo mã hóa nếu muốn.
-• Tùy chọn dùng Tor cho mọi kết nối.
+• Tùy chọn dùng Tor hoặc Nym cho mọi kết nối.
 • Không quảng cáo, không theo dõi.
 
 Thanh toán nhanh, masternode và quản trị

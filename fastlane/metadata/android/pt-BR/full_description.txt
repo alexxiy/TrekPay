@@ -2,7 +2,7 @@ O TrekPay é uma carteira Kerrigan de autocustódia que deixa você no controle.
 
 Privacidade
 • Transações Shield: mova KRGN para o Shield, retire do Shield e envie com privacidade, com um memo criptografado opcional.
-• Tor opcional em todas as conexões.
+• Tor ou Nym opcional em todas as conexões.
 • Sem anúncios e sem rastreamento.
 
 Pagamentos rápidos, masternodes e governança

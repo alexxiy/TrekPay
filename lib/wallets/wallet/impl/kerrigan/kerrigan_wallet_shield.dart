@@ -726,7 +726,6 @@ extension _KerriganShield on KerriganWallet {
           host: node.host,
           port: node.port,
           useSSL: node.useSSL,
-          useTor: false,
         ).baseUri.toString(),
       "https://download.z.cash/downloads",
     };
@@ -743,10 +742,8 @@ extension _KerriganShield on KerriganWallet {
             Uri.parse("$src/$name"),
             file,
             maxBytes: size,
-            // Per file: Tor may have been turned on meanwhile.
-            proxy: bridge.useTor
-                ? TorService.sharedInstance.getProxyInfo()
-                : null,
+            // Per file: Tor or Nym may have been turned on meanwhile.
+            proxy: bridge.proxyInfo,
             onProgress: (r, _) => onProgress(base + weight * r / size),
           );
           lastError = null;

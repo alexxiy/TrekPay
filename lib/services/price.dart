@@ -22,7 +22,7 @@ import '../utilities/logger.dart';
 import '../utilities/prefs.dart';
 import '../utilities/util.dart';
 import '../wallets/crypto_currency/crypto_currency.dart';
-import 'tor_service.dart';
+import 'network_privacy.dart';
 
 /// A coin's price in the chosen currency. [change24h] is in percent, null
 /// when the price source doesn't give it.
@@ -65,11 +65,7 @@ class PriceAPI {
   }
 
   static ({InternetAddress host, int port})? get _proxyInfo =>
-      !AppConfig.hasFeature(AppFeature.tor)
-      ? null
-      : Prefs.instance.useTor
-      ? TorService.sharedInstance.getProxyInfo()
-      : null;
+      NetworkPrivacy.proxyInfo();
 
   static Future<Map<dynamic, dynamic>> _getJson(HTTP client, Uri url) async {
     final response = await client.get(
