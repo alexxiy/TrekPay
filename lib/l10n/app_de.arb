@@ -636,6 +636,8 @@
   "txPending": "Ausstehend",
   "txBlockHeight": "Blockhöhe",
   "txConfirmations": "Bestätigungen",
+  "txInstantSend": "InstantSend",
+  "txInstantSendLocked": "Gesichert, sofort ausgebbar",
   "txSubType": "Tx-Untertyp",
   "txShielded": "Ins Shield verschoben",
   "txNewCoins": "Neue Coins",

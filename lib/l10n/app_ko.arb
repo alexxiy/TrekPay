@@ -636,6 +636,8 @@
   "txPending": "대기 중",
   "txBlockHeight": "블록 높이",
   "txConfirmations": "컨펌",
+  "txInstantSend": "InstantSend",
+  "txInstantSendLocked": "잠금 완료, 바로 사용 가능",
   "txSubType": "거래 하위 유형",
   "txShielded": "Shield로 이동함",
   "txNewCoins": "새 코인",

@@ -636,6 +636,8 @@
   "txPending": "Đang chờ",
   "txBlockHeight": "Chiều cao khối",
   "txConfirmations": "Xác nhận",
+  "txInstantSend": "InstantSend",
+  "txInstantSendLocked": "Đã khóa, có thể chi tiêu ngay",
   "txSubType": "Loại phụ của giao dịch",
   "txShielded": "Đã chuyển vào Shield",
   "txNewCoins": "Coin mới",

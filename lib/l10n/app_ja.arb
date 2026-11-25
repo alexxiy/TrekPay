@@ -636,6 +636,8 @@
   "txPending": "保留中",
   "txBlockHeight": "ブロック高",
   "txConfirmations": "承認数",
+  "txInstantSend": "InstantSend",
+  "txInstantSendLocked": "ロック済み、すぐに使えます",
   "txSubType": "取引のサブタイプ",
   "txShielded": "Shield へ移動",
   "txNewCoins": "新規発行コイン",

@@ -636,6 +636,8 @@
   "txPending": "待确认",
   "txBlockHeight": "区块高度",
   "txConfirmations": "确认数",
+  "txInstantSend": "InstantSend",
+  "txInstantSendLocked": "已锁定，可立即使用",
   "txSubType": "交易子类型",
   "txShielded": "已转入 Shield",
   "txNewCoins": "新币",

@@ -636,6 +636,8 @@
   "txPending": "Beklemede",
   "txBlockHeight": "Blok yüksekliği",
   "txConfirmations": "Onaylar",
+  "txInstantSend": "InstantSend",
+  "txInstantSendLocked": "Kilitlendi, harcanabilir",
   "txSubType": "İşlem alt türü",
   "txShielded": "Shield'e taşındı",
   "txNewCoins": "Yeni coinler",

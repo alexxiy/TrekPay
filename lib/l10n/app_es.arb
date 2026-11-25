@@ -636,6 +636,8 @@
   "txPending": "Pendiente",
   "txBlockHeight": "Altura del bloque",
   "txConfirmations": "Confirmaciones",
+  "txInstantSend": "InstantSend",
+  "txInstantSendLocked": "Asegurada, lista para gastar",
   "txSubType": "Subtipo de tx",
   "txShielded": "Movido a Shield",
   "txNewCoins": "Monedas nuevas",

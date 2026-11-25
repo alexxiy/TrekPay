@@ -781,7 +781,7 @@ class KerriganWallet extends Bip39HDWallet<Kerrigan>
         // side, so keep the entry we built until it confirms; then keep
         // the exact amount and change we built it with.
         if (tx.height == null) {
-          // Keep our entry; just mark it final once InstantSend locks it.
+          // Keep our entry; just mark it once InstantSend locks it.
           if (tx.isInstantLocked && !stored.isInstantLocked) {
             changed.add(
               stored.copyWith(

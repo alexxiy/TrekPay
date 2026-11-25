@@ -85,7 +85,7 @@ void main() {
     expect(tx.isConfirmed(350, 1, 101), isFalse);
   });
 
-  test("an InstantSend-locked mempool tx counts as confirmed", () {
+  test("an InstantSend-locked mempool tx shows as pending until mined", () {
     Map<String, dynamic> pending(bool locked) => _tx(
       height: -1,
       instantlock: locked,
@@ -107,17 +107,20 @@ void main() {
     );
     final locked = _parse(pending(true));
     expect(locked.isInstantLocked, isTrue);
-    expect(locked.isConfirmed(500, 1, 101), isTrue);
+    expect(locked.isInstantLockedBeforeBlock, isTrue);
+    // The coins are spendable at once, but the tx waits for its block.
+    expect(locked.isConfirmed(500, 1, 101), isFalse);
     expect(
       locked.statusLabel(
         currentChainHeight: 500,
         minConfirms: 1,
         minCoinbaseConfirms: 101,
       ),
-      "Received",
+      "Receiving (0/1)",
     );
     final unlocked = _parse(pending(false));
     expect(unlocked.isInstantLocked, isFalse);
+    expect(unlocked.isInstantLockedBeforeBlock, isFalse);
     expect(unlocked.isConfirmed(500, 1, 101), isFalse);
   });
 

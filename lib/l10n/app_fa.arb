@@ -636,6 +636,8 @@
   "txPending": "در انتظار",
   "txBlockHeight": "ارتفاع بلاک",
   "txConfirmations": "تأییدها",
+  "txInstantSend": "InstantSend",
+  "txInstantSendLocked": "قفل‌شده، آماده خرج کردن",
   "txSubType": "زیرنوع تراکنش",
   "txShielded": "شیلدشده",
   "txNewCoins": "کوین‌های جدید",

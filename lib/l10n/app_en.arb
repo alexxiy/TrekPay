@@ -1856,6 +1856,8 @@
   "txPending": "Pending",
   "txBlockHeight": "Block height",
   "txConfirmations": "Confirmations",
+  "txInstantSend": "InstantSend",
+  "txInstantSendLocked": "Locked, ready to spend",
   "txSubType": "Tx sub type",
   "txShielded": "Shielded",
   "txNewCoins": "New coins",

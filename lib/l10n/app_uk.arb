@@ -636,6 +636,8 @@
   "txPending": "Очікує підтвердження",
   "txBlockHeight": "Висота блоку",
   "txConfirmations": "Підтвердження",
+  "txInstantSend": "InstantSend",
+  "txInstantSendLocked": "Зафіксована, можна витрачати",
   "txSubType": "Підтип транзакції",
   "txShielded": "Переведено в Shield",
   "txNewCoins": "Нові монети",

@@ -636,6 +636,8 @@
   "txPending": "Gözləmədə",
   "txBlockHeight": "Blokun hündürlüyü",
   "txConfirmations": "Təsdiqlər",
+  "txInstantSend": "InstantSend",
+  "txInstantSendLocked": "Kilidlənib, xərcləməyə hazırdır",
   "txSubType": "Əməliyyatın alt növü",
   "txShielded": "Shield-ə köçürüldü",
   "txNewCoins": "Yeni coinlər",

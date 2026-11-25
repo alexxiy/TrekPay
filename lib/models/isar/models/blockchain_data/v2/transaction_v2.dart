@@ -111,8 +111,8 @@ class TransactionV2 {
     int minimumConfirms,
     int minimumCoinbaseConfirms,
   ) {
-    // Kerrigan: an InstantSend lock makes an unconfirmed tx final.
-    if (isInstantLocked && (height == null || height! <= 0)) return true;
+    // Kerrigan: an InstantSend lock makes the coins spendable at once (see
+    // the wallet's coin checks), but the tx shows as pending until its block.
     final confirmations = getConfirmations(currentChainHeight);
     return confirmations >=
         (isCoinbase() ? minimumCoinbaseConfirms : minimumConfirms);
@@ -191,6 +191,11 @@ class TransactionV2 {
   @ignore
   bool get isInstantLocked =>
       _getFromOtherData(key: TxV2OdKeys.instantLock) == true;
+
+  /// Kerrigan: locked by InstantSend and not in a block yet.
+  @ignore
+  bool get isInstantLockedBeforeBlock =>
+      isInstantLocked && (height == null || height! <= 0);
 
   /// Kerrigan change addresses among the outputs.
   @ignore
@@ -288,10 +293,7 @@ class TransactionV2 {
       case KerriganTxKind.burn:
         return label(l10n.txProposalFee, l10n.txProposalFee);
       case KerriganTxKind.masternodeRegistration:
-        return label(
-          l10n.txMasternodeRegistered,
-          l10n.txRegisteringMasternode,
-        );
+        return label(l10n.txMasternodeRegistered, l10n.txRegisteringMasternode);
       case KerriganTxKind.masternodeUpdate:
         return label(l10n.txMasternodeUpdated, l10n.txUpdatingMasternode);
       case KerriganTxKind.shield:

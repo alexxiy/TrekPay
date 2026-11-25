@@ -636,6 +636,8 @@
   "txPending": "معلّقة",
   "txBlockHeight": "ارتفاع الكتلة",
   "txConfirmations": "التأكيدات",
+  "txInstantSend": "InstantSend",
+  "txInstantSendLocked": "مقفلة، جاهزة للإنفاق",
   "txSubType": "النوع الفرعي للمعاملة",
   "txShielded": "محمية",
   "txNewCoins": "عملات جديدة",
