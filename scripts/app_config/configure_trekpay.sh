@@ -63,6 +63,7 @@ const _commitHash = "$BUILT_COMMIT_HASH";
 
 // Project links. Empty ones are not shown in the app.
 const _websiteUrl = "https://trekpay.space";
+const _gitHubRepo = "alexxiy/TrekPay";
 const _termsUrl = "https://trekpay.space/terms-of-service.html";
 const _privacyUrl = "https://trekpay.space/privacy-policy.html";
 
