@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
+import '../../widgets/motion.dart';
 import 'kerrigan_donation.dart';
 
 /// The donation screen's colours: violet for the dark, shielded Delta,
@@ -218,19 +219,8 @@ class _KerriganDonationStageState extends State<KerriganDonationStage>
                           ),
                         ),
                         child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 350),
-                          switchInCurve: Curves.easeOutBack,
-                          transitionBuilder: (child, animation) =>
-                              FadeTransition(
-                                opacity: animation,
-                                child: ScaleTransition(
-                                  scale: Tween(
-                                    begin: 0.85,
-                                    end: 1.0,
-                                  ).animate(animation),
-                                  child: child,
-                                ),
-                              ),
+                          duration: const Duration(milliseconds: 420),
+                          transitionBuilder: Motion.fadeScaleFrom(0.85),
                           child: _picture(size),
                         ),
                       ),
