@@ -616,6 +616,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  flutter_libnym:
+    dependency: "direct main"
+    description:
+      path: "crypto_plugins/flutter_libnym"
+      relative: true
+    source: path
+    version: "0.1.0"
   flutter_lints:
     dependency: "direct dev"
     description:
